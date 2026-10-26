@@ -1,4 +1,4 @@
-const CACHE_NAME = "still-niv-shell-v1";
+const CACHE_NAME = "still-bible-shell-v2";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/still.svg"];
 
 self.addEventListener("install", (event) => {
@@ -8,6 +8,10 @@ self.addEventListener("install", (event) => {
     const response = await fetch("/");
     if (!response.ok) throw new Error("Could not cache the reader shell.");
     await cache.put("/", response.clone());
+    try {
+      const dataResponse = await fetch("/data/arb-vd.json");
+      if (dataResponse.ok) await cache.put("/data/arb-vd.json", dataResponse);
+    } catch { /* The data will be cached on its first successful request. */ }
     const html = await response.text();
     const assets = [...html.matchAll(/(?:src|href)=["']([^"']*\/_next\/static\/[^"']+)["']/g)]
       .map((match) => new URL(match[1], self.location.origin).href);
@@ -23,7 +27,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((names) => Promise.all(names.filter((name) => name.startsWith("still-niv-shell-") && name !== CACHE_NAME).map((name) => caches.delete(name)))),
+    caches.keys().then((names) => Promise.all(names.filter((name) => (name.startsWith("still-niv-shell-") || name.startsWith("still-bible-shell-")) && name !== CACHE_NAME).map((name) => caches.delete(name)))),
   );
   self.clients.claim();
 });
@@ -32,6 +36,19 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+
+  if (url.pathname === "/data/arb-vd.json") {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      }),
+    );
+    return;
+  }
 
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(

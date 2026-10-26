@@ -44,6 +44,8 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .offline-indicator { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
 .offline-indicator .status-dot { width: 6px; height: 6px; }
 .settings-trigger { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-raised); color: var(--ink); font-size: 12px; transition: border-color .15s ease, background .15s ease; }
+.translation-trigger { min-height: 38px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-raised); color: var(--ink); font-size: 11px; font-weight: 600; }
+.translation-trigger:hover { border-color: var(--accent); background: var(--accent-soft); }
 .settings-trigger:hover { background: var(--accent-soft); border-color: transparent; }
 .settings-trigger svg { width: 16px; height: 16px; }
 .reader-scroll { min-height: 0; flex: 1; overflow-y: auto; }
@@ -108,6 +110,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .scripture { max-width: 680px; margin: 0 auto; color: var(--ink); font: 400 var(--reading-size) / 1.82 Georgia, 'Times New Roman', serif; letter-spacing: .002em; }
 .scripture p { margin: 0 0 1.25em; }
 .scripture .copyright { margin-top: 3.5em; padding-top: 1.2em; border-top: 1px solid var(--line); color: var(--muted); font: 11px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.reader-heading h1[dir="rtl"] { font-family: 'Geeza Pro', 'Noto Naskh Arabic', 'Times New Roman', serif; letter-spacing: 0; }
+.scripture.arabic-scripture { text-align: right; font-family: 'Geeza Pro', 'Noto Naskh Arabic', 'Times New Roman', serif; font-size: calc(var(--reading-size) + 2px); line-height: 2.05; }
+.scripture.arabic-scripture p { margin-bottom: 1.3em; }
+.offline-ready { color: var(--muted); font-size: 11px; }
 .reader-message { min-height: 300px; padding: 50px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; color: var(--muted); }
 .reader-message p { max-width: 480px; margin: 0; line-height: 1.7; }
 .loading-mark { width: 25px; height: 25px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
