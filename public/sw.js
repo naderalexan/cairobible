@@ -53,7 +53,7 @@ self.addEventListener("fetch", (event) => {
           if (response.ok) await (await caches.open(CACHE_NAME)).put("/", response.clone());
           return response;
         })
-        .catch(async () => (await caches.match("/")) ?? Response.error()),
+        .catch(async () => (await (await caches.open(CACHE_NAME)).match("/")) ?? Response.error()),
     );
   }
 });
