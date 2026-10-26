@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   title: "Still — NIV Bible",
   description: "A quiet, offline-ready NIV Bible reader.",
   applicationName: "Still NIV",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icons/still.svg", apple: "/icons/still.svg" },
 };
 
 export const viewport: Viewport = {
