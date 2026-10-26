@@ -1,7 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { books } from "@/lib/books";
+import {
+  connectToNiv,
+  countFreshCachedChapters,
+  getFreshCachedChapter,
+  loadChapter,
+  saveWholeBibleOffline,
+  type BibleChapter,
+  type BibleMetadata,
+} from "@/lib/scripture";
+
+const FONT_SIZES = [18, 20, 22, 25, 29];
+const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
+const POSITION_KEY = "still-reading-position";
+const API_KEY_KEY = "still-api-key";
 
 export default function Home() {
   const [currentBook, setCurrentBook] = useState(books[0]);
@@ -12,6 +26,108 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [fontLevel, setFontLevel] = useState(2);
+  const [apiKey, setApiKey] = useState("");
+  const [apiInput, setApiInput] = useState("");
+  const [connected, setConnected] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [chapterData, setChapterData] = useState<BibleChapter | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [settingsStatus, setSettingsStatus] = useState("");
+  const [metadata, setMetadata] = useState<BibleMetadata | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [savedCount, setSavedCount] = useState(0);
+  const [downloadProgress, setDownloadProgress] = useState<{ complete: number; total: number; book: string } | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const downloadController = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("still-theme");
+    setTheme(savedTheme === "dark" ? "dark" : "light");
+    const savedFont = Number(localStorage.getItem("still-font-level"));
+    if (Number.isInteger(savedFont) && savedFont >= 0 && savedFont <= 4) setFontLevel(savedFont);
+    const savedPosition = localStorage.getItem(POSITION_KEY);
+    if (savedPosition) {
+      try {
+        const position = JSON.parse(savedPosition) as { bookId?: string; chapter?: number };
+        const book = books.find((item) => item.id === position.bookId);
+        if (book && position.chapter && position.chapter <= book.chapters) {
+          setCurrentBook(book);
+          setChapter(position.chapter);
+        }
+      } catch { localStorage.removeItem(POSITION_KEY); }
+    }
+    const savedKey = localStorage.getItem(API_KEY_KEY) ?? "";
+    setApiKey(savedKey);
+    setApiInput(savedKey);
+    setConnected(Boolean(savedKey));
+    setIsOnline(navigator.onLine);
+    if (window.innerWidth < 760) setSidebarOpen(false);
+    void countFreshCachedChapters().then(setSavedCount).catch(() => undefined);
+    setReady(true);
+
+    const updateOnline = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    if ("serviceWorker" in navigator) void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    return () => {
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (ready) localStorage.setItem(POSITION_KEY, JSON.stringify({ bookId: currentBook.id, chapter }));
+  }, [ready, currentBook.id, chapter]);
+
+  useEffect(() => {
+    if (connected && apiKey) void connectToNiv(apiKey).then(setMetadata).catch(() => undefined);
+  }, [connected, apiKey]);
+
+  useEffect(() => {
+    if (!settingsOpen && !chapterPickerOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSettingsOpen(false);
+        setChapterPickerOpen(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [settingsOpen, chapterPickerOpen]);
+
+  useEffect(() => {
+    if (ready) localStorage.setItem("still-theme", theme);
+  }, [ready, theme]);
+
+  useEffect(() => {
+    if (ready) localStorage.setItem("still-font-level", String(fontLevel));
+  }, [ready, fontLevel]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!ready) return;
+      setLoading(true);
+      setLoadError("");
+      setChapterData(null);
+      try {
+        const data = apiKey
+          ? await loadChapter(currentBook, chapter, apiKey)
+          : await getFreshCachedChapter(currentBook.id, chapter);
+        if (!cancelled) {
+          setChapterData(data ?? null);
+          if (!data && apiKey) setLoadError("No chapter was returned. Check your connection and try again.");
+          setSavedCount(await countFreshCachedChapters().catch(() => 0));
+        }
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Could not open this chapter.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiKey, chapter, currentBook, ready, refreshToken]);
 
   const filteredBooks = useMemo(
     () => books.filter((book) => book.name.toLowerCase().includes(query.toLowerCase().trim())),
@@ -41,6 +157,57 @@ export default function Home() {
     setChapter(direction > 0 ? 1 : nextBook.chapters);
   }
 
+  async function connect() {
+    setSettingsStatus("Checking your NIV access…");
+    try {
+      const result = await connectToNiv(apiInput);
+      localStorage.setItem(API_KEY_KEY, apiInput.trim());
+      setApiKey(apiInput.trim());
+      setConnected(true);
+      setMetadata(result);
+      setSettingsStatus("Connected. Your NIV chapter will load automatically.");
+    } catch (error) {
+      setSettingsStatus(error instanceof Error ? error.message : "Could not connect to API.Bible.");
+    }
+  }
+
+  function disconnect() {
+    localStorage.removeItem(API_KEY_KEY);
+    setApiKey("");
+    setApiInput("");
+    setConnected(false);
+    setMetadata(null);
+    setSettingsStatus("API key removed. Freshly cached chapters remain available on this device.");
+  }
+
+  async function saveOffline() {
+    if (!apiKey) {
+      setSettingsOpen(true);
+      setSettingsStatus("Connect an API.Bible key with NIV access before saving chapters.");
+      return;
+    }
+    const controller = new AbortController();
+    downloadController.current = controller;
+    setSettingsStatus("Saving the NIV chapter by chapter. You can pause at any time.");
+    try {
+      await saveWholeBibleOffline(apiKey, (complete, total, book) => {
+        setDownloadProgress({ complete, total, book });
+      }, controller.signal);
+      if (!controller.signal.aborted) setSettingsStatus("Offline download complete.");
+      else setSettingsStatus("Download paused. Completed chapters are saved and will be skipped next time.");
+      setSavedCount(await countFreshCachedChapters().catch(() => savedCount));
+    } catch (error) {
+      setSettingsStatus(error instanceof Error ? error.message : "The download stopped. Try again when you are online.");
+    } finally {
+      downloadController.current = null;
+      setDownloadProgress(null);
+    }
+  }
+
+  function pauseDownload() {
+    downloadController.current?.abort();
+  }
+
   function renderBooks(list: typeof books) {
     return list.map((book) => (
       <li key={book.id}>
@@ -56,7 +223,7 @@ export default function Home() {
   }
 
   return (
-    <div className={`app-shell ${theme}`}>
+    <div className={`app-shell ${theme}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px` } as CSSProperties}>
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label="Bible books">
         <div className="sidebar-top">
           <a className="brand" href="#" aria-label="Still NIV Bible home">
@@ -86,7 +253,7 @@ export default function Home() {
             <span className="toolbar-label">A place to read</span>
           </div>
           <div className="toolbar-actions">
-            <span className="offline-indicator"><span className="status-dot" />Online</span>
+            <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{isOnline ? "Online" : "Offline"}</span>
             <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`} title="Switch theme"><MoonIcon /></button>
             <button className="settings-trigger" onClick={() => setSettingsOpen(true)}><GearIcon /><span>Settings</span></button>
           </div>
@@ -98,19 +265,31 @@ export default function Home() {
               <div><p className="eyebrow">{currentBook.testament.toUpperCase()} <span>·</span> NIV</p><h1>{currentBook.name} <span>{chapter}</span></h1></div>
               <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>Chapter {chapter}</span><ChevronDown /></button>
             </div>
-            <section className="welcome">
-              <div className="welcome-art" aria-hidden="true"><BookIllustration /></div>
-              <p className="eyebrow">MAKE ROOM FOR THE WORD</p>
-              <h2>Read without<br />the noise.</h2>
-              <p className="welcome-copy">A simple, quiet place for the NIV. Pick up where you left off, or find a book and settle in.</p>
-              <button className="primary-button" onClick={() => setSettingsOpen(true)}>Connect your NIV access <span aria-hidden="true">→</span></button>
-              <p className="setup-note">Requires an API.Bible key with NIV access. Your key stays in this browser.</p>
-            </section>
+            {chapterData ? (
+              <article className="scripture" aria-label={`${currentBook.name} chapter ${chapter}`}>
+                {scriptureParagraphs(chapterData.content).map((paragraph, index) => <p key={`${chapterData.id}-${index}`}>{paragraph}</p>)}
+                {scriptureParagraphs(chapterData.content).length === 0 && <p>This chapter has no readable text.</p>}
+                {metadata?.copyright && <p className="copyright">{metadata.copyright}</p>}
+              </article>
+            ) : loading ? (
+              <section className="reader-message" role="status"><span className="loading-mark" /><p>{isOnline ? "Opening your chapter…" : "Looking for a saved chapter…"}</p></section>
+            ) : loadError ? (
+              <section className="reader-message" role="alert"><p>{loadError}</p><button className="secondary-button" onClick={() => setRefreshToken((value) => value + 1)}>Try again</button></section>
+            ) : (
+              <section className="welcome">
+                <div className="welcome-art" aria-hidden="true"><BookIllustration /></div>
+                <p className="eyebrow">MAKE ROOM FOR THE WORD</p>
+                <h2>{isOnline ? <>Read without<br />the noise.</> : <>No saved chapter<br />yet.</>}</h2>
+                <p className="welcome-copy">{isOnline ? "A simple, quiet place for the NIV. Pick up where you left off, or find a book and settle in." : "Connect and save chapters while online to read them here later."}</p>
+                <button className="primary-button" onClick={() => setSettingsOpen(true)}>{connected ? "Open reading settings" : "Connect your NIV access"} <span aria-hidden="true">→</span></button>
+                <p className="setup-note">Requires an API.Bible key with NIV access. Your key stays in this browser.</p>
+              </section>
+            )}
           </section>
         </div>
         <footer className="reader-footer">
           <button className="chapter-step" onClick={() => stepChapter(-1)} disabled={currentBook.id === "GEN" && chapter === 1} aria-label="Previous chapter"><ChevronLeft /><span>Previous</span></button>
-          <button className="offline-button" onClick={() => setSettingsOpen(true)}><DownloadIcon /><span>Save Bible offline</span></button>
+          <button className="offline-button" onClick={() => apiKey ? void saveOffline() : setSettingsOpen(true)} disabled={Boolean(downloadProgress)}><DownloadIcon /><span>{downloadProgress ? `${downloadProgress.complete} / ${downloadProgress.total}` : savedCount ? `${savedCount} chapters saved` : "Save Bible offline"}</span></button>
           <button className="chapter-step" onClick={() => stepChapter(1)} disabled={currentBook.id === "REV" && chapter === currentBook.chapters} aria-label="Next chapter"><span>Next</span><ChevronRight /></button>
         </footer>
       </main>
@@ -127,16 +306,29 @@ export default function Home() {
           <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close settings">×</button>
           <div className="dialog-content">
             <p className="eyebrow">YOUR READING SPACE</p><h2 id="settingsTitle">Settings</h2>
-            <section className="setting-block"><div className="setting-heading"><div><h3>Reading size</h3><p>Choose what feels comfortable.</p></div><output>{["Small", "Comfortable", "Medium", "Large", "Extra large"][fontLevel]}</output></div>
+            <section className="setting-block">            <div className="setting-heading"><div><h3>Reading size</h3><p>Choose what feels comfortable.</p></div><output>{FONT_LABELS[fontLevel]}</output></div>
               <div className="slider-row"><span className="slider-small" aria-hidden="true">A</span><input type="range" min="0" max="4" step="1" value={fontLevel} aria-label="Reading text size, five levels" onChange={(event) => setFontLevel(Number(event.target.value))} /><span className="slider-large" aria-hidden="true">A</span></div><div className="slider-levels"><span>Small</span><span>Large</span></div>
             </section>
-            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>NIV access</h3><p>Use an API.Bible key that includes NIV.</p></div></div><label className="field-label" htmlFor="apiKeyInput">API key</label><div className="key-field"><input id="apiKeyInput" type="password" autoComplete="off" placeholder="Paste your API.Bible key" /><button className="small-button">Connect</button></div><p className="privacy-note">Stored only on this device. Scripture is fetched directly from API.Bible and cached for up to 30 days.</p></section>
-            <section className="setting-block offline-setting"><div className="setting-heading"><div><h3>Offline reading</h3><p>Save chapters for your next offline moment.</p></div></div><button className="secondary-button">Save the whole NIV offline</button></section>
+            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>NIV access</h3><p>Use an API.Bible key that includes NIV.</p></div></div><label className="field-label" htmlFor="apiKeyInput">API key</label><div className="key-field"><input id="apiKeyInput" type="password" autoComplete="off" placeholder="Paste your API.Bible key" value={apiInput} onChange={(event) => setApiInput(event.target.value)} /><button className="small-button" onClick={() => void connect()} disabled={!apiInput.trim()}>{connected ? "Check key" : "Connect"}</button></div>{connected && <button className="text-button" onClick={disconnect}>Remove saved key</button>}<p className="privacy-note">Stored only on this device. NIV chapters are cached in this browser for up to 29 days to respect API.Bible’s licensing terms.</p>{metadata?.copyright && <p className="privacy-note">{metadata.copyright}</p>}</section>
+            <section className="setting-block offline-setting"><div className="setting-heading"><div><h3>Offline reading</h3><p>{savedCount} fresh chapters saved on this device.</p></div></div>{downloadProgress ? <><p className="download-status">Saving {downloadProgress.book} · {downloadProgress.complete} of {downloadProgress.total} chapters</p><progress max={downloadProgress.total} value={downloadProgress.complete} aria-label="Offline download progress" /><button className="secondary-button" onClick={pauseDownload}>Pause download</button></> : <button className="secondary-button" onClick={() => void saveOffline()} disabled={!apiKey}>Save the whole NIV offline</button>}</section>
+            {settingsStatus && <p className="settings-status" role="status">{settingsStatus}</p>}
           </div>
         </section>
       </div>}
     </div>
   );
+}
+
+function scriptureParagraphs(content: string): string[] {
+  if (typeof DOMParser === "undefined") return [];
+  const document = new DOMParser().parseFromString(content, "text/html");
+  document.querySelectorAll("script, style, iframe, object").forEach((node) => node.remove());
+  const paragraphs = Array.from(document.body.querySelectorAll("p"))
+    .map((paragraph) => paragraph.textContent?.replace(/\s+/g, " ").trim() ?? "")
+    .filter(Boolean);
+  if (paragraphs.length) return paragraphs;
+  const text = document.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
+  return text ? [text] : [];
 }
 
 function BookMark() { return <svg viewBox="0 0 32 32"><path d="M16 5v22M5 9c5-2 8-1 11 2 3-3 6-4 11-2v16c-5-2-8-1-11 2-3-3-6-4-11-2z" /></svg>; }
