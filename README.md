@@ -1,6 +1,12 @@
-# Still — NIV Bible
+# Still — Bible reader
 
-A focused, installable Next.js Bible reader with quick book/chapter navigation, saved reading preferences, and IndexedDB chapter storage for offline use.
+A focused, installable Next.js Bible reader with NIV and Arabic Smith & Van Dyck (SVD), quick book/chapter navigation, saved reading preferences, and offline reading.
+
+## Arabic Smith & Van Dyck (SVD)
+
+The complete Arabic Van Dyck Bible is bundled locally at `public/data/arb-vd.json` and served with the app—no account, API key, or backend is required. The service worker precaches this file, so the SVD remains available offline after the app has been opened online once.
+
+Source: [eBible.org Arabic Van Dyck Bible](https://ebible.org/Scriptures/details.php?id=arb-vd), downloaded from the [read-aloud text archive](https://ebible.org/Scriptures/arb-vd_readaloud.zip). eBible.org lists this translation as public domain; the source credits the Syrian Mission and American Bible Society.
 
 ## NIV content
 
