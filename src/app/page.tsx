@@ -317,9 +317,31 @@ export default function Home() {
             <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{isOnline ? "Online" : "Offline"}</span>
             <button className="translation-trigger" onClick={() => setTranslation(translation === "niv" ? "svd" : "niv")} aria-label={`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`} title="Switch translation">{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
             <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`} title="Switch theme"><MoonIcon /></button>
-            <button className="settings-trigger" onClick={() => setSettingsOpen(true)}><GearIcon /><span>Settings</span></button>
+            <button className="settings-trigger" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /><span>Settings</span></button>
           </div>
         </header>
+
+        {settingsOpen && <section className="settings-dropdown" id="settingsDropdown" aria-labelledby="settingsTitle">
+          <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close settings">×</button>
+          <div className="dialog-content">
+            <p className="eyebrow">YOUR READING SPACE</p><h2 id="settingsTitle">Settings</h2>
+            <section className="setting-block">            <div className="setting-heading"><div><h3>Reading size</h3><p>Choose what feels comfortable.</p></div><output>{FONT_LABELS[fontLevel]}</output></div>
+              <div className="slider-row"><span className="slider-small" aria-hidden="true">A</span><input type="range" min="0" max="4" step="1" value={fontLevel} aria-label="Reading text size, five levels" onChange={(event) => setFontLevel(Number(event.target.value))} /><span className="slider-large" aria-hidden="true">A</span></div><div className="slider-levels"><span>Small</span><span>Large</span></div>
+            </section>
+            <section className="setting-block">
+              <div className="setting-heading"><div><h3>Line spacing</h3><p>Adjust the space between lines.</p></div><output>{selectedLineHeight.label}</output></div>
+              <div className="line-height-options" role="radiogroup" aria-label="Reader line spacing">
+                {LINE_HEIGHT_OPTIONS.map((option) => <label className="line-height-option" key={option.value}>
+                  <input type="radio" name="reading-line-height" value={option.value} checked={lineHeight === option.value} onChange={(event) => { const value = Number(event.target.value); if (isLineHeightValue(value)) setLineHeight(value); }} />
+                  <span>{option.label}</span>
+                </label>)}
+              </div>
+            </section>
+            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>NIV access</h3><p>Use an API.Bible key that includes NIV.</p></div></div><label className="field-label" htmlFor="apiKeyInput">API key</label><div className="key-field"><input id="apiKeyInput" type="password" autoComplete="off" placeholder="Paste your API.Bible key" value={apiInput} onChange={(event) => setApiInput(event.target.value)} /><button className="small-button" onClick={() => void connect()} disabled={!apiInput.trim()}>{connected ? "Check key" : "Connect"}</button></div>{connected && <button className="text-button" onClick={disconnect}>Remove saved key</button>}<p className="privacy-note">Stored only on this device. NIV chapters are cached in this browser for up to 29 days to respect API.Bible’s licensing terms.</p>{metadata?.copyright && <p className="privacy-note">{metadata.copyright}</p>}</section>
+            <section className="setting-block offline-setting"><div className="setting-heading"><div><h3>Offline reading</h3><p>{savedCount} fresh chapters saved on this device.</p></div></div>{downloadProgress ? <><p className="download-status">Saving {downloadProgress.book} · {downloadProgress.complete} of {downloadProgress.total} chapters</p><progress max={downloadProgress.total} value={downloadProgress.complete} aria-label="Offline download progress" /><button className="secondary-button" onClick={pauseDownload}>Pause download</button></> : <button className="secondary-button" onClick={() => void saveOffline()} disabled={!apiKey}>Save the whole NIV offline</button>}</section>
+            {settingsStatus && <p className="settings-status" role="status">{settingsStatus}</p>}
+          </div>
+        </section>}
 
         <div className="reader-scroll">
           <section className="reader">
@@ -363,20 +385,6 @@ export default function Home() {
         </section>
       </div>}
 
-      {settingsOpen && <div className="dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSettingsOpen(false); }}>
-        <section className="app-dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-          <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close settings">×</button>
-          <div className="dialog-content">
-            <p className="eyebrow">YOUR READING SPACE</p><h2 id="settingsTitle">Settings</h2>
-            <section className="setting-block">            <div className="setting-heading"><div><h3>Reading size</h3><p>Choose what feels comfortable.</p></div><output>{FONT_LABELS[fontLevel]}</output></div>
-              <div className="slider-row"><span className="slider-small" aria-hidden="true">A</span><input type="range" min="0" max="4" step="1" value={fontLevel} aria-label="Reading text size, five levels" onChange={(event) => setFontLevel(Number(event.target.value))} /><span className="slider-large" aria-hidden="true">A</span></div><div className="slider-levels"><span>Small</span><span>Large</span></div>
-            </section>
-            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>NIV access</h3><p>Use an API.Bible key that includes NIV.</p></div></div><label className="field-label" htmlFor="apiKeyInput">API key</label><div className="key-field"><input id="apiKeyInput" type="password" autoComplete="off" placeholder="Paste your API.Bible key" value={apiInput} onChange={(event) => setApiInput(event.target.value)} /><button className="small-button" onClick={() => void connect()} disabled={!apiInput.trim()}>{connected ? "Check key" : "Connect"}</button></div>{connected && <button className="text-button" onClick={disconnect}>Remove saved key</button>}<p className="privacy-note">Stored only on this device. NIV chapters are cached in this browser for up to 29 days to respect API.Bible’s licensing terms.</p>{metadata?.copyright && <p className="privacy-note">{metadata.copyright}</p>}</section>
-            <section className="setting-block offline-setting"><div className="setting-heading"><div><h3>Offline reading</h3><p>{savedCount} fresh chapters saved on this device.</p></div></div>{downloadProgress ? <><p className="download-status">Saving {downloadProgress.book} · {downloadProgress.complete} of {downloadProgress.total} chapters</p><progress max={downloadProgress.total} value={downloadProgress.complete} aria-label="Offline download progress" /><button className="secondary-button" onClick={pauseDownload}>Pause download</button></> : <button className="secondary-button" onClick={() => void saveOffline()} disabled={!apiKey}>Save the whole NIV offline</button>}</section>
-            {settingsStatus && <p className="settings-status" role="status">{settingsStatus}</p>}
-          </div>
-        </section>
-      </div>}
     </div>
   );
 }
@@ -458,7 +466,7 @@ function BookMark() { return <svg viewBox="0 0 32 32"><path d="M16 5v22M5 9c5-2 
 function SearchIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="m13 13 4 4" /></svg>; }
 function MenuIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" /></svg>; }
 function MoonIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.7 12.2A7 7 0 0 1 7.8 3.3 7 7 0 1 0 16.7 12.2Z" /></svg>; }
-function GearIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3" /><path d="M16.4 11.8a6.7 6.7 0 0 0 0-3.6l1.3-1-1.6-2.8-1.6.6a6.7 6.7 0 0 0-3.1-1.8L11.2 1H8l-.3 2.2a6.7 6.7 0 0 0-3.1 1.8L3 4.4 1.4 7.2l1.3 1a6.7 6.7 0 0 0 0 3.6l-1.3 1L3 15.6l1.6-.6a6.7 6.7 0 0 0 3.1 1.8L8 19h3.2l.3-2.2a6.7 6.7 0 0 0 3.1-1.8l1.6.6 1.6-2.8z" transform="translate(1 0) scale(.9)" /></svg>; }
+function GearIcon() { return <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="3" /><path d="M16.4 11.8a6.7 6.7 0 0 0 0-3.6l1.3-1-1.6-2.8-1.6.6a6.7 6.7 0 0 0-3.1-1.8L11.2 1H8l-.3 2.2a6.7 6.7 0 0 0-3.1 1.8L3 4.4 1.4 7.2l1.3 1a6.7 6.7 0 0 0 0 3.6l-1.3 1L3 15.6l1.6-.6a6.7 6.7 0 0 0 3.1 1.8L8 19h3.2l.3-2.2a6.7 6.7 0 0 0 3.1-1.8l1.6.6 1.6-2.8z" /></svg>; }
 function ChevronDown() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" /></svg>; }
 function ChevronLeft() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>; }
 function ChevronRight() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>; }
