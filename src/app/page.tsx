@@ -15,8 +15,18 @@ import { loadSvdChapter } from "@/lib/svd";
 
 const FONT_SIZES = [18, 20, 22, 25, 29];
 const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
+const LINE_HEIGHT_OPTIONS = [
+  { label: "Small", value: 0.55, ratio: 1.5 },
+  { label: "Medium", value: 0.85, ratio: 1.85 },
+  { label: "Large", value: 1, ratio: 2 },
+] as const;
+type LineHeightValue = (typeof LINE_HEIGHT_OPTIONS)[number]["value"];
 const POSITION_KEY = "still-reading-position";
 const API_KEY_KEY = "still-api-key";
+
+function isLineHeightValue(value: number): value is LineHeightValue {
+  return LINE_HEIGHT_OPTIONS.some((option) => option.value === value);
+}
 
 export default function Home() {
   const [currentBook, setCurrentBook] = useState(books[0]);
@@ -29,6 +39,7 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [fontLevel, setFontLevel] = useState(2);
+  const [lineHeight, setLineHeight] = useState<LineHeightValue>(LINE_HEIGHT_OPTIONS[0].value);
   const [apiKey, setApiKey] = useState("");
   const [apiInput, setApiInput] = useState("");
   const [connected, setConnected] = useState(false);
@@ -51,6 +62,8 @@ export default function Home() {
     setTheme(savedTheme === "dark" ? "dark" : "light");
     const savedFont = Number(localStorage.getItem("still-font-level"));
     if (Number.isInteger(savedFont) && savedFont >= 0 && savedFont <= 4) setFontLevel(savedFont);
+    const savedLineHeight = Number(localStorage.getItem("still-line-height"));
+    if (isLineHeightValue(savedLineHeight)) setLineHeight(savedLineHeight);
     const savedPosition = localStorage.getItem(POSITION_KEY);
     if (savedPosition) {
       try {
@@ -112,6 +125,10 @@ export default function Home() {
   useEffect(() => {
     if (ready) localStorage.setItem("still-font-level", String(fontLevel));
   }, [ready, fontLevel]);
+
+  useEffect(() => {
+    if (ready) localStorage.setItem("still-line-height", String(lineHeight));
+  }, [ready, lineHeight]);
 
   useEffect(() => {
     let cancelled = false;
@@ -241,10 +258,11 @@ export default function Home() {
     ));
   }
 
+  const selectedLineHeight = LINE_HEIGHT_OPTIONS.find((option) => option.value === lineHeight) ?? LINE_HEIGHT_OPTIONS[0];
   const paragraphs = chapterData ? scriptureParagraphs(chapterData.content) : [];
 
   return (
-    <div className={`app-shell ${theme}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px` } as CSSProperties}>
+    <div className={`app-shell ${theme}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label="Bible books">
         <div className="sidebar-top">
           <a className="brand" href="#" aria-label="Still Bible Reader home">
