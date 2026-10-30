@@ -87,7 +87,29 @@ export default function Home() {
     const updateOnline = () => setIsOnline(navigator.onLine);
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);
-    if ("serviceWorker" in navigator) void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    if ("serviceWorker" in navigator) {
+      if (process.env.NODE_ENV === "production") {
+        void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      } else {
+        void navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+          const workerUrl = new URL("/sw.js", window.location.origin).href;
+          const appRegistrations = registrations.filter((registration) =>
+            [registration.active, registration.waiting, registration.installing]
+              .some((worker) => worker?.scriptURL === workerUrl),
+          );
+          await Promise.all(appRegistrations.map((registration) => registration.unregister()));
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames
+              .filter((name) => name.startsWith("still-bible-shell-") || name.startsWith("still-niv-shell-"))
+              .map((name) => caches.delete(name)),
+          );
+          if (appRegistrations.length && navigator.serviceWorker.controller) window.location.reload();
+        }).catch((error: unknown) => {
+          console.error("Could not clear the app service worker in development.", error);
+        });
+      }
+    }
     return () => {
       window.removeEventListener("online", updateOnline);
       window.removeEventListener("offline", updateOnline);
