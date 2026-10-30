@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { books } from "@/lib/books";
 import {
   connectToNiv,
@@ -241,6 +241,8 @@ export default function Home() {
     ));
   }
 
+  const paragraphs = chapterData ? scriptureParagraphs(chapterData.content) : [];
+
   return (
     <div className={`app-shell ${theme}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px` } as CSSProperties}>
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label="Bible books">
@@ -287,8 +289,8 @@ export default function Home() {
             </div>
             {chapterData ? (
               <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} dir={translation === "svd" ? "rtl" : "ltr"} lang={translation === "svd" ? "ar" : "en"} aria-label={`${currentBook.name} chapter ${chapter}`}>
-                {scriptureParagraphs(chapterData.content).map((paragraph, index) => <p key={`${chapterData.id}-${index}`}>{paragraph}</p>)}
-                {scriptureParagraphs(chapterData.content).length === 0 && <p>This chapter has no readable text.</p>}
+                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined}>{paragraph.content}</p>)}
+                {paragraphs.length === 0 && <p>This chapter has no readable text.</p>}
                 {translation === "niv" && metadata?.copyright && <p className="copyright">{metadata.copyright}</p>}
               </article>
             ) : loading ? (
@@ -339,16 +341,77 @@ export default function Home() {
   );
 }
 
-function scriptureParagraphs(content: string): string[] {
+type ScriptureParagraph = { content: ReactNode[]; isVerse: boolean };
+type ScriptureToken = { content: ReactNode; startsVerse: boolean };
+
+function scriptureParagraphs(content: string): ScriptureParagraph[] {
   if (typeof DOMParser === "undefined") return [];
   const document = new DOMParser().parseFromString(content, "text/html");
-  document.querySelectorAll("script, style, iframe, object").forEach((node) => node.remove());
-  const paragraphs = Array.from(document.body.querySelectorAll("p"))
-    .map((paragraph) => paragraph.textContent?.replace(/\s+/g, " ").trim() ?? "")
-    .filter(Boolean);
-  if (paragraphs.length) return paragraphs;
-  const text = document.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
-  return text ? [text] : [];
+  document.querySelectorAll("script, style, iframe, object, svg, math, template").forEach((node) => node.remove());
+  const paragraphs = Array.from(document.body.querySelectorAll("p"));
+  const source = paragraphs.length ? paragraphs : [document.body];
+  const blocks = source.flatMap((paragraph) => {
+    if (!paragraph.textContent?.trim()) return [];
+
+    const tokens = Array.from(paragraph.childNodes).flatMap((node, index) => renderScriptureTokens(node, String(index)));
+    const result: ScriptureParagraph[] = [];
+    let current: ReactNode[] = [];
+    let isVerse = false;
+    const finish = () => {
+      if (current.length) result.push({ content: current, isVerse });
+      current = [];
+    };
+
+    tokens.forEach((token) => {
+      if (token.startsVerse) {
+        finish();
+        isVerse = true;
+      }
+      current.push(token.content);
+    });
+    finish();
+    return result;
+  });
+
+  return blocks.reduce<ScriptureParagraph[]>((result, paragraph, index) => {
+    const previous = result[result.length - 1];
+    if (!paragraph.isVerse && previous?.isVerse) {
+      previous.content.push(<br key={`continuation-${index}`} />, ...paragraph.content);
+    } else {
+      result.push(paragraph);
+    }
+    return result;
+  }, []);
+}
+
+function renderScriptureTokens(node: Node, key: string): ScriptureToken[] {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ? [{ content: node.textContent, startsVerse: false }] : [];
+  }
+  if (!(node instanceof Element)) return [];
+  if (node.matches("[data-number], .v, .verse-num, .verse-number")) {
+    return [{ content: <span key={key} className="verse-number">{node.textContent}</span>, startsVerse: true }];
+  }
+
+  if (node.tagName.toLowerCase() === "br") return [{ content: <br key={key} />, startsVerse: false }];
+
+  return Array.from(node.childNodes).flatMap((child, index) => renderScriptureTokens(child, `${key}-${index}`)).map((token, index) => ({
+    ...token,
+    content: wrapScriptureInline(node.tagName.toLowerCase(), token.content, `${key}-${index}`),
+  }));
+}
+
+function wrapScriptureInline(tag: string, content: ReactNode, key: string): ReactNode {
+  switch (tag) {
+    case "b": return <b key={key}>{content}</b>;
+    case "strong": return <strong key={key}>{content}</strong>;
+    case "i": return <i key={key}>{content}</i>;
+    case "em": return <em key={key}>{content}</em>;
+    case "sup": return <sup key={key}>{content}</sup>;
+    case "sub": return <sub key={key}>{content}</sub>;
+    case "span": return <span key={key}>{content}</span>;
+    default: return content;
+  }
 }
 
 function BookMark() { return <svg viewBox="0 0 32 32"><path d="M16 5v22M5 9c5-2 8-1 11 2 3-3 6-4 11-2v16c-5-2-8-1-11 2-3-3-6-4-11-2z" /></svg>; }
