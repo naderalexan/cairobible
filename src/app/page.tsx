@@ -36,6 +36,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [fontLevel, setFontLevel] = useState(2);
@@ -129,16 +130,17 @@ export default function Home() {
   }, [connected, apiKey]);
 
   useEffect(() => {
-    if (!settingsOpen && !chapterPickerOpen) return;
+    if (!settingsOpen && !chapterPickerOpen && !focusMode) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setSettingsOpen(false);
         setChapterPickerOpen(false);
+        setFocusMode(false);
       }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [settingsOpen, chapterPickerOpen]);
+  }, [settingsOpen, chapterPickerOpen, focusMode]);
 
   useEffect(() => {
     if (ready) localStorage.setItem("still-theme", theme);
@@ -283,8 +285,11 @@ export default function Home() {
   const selectedLineHeight = LINE_HEIGHT_OPTIONS.find((option) => option.value === lineHeight) ?? LINE_HEIGHT_OPTIONS[0];
   const paragraphs = chapterData ? scriptureParagraphs(chapterData.content) : [];
 
+  const isFirstChapter = currentBook.id === "GEN" && chapter === 1;
+  const isLastChapter = currentBook.id === "REV" && chapter === currentBook.chapters;
+
   return (
-    <div className={`app-shell ${theme}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
+    <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label="Bible books">
         <div className="sidebar-top">
           <a className="brand" href="#" aria-label="Still Bible Reader home">
@@ -317,6 +322,7 @@ export default function Home() {
             <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{isOnline ? "Online" : "Offline"}</span>
             <button className="translation-trigger" onClick={() => setTranslation(translation === "niv" ? "svd" : "niv")} aria-label={`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`} title="Switch translation">{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
             <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`} title="Switch theme"><MoonIcon /></button>
+            <button className="focus-trigger" onClick={() => { setFocusMode(true); setSettingsOpen(false); setChapterPickerOpen(false); }}><FocusIcon /><span>Focus</span></button>
             <button className="settings-trigger" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /><span>Settings</span></button>
           </div>
         </header>
@@ -372,10 +378,15 @@ export default function Home() {
           </section>
         </div>
         <footer className="reader-footer">
-          <button className="chapter-step" onClick={() => stepChapter(-1)} disabled={currentBook.id === "GEN" && chapter === 1} aria-label="Previous chapter"><ChevronLeft /><span>Previous</span></button>
+          <button className="chapter-step" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label="Previous chapter"><ChevronLeft /><span>Previous</span></button>
           {translation === "svd" ? <span className="offline-ready" aria-label="SVD Bible stored on this device">SVD · On this device</span> : <button className="offline-button" onClick={() => apiKey ? void saveOffline() : setSettingsOpen(true)} disabled={Boolean(downloadProgress)}><DownloadIcon /><span>{downloadProgress ? `${downloadProgress.complete} / ${downloadProgress.total}` : savedCount ? `${savedCount} chapters saved` : "Save Bible offline"}</span></button>}
-          <button className="chapter-step" onClick={() => stepChapter(1)} disabled={currentBook.id === "REV" && chapter === currentBook.chapters} aria-label="Next chapter"><span>Next</span><ChevronRight /></button>
+          <button className="chapter-step" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label="Next chapter"><span>Next</span><ChevronRight /></button>
         </footer>
+        {focusMode && <nav className="focus-actions" aria-label="Focus reading controls">
+          <button className="focus-exit" onClick={() => setFocusMode(false)}>Exit focus</button>
+          <button className="focus-arrow" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label="Previous chapter"><ChevronLeft /></button>
+          <button className="focus-arrow" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label="Next chapter"><ChevronRight /></button>
+        </nav>}
       </main>
 
       {chapterPickerOpen && <div className="dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setChapterPickerOpen(false); }}>
@@ -471,4 +482,5 @@ function ChevronDown() { return <svg viewBox="0 0 20 20" aria-hidden="true"><pat
 function ChevronLeft() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>; }
 function ChevronRight() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>; }
 function DownloadIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 14v3h14v-3" /></svg>; }
+function FocusIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1v3m10-4h3a1 1 0 0 1 1 1v3M3 13v3a1 1 0 0 0 1 1h3m10-4v3a1 1 0 0 1-1 1h-3" /></svg>; }
 function BookIllustration() { return <svg viewBox="0 0 180 150"><path className="art-line" d="M90 27v94M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14 18-16 39-21 62-14V25c-23-7-44-2-62 14Z" /><path className="art-page" d="M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14zM90 39c18-16 39-21 62-14v76c-23-7-44-2-62 14z" /><path className="art-rule" d="M44 45c12-2 23 0 33 6M44 57c12-2 23 0 33 6M103 51c10-6 21-8 33-6M103 63c10-6 21-8 33-6" /></svg>; }

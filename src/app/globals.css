@@ -45,6 +45,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .offline-indicator .status-dot { width: 6px; height: 6px; }
 .settings-trigger { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-raised); color: var(--ink); font-size: 12px; transition: border-color .15s ease, background .15s ease; }
 .translation-trigger { min-height: 38px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-raised); color: var(--ink); font-size: 11px; font-weight: 600; }
+.focus-trigger { min-height: 42px; padding: 0 11px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-raised); color: var(--ink); font-size: 12px; }
+.focus-trigger:hover { border-color: var(--accent); background: var(--accent-soft); }
+.focus-trigger svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
 .translation-trigger:hover { border-color: var(--accent); background: var(--accent-soft); }
 .settings-trigger:hover { background: var(--accent-soft); border-color: transparent; }
 .settings-trigger svg { width: 16px; height: 16px; }
@@ -73,6 +76,16 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .primary-button span { font-size: 17px; }
 .setup-note { margin: 13px 0 0; color: var(--muted); font-size: 10px; }
 .reader-footer { min-height: 74px; padding: 0 clamp(20px, 4vw, 54px); display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); }
+.focus-actions { position: fixed; z-index: 6; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; padding: 7px; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 999px; background: var(--surface-raised); box-shadow: var(--shadow); }
+.focus-actions button { min-width: 44px; min-height: 44px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); }
+.focus-actions button:hover:not(:disabled) { background: var(--accent-soft); }
+.focus-actions button:disabled { opacity: .35; cursor: not-allowed; }
+.focus-actions .focus-exit { padding: 0 13px; font-size: 12px; }
+.focus-actions .focus-arrow { display: grid; place-items: center; }
+.focus-actions .focus-arrow svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.app-shell.focus-mode .sidebar, .app-shell.focus-mode .toolbar, .app-shell.focus-mode .reader-heading, .app-shell.focus-mode .reader-footer { display: none; }
+.app-shell.focus-mode .reader { width: min(100% - 48px, 760px); padding: 64px 0 112px; }
+.app-shell.focus-mode .main-area, .app-shell.focus-mode .reader-scroll { min-height: 100dvh; }
 .chapter-step, .offline-button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; background: transparent; color: var(--muted); font-size: 11px; }
 .chapter-step:hover:not(:disabled) { color: var(--ink); }
 .chapter-step:disabled { opacity: .35; cursor: not-allowed; }
