@@ -1,6 +1,6 @@
-# Still — Bible reader
+# Cairo Bible
 
-A focused, installable Next.js Bible reader with NIV and Arabic Smith & Van Dyck (SVD), quick book/chapter navigation, saved reading preferences, and offline reading.
+A warm, installable Next.js Bible reader with NIV and Arabic Smith & Van Dyck (SVD), quick book/chapter navigation, saved reading preferences, and offline reading. The Cairo Bible wordmark uses locally bundled Montserrat and Yellowtail fonts; their licenses are included in `public/fonts/`.
 
 ## Arabic Smith & Van Dyck (SVD)
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { books } from "@/lib/books";
 import {
@@ -102,7 +103,7 @@ export default function Home() {
           const cacheNames = await caches.keys();
           await Promise.all(
             cacheNames
-              .filter((name) => name.startsWith("still-bible-shell-") || name.startsWith("still-niv-shell-"))
+              .filter((name) => name.startsWith("cairo-bible-shell-") || name.startsWith("still-bible-shell-") || name.startsWith("still-niv-shell-"))
               .map((name) => caches.delete(name)),
           );
           if (appRegistrations.length && navigator.serviceWorker.controller) window.location.reload();
@@ -292,10 +293,10 @@ export default function Home() {
     <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label="Bible books">
         <div className="sidebar-top">
-          <a className="brand" href="#" aria-label="Still Bible Reader home">
+          <Link className="brand" href="/" aria-label="Cairo Bible home">
             <span className="brand-mark" aria-hidden="true"><BookMark /></span>
-            <span><strong>still</strong><small>BIBLE READER</small></span>
-          </a>
+            <span><strong>Cairo Bible</strong><small>READING, MADE QUIET</small></span>
+          </Link>
           <button className="icon-button sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close book list">×</button>
         </div>
         <label className="search-wrap" htmlFor="bookSearch">
@@ -473,7 +474,7 @@ function wrapScriptureInline(tag: string, content: ReactNode, key: string): Reac
   }
 }
 
-function BookMark() { return <svg viewBox="0 0 32 32"><path d="M16 5v22M5 9c5-2 8-1 11 2 3-3 6-4 11-2v16c-5-2-8-1-11 2-3-3-6-4-11-2z" /></svg>; }
+function BookMark() { return <svg viewBox="0 0 32 32"><path d="M16 3.5c-6.5 0-11 4.8-11 11.5v13h22V15c0-6.7-4.5-11.5-11-11.5Z" /><path d="M16 16v11M8 19c3.4-1.2 5.9-.4 8 1.7 2.1-2.1 4.6-2.9 8-1.7v8c-3.4-1.2-5.9-.4-8 1.7-2.1-2.1-4.6-2.9-8-1.7z" /></svg>; }
 function SearchIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="m13 13 4 4" /></svg>; }
 function MenuIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" /></svg>; }
 function MoonIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.7 12.2A7 7 0 0 1 7.8 3.3 7 7 0 1 0 16.7 12.2Z" /></svg>; }

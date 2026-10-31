@@ -2,15 +2,15 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Still — NIV Bible",
-  description: "A quiet, offline-ready NIV Bible reader.",
-  applicationName: "Still NIV",
+  title: "Cairo Bible — Bible reader",
+  description: "A warm, offline-ready Bible reader for NIV and Arabic SVD.",
+  applicationName: "Cairo Bible",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icons/still.svg", apple: "/icons/still.svg" },
+  icons: { icon: "/icons/cairo-bible.svg", apple: "/icons/cairo-bible.svg" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f6f4ed",
+  themeColor: "#F3E8DC",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

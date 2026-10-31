@@ -1,10 +1,10 @@
 {
-  "name": "Still — NIV Bible",
-  "short_name": "Still NIV",
-  "description": "A quiet, offline-ready NIV Bible reader.",
+  "name": "Cairo Bible",
+  "short_name": "Cairo Bible",
+  "description": "A warm, offline-ready Bible reader for NIV and Arabic SVD.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f6f4ed",
-  "theme_color": "#f6f4ed",
-  "icons": [{ "src": "/icons/still.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "background_color": "#F3E8DC",
+  "theme_color": "#F3E8DC",
+  "icons": [{ "src": "/icons/cairo-bible.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }

@@ -1,5 +1,5 @@
-const CACHE_NAME = "still-bible-shell-v3";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/still.svg"];
+const CACHE_NAME = "cairo-bible-shell-v4";
+const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/cairo-bible.svg", "/fonts/montserrat-latin.woff2", "/fonts/yellowtail-latin.woff2"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -27,7 +27,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((names) => Promise.all(names.filter((name) => (name.startsWith("still-niv-shell-") || name.startsWith("still-bible-shell-")) && name !== CACHE_NAME).map((name) => caches.delete(name)))),
+    caches.keys().then((names) => Promise.all(names.filter((name) => (name.startsWith("cairo-bible-shell-") || name.startsWith("still-niv-shell-") || name.startsWith("still-bible-shell-")) && name !== CACHE_NAME).map((name) => caches.delete(name)))),
   );
   self.clients.claim();
 });
