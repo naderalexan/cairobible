@@ -342,7 +342,7 @@ export default function Home() {
           <div className="toolbar-actions">
             <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{isOnline ? "Online" : "Offline"}</span>
             <button className="translation-trigger" onClick={() => setTranslation(translation === "niv" ? "svd" : "niv")} aria-label={`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`} title="Switch translation">{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
-            <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`} title="Switch theme"><MoonIcon /></button>
+            <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} appearance`} title={`Switch to ${theme === "light" ? "dark" : "light"} appearance`}>{theme === "light" ? <MoonIcon /> : <SunIcon />}</button>
             <button className="focus-trigger" onClick={() => { setFocusMode(true); setSettingsOpen(false); setChapterPickerOpen(false); }}><FocusIcon /><span>Focus</span></button>
             <button className="settings-trigger" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /><span>Settings</span></button>
           </div>
@@ -352,8 +352,17 @@ export default function Home() {
           <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close settings">×</button>
           <div className="dialog-content">
             <p className="eyebrow">YOUR READING SPACE</p><h2 id="settingsTitle">Settings</h2>
+            <section className="setting-block appearance-setting">
+              <div className="setting-heading"><div><h3 id="appearanceTitle">Appearance</h3><p>Choose light or dark mode.</p></div><output>{theme === "light" ? "Light" : "Dark"}</output></div>
+              <div className="appearance-options" role="radiogroup" aria-labelledby="appearanceTitle">
+                {(["light", "dark"] as const).map((option) => <label className="appearance-option" key={option}>
+                  <input type="radio" name="appearance" value={option} checked={theme === option} onChange={() => setTheme(option)} />
+                  <span>{option === "light" ? "Light" : "Dark"}</span>
+                </label>)}
+              </div>
+            </section>
             <section className="setting-block palette-setting">
-              <div className="setting-heading"><div><h3 id="paletteTitle">Color theme</h3><p>Choose a palette for your reading space.</p></div><output>{selectedPalette.name}</output></div>
+              <div className="setting-heading"><div><h3 id="paletteTitle">Color palette</h3><p>Choose the colors for your reading space.</p></div><output>{selectedPalette.name}</output></div>
               <div className="palette-options" role="radiogroup" aria-labelledby="paletteTitle">
                 {PALETTES.map((option) => <label className="palette-option" key={option.id}>
                   <input type="radio" name="color-palette" value={option.id} checked={palette === option.id} onChange={() => setPalette(option.id)} />
@@ -509,6 +518,7 @@ function BookMark() { return <svg viewBox="0 0 32 32"><path d="M16 3.5c-6.5 0-11
 function SearchIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="m13 13 4 4" /></svg>; }
 function MenuIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" /></svg>; }
 function MoonIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.7 12.2A7 7 0 0 1 7.8 3.3 7 7 0 1 0 16.7 12.2Z" /></svg>; }
+function SunIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.5" /><path d="M10 1.5v2M10 16.5v2M18.5 10h-2M3.5 10h-2m14.51-6.01-1.42 1.42M5.41 14.59l-1.42 1.42m12.02 0-1.42-1.42M5.41 5.41 3.99 3.99" /></svg>; }
 function GearIcon() { return <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="3" /><path d="M16.4 11.8a6.7 6.7 0 0 0 0-3.6l1.3-1-1.6-2.8-1.6.6a6.7 6.7 0 0 0-3.1-1.8L11.2 1H8l-.3 2.2a6.7 6.7 0 0 0-3.1 1.8L3 4.4 1.4 7.2l1.3 1a6.7 6.7 0 0 0 0 3.6l-1.3 1L3 15.6l1.6-.6a6.7 6.7 0 0 0 3.1 1.8L8 19h3.2l.3-2.2a6.7 6.7 0 0 0 3.1-1.8l1.6.6 1.6-2.8z" /></svg>; }
 function ChevronDown() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" /></svg>; }
 function ChevronLeft() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>; }
