@@ -415,6 +415,7 @@ export default function Home() {
         </footer>
         {focusMode && <nav className="focus-actions" aria-label="Focus reading controls">
           <button className="focus-exit" onClick={() => setFocusMode(false)}>Exit focus</button>
+          <button className="focus-arrow" onClick={() => setSettingsOpen(!settingsOpen)} aria-label={settingsOpen ? "Close settings" : "Open settings"} aria-expanded={settingsOpen} aria-controls="settingsDropdown" title="Settings"><GearIcon /></button>
           <button className="focus-arrow" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label="Previous chapter"><ChevronLeft /></button>
           <button className="focus-arrow" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label="Next chapter"><ChevronRight /></button>
         </nav>}
