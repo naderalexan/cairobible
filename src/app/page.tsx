@@ -72,6 +72,7 @@ export default function Home() {
   const [copyStatus, setCopyStatus] = useState("");
   const selectedVerseKey = selectedVerse?.key;
   const downloadController = useRef<AbortController | null>(null);
+  const settingsDropdownRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const savedTranslation = localStorage.getItem("still-translation");
@@ -147,6 +148,19 @@ export default function Home() {
   useEffect(() => {
     if (connected && apiKey) void connectToNiv(apiKey).then(setMetadata).catch(() => undefined);
   }, [connected, apiKey]);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (settingsDropdownRef.current?.contains(target)) return;
+      if (target.closest('[aria-controls="settingsDropdown"]')) return;
+      setSettingsOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [settingsOpen]);
 
   useEffect(() => {
     if (!settingsOpen && !chapterPickerOpen && !focusMode) return;
@@ -428,7 +442,7 @@ export default function Home() {
           </div>
         </header>
 
-        {settingsOpen && <section className="settings-dropdown" id="settingsDropdown" aria-labelledby="settingsTitle">
+        {settingsOpen && <section className="settings-dropdown" id="settingsDropdown" aria-labelledby="settingsTitle" ref={settingsDropdownRef}>
           <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close settings">×</button>
           <div className="dialog-content">
             <p className="eyebrow">YOUR READING SPACE</p><h2 id="settingsTitle">Settings</h2>
