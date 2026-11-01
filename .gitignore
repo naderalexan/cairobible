@@ -4,3 +4,7 @@ out/
 .env*
 .DS_Store
 npm-debug.log*
+/dist/
+.vinext/
+.cloudflare/
+.wrangler/
