@@ -16,6 +16,14 @@ import { loadSvdChapter } from "@/lib/svd";
 
 const FONT_SIZES = [18, 20, 22, 25, 29];
 const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
+const PALETTES = [
+  { id: "cairo", name: "Cairo" },
+  { id: "olive", name: "Olive" },
+  { id: "nile", name: "Nile" },
+  { id: "amethyst", name: "Amethyst" },
+  { id: "sandstone", name: "Sandstone" },
+] as const;
+type PaletteId = (typeof PALETTES)[number]["id"];
 const LINE_HEIGHT_OPTIONS = [
   { label: "Small", value: 0.55, ratio: 1.5 },
   { label: "Medium", value: 0.85, ratio: 1.85 },
@@ -29,6 +37,10 @@ function isLineHeightValue(value: number): value is LineHeightValue {
   return LINE_HEIGHT_OPTIONS.some((option) => option.value === value);
 }
 
+function isPaletteId(value: string | null): value is PaletteId {
+  return PALETTES.some((palette) => palette.id === value);
+}
+
 export default function Home() {
   const [currentBook, setCurrentBook] = useState(books[0]);
   const [chapter, setChapter] = useState(1);
@@ -40,6 +52,7 @@ export default function Home() {
   const [focusMode, setFocusMode] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [palette, setPalette] = useState<PaletteId>("cairo");
   const [fontLevel, setFontLevel] = useState(2);
   const [lineHeight, setLineHeight] = useState<LineHeightValue>(LINE_HEIGHT_OPTIONS[0].value);
   const [apiKey, setApiKey] = useState("");
@@ -62,6 +75,8 @@ export default function Home() {
     setTranslation(savedTranslation === "svd" ? "svd" : "niv");
     const savedTheme = localStorage.getItem("still-theme");
     setTheme(savedTheme === "dark" ? "dark" : "light");
+    const savedPalette = localStorage.getItem("still-palette");
+    if (isPaletteId(savedPalette)) setPalette(savedPalette);
     const savedFont = Number(localStorage.getItem("still-font-level"));
     if (Number.isInteger(savedFont) && savedFont >= 0 && savedFont <= 4) setFontLevel(savedFont);
     const savedLineHeight = Number(localStorage.getItem("still-line-height"));
@@ -146,6 +161,10 @@ export default function Home() {
   useEffect(() => {
     if (ready) localStorage.setItem("still-theme", theme);
   }, [ready, theme]);
+
+  useEffect(() => {
+    if (ready) localStorage.setItem("still-palette", palette);
+  }, [ready, palette]);
 
   useEffect(() => {
     if (ready) localStorage.setItem("still-font-level", String(fontLevel));
@@ -284,13 +303,14 @@ export default function Home() {
   }
 
   const selectedLineHeight = LINE_HEIGHT_OPTIONS.find((option) => option.value === lineHeight) ?? LINE_HEIGHT_OPTIONS[0];
+  const selectedPalette = PALETTES.find((option) => option.id === palette) ?? PALETTES[0];
   const paragraphs = chapterData ? scriptureParagraphs(chapterData.content) : [];
 
   const isFirstChapter = currentBook.id === "GEN" && chapter === 1;
   const isLastChapter = currentBook.id === "REV" && chapter === currentBook.chapters;
 
   return (
-    <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
+    <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label="Bible books">
         <div className="sidebar-top">
           <Link className="brand" href="/" aria-label="Cairo Bible home">
@@ -332,6 +352,16 @@ export default function Home() {
           <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close settings">×</button>
           <div className="dialog-content">
             <p className="eyebrow">YOUR READING SPACE</p><h2 id="settingsTitle">Settings</h2>
+            <section className="setting-block palette-setting">
+              <div className="setting-heading"><div><h3 id="paletteTitle">Color theme</h3><p>Choose a palette for your reading space.</p></div><output>{selectedPalette.name}</output></div>
+              <div className="palette-options" role="radiogroup" aria-labelledby="paletteTitle">
+                {PALETTES.map((option) => <label className="palette-option" key={option.id}>
+                  <input type="radio" name="color-palette" value={option.id} checked={palette === option.id} onChange={() => setPalette(option.id)} />
+                  <span className="palette-swatch" data-palette-swatch={option.id} aria-hidden="true" />
+                  <span className="palette-name">{option.name}</span>
+                </label>)}
+              </div>
+            </section>
             <section className="setting-block">            <div className="setting-heading"><div><h3>Reading size</h3><p>Choose what feels comfortable.</p></div><output>{FONT_LABELS[fontLevel]}</output></div>
               <div className="slider-row"><span className="slider-small" aria-hidden="true">A</span><input type="range" min="0" max="4" step="1" value={fontLevel} aria-label="Reading text size, five levels" onChange={(event) => setFontLevel(Number(event.target.value))} /><span className="slider-large" aria-hidden="true">A</span></div><div className="slider-levels"><span>Small</span><span>Large</span></div>
             </section>

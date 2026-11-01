@@ -1,6 +1,6 @@
 # Cairo Bible
 
-A warm, installable Next.js Bible reader with NIV and Arabic Smith & Van Dyck (SVD), quick book/chapter navigation, saved reading preferences, and offline reading. The Cairo Bible wordmark uses locally bundled Montserrat and Yellowtail fonts; their licenses are included in `public/fonts/`.
+A warm, installable Next.js Bible reader with NIV and Arabic Smith & Van Dyck (SVD), quick book/chapter navigation, five color palettes, saved reading preferences, and offline reading. The Cairo Bible wordmark uses locally bundled Montserrat and Yellowtail fonts; their licenses are included in `public/fonts/`.
 
 ## Arabic Smith & Van Dyck (SVD)
 
@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>, choose **Settings**, and connect an API.Bible key with NIV enabled. The app is configured for static export (`npm run build` creates `out/`) and can be hosted on any static HTTPS host. A service worker caches the app shell and Next.js static assets; Scripture chapters are cached separately in IndexedDB for up to 29 days.
+Open <http://localhost:3000>, choose **Settings** to select one of five color palettes or connect an API.Bible key with NIV enabled. The app is configured for static export (`npm run build` creates `out/`) and can be hosted on any static HTTPS host. A service worker caches the app shell and Next.js static assets; Scripture chapters are cached separately in IndexedDB for up to 29 days.
 
 ## Offline use
 
