@@ -68,6 +68,9 @@ export default function Home() {
   const [savedCount, setSavedCount] = useState(0);
   const [downloadProgress, setDownloadProgress] = useState<{ complete: number; total: number; book: string } | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
+  const [selectedVerse, setSelectedVerse] = useState<{ key: string; text: string; reference: string; top: number; left: number } | null>(null);
+  const [copyStatus, setCopyStatus] = useState("");
+  const selectedVerseKey = selectedVerse?.key;
   const downloadController = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -175,6 +178,31 @@ export default function Home() {
   }, [ready, lineHeight]);
 
   useEffect(() => {
+    setSelectedVerse(null);
+    setCopyStatus("");
+  }, [chapter, currentBook.id, translation]);
+
+  useEffect(() => {
+    if (!selectedVerseKey) return;
+    const updatePosition = () => {
+      const verse = document.querySelector<HTMLElement>(`[data-verse-key="${selectedVerseKey}"]`);
+      if (!verse) {
+        setSelectedVerse(null);
+        return;
+      }
+      const rect = verse.getBoundingClientRect();
+      setSelectedVerse((current) => current ? { ...current, top: rect.top, left: Math.max(8, rect.left - 44) } : null);
+    };
+    const scrollArea = document.querySelector(".reader-scroll");
+    scrollArea?.addEventListener("scroll", updatePosition, { passive: true });
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      scrollArea?.removeEventListener("scroll", updatePosition);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [selectedVerseKey]);
+
+  useEffect(() => {
     let cancelled = false;
     void (async () => {
       if (!ready) return;
@@ -235,6 +263,58 @@ export default function Home() {
     if (!nextBook) return;
     setCurrentBook(nextBook);
     setChapter(direction > 0 ? 1 : nextBook.chapters);
+  }
+
+  function handleVerseSelection() {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+      setSelectedVerse(null);
+      return;
+    }
+    const node = selection.getRangeAt(0).commonAncestorContainer;
+    const element = node instanceof Element ? node : node.parentElement;
+    const verse = element?.closest<HTMLElement>("p.verse[data-verse-number]");
+    if (!verse) {
+      setSelectedVerse(null);
+      return;
+    }
+    const verseNumber = verse.dataset.verseNumber;
+    if (!verseNumber) return;
+    const verseText = verse.cloneNode(true) as HTMLElement;
+    verseText.querySelectorAll(".verse-number").forEach((number) => number.remove());
+    const text = verseText.textContent?.replace(/\s+/g, " ").trim();
+    if (!text) return;
+    const rect = verse.getBoundingClientRect();
+    setSelectedVerse({
+      key: verse.dataset.verseKey ?? "",
+      text,
+      reference: `${currentBook.name} ${chapter}:${verseNumber}`,
+      top: rect.top,
+      left: Math.max(8, rect.left - 44),
+    });
+  }
+
+  async function copySelectedVerse() {
+    if (!selectedVerse) return;
+    const copyText = `"${selectedVerse.text}" - ${selectedVerse.reference}`;
+    try {
+      await navigator.clipboard.writeText(copyText);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = copyText;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.append(textarea);
+      textarea.select();
+      const copied = document.execCommand("copy");
+      textarea.remove();
+      if (!copied) {
+        setCopyStatus("Could not copy this verse.");
+        return;
+      }
+    }
+    setCopyStatus(`Copied ${selectedVerse.reference}`);
   }
 
   async function connect() {
@@ -396,8 +476,8 @@ export default function Home() {
               <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{translation === "svd" ? `الإصحاح ${chapter}` : `Chapter ${chapter}`}</span><ChevronDown /></button>
             </div>
             {chapterData ? (
-              <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} dir={translation === "svd" ? "rtl" : "ltr"} lang={translation === "svd" ? "ar" : "en"} aria-label={`${currentBook.name} chapter ${chapter}`}>
-                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined}>{paragraph.content}</p>)}
+              <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} dir={translation === "svd" ? "rtl" : "ltr"} lang={translation === "svd" ? "ar" : "en"} aria-label={`${currentBook.name} chapter ${chapter}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
+                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined}>{paragraph.content}</p>)}
                 {paragraphs.length === 0 && <p>This chapter has no readable text.</p>}
                 {translation === "niv" && metadata?.copyright && <p className="copyright">{metadata.copyright}</p>}
               </article>
@@ -436,13 +516,15 @@ export default function Home() {
           <div className="dialog-content"><p className="eyebrow">JUMP TO</p><h2 id="chapterDialogTitle">{translation === "svd" ? svdBookName || currentBook.name : currentBook.name}</h2><div className="chapter-grid">{Array.from({ length: currentBook.chapters }, (_, index) => index + 1).map((item) => <button key={item} className={item === chapter ? "active" : ""} aria-current={item === chapter ? "page" : undefined} onClick={() => { setChapter(item); setChapterPickerOpen(false); }}>{item}</button>)}</div></div>
         </section>
       </div>}
+      {selectedVerse && <button className="verse-copy-popup" style={{ top: selectedVerse.top, left: selectedVerse.left }} onClick={() => void copySelectedVerse()} aria-label={`Copy ${selectedVerse.reference}`} title={`Copy ${selectedVerse.reference}`}><CopyIcon /></button>}
+      <span className="visually-hidden" role="status" aria-live="polite">{copyStatus}</span>
 
     </div>
   );
 }
 
-type ScriptureParagraph = { content: ReactNode[]; isVerse: boolean };
-type ScriptureToken = { content: ReactNode; startsVerse: boolean };
+type ScriptureParagraph = { content: ReactNode[]; isVerse: boolean; verseNumber?: string };
+type ScriptureToken = { content: ReactNode; startsVerse: boolean; verseNumber?: string };
 
 function scriptureParagraphs(content: string): ScriptureParagraph[] {
   if (typeof DOMParser === "undefined") return [];
@@ -457,8 +539,9 @@ function scriptureParagraphs(content: string): ScriptureParagraph[] {
     const result: ScriptureParagraph[] = [];
     let current: ReactNode[] = [];
     let isVerse = false;
+    let verseNumber: string | undefined;
     const finish = () => {
-      if (current.length) result.push({ content: current, isVerse });
+      if (current.length) result.push({ content: current, isVerse, verseNumber });
       current = [];
     };
 
@@ -466,6 +549,7 @@ function scriptureParagraphs(content: string): ScriptureParagraph[] {
       if (token.startsVerse) {
         finish();
         isVerse = true;
+        verseNumber = token.verseNumber;
       }
       current.push(token.content);
     });
@@ -490,7 +574,8 @@ function renderScriptureTokens(node: Node, key: string): ScriptureToken[] {
   }
   if (!(node instanceof Element)) return [];
   if (node.matches("[data-number], .v, .verse-num, .verse-number")) {
-    return [{ content: <span key={key} className="verse-number">{node.textContent}</span>, startsVerse: true }];
+    const verseNumber = node.getAttribute("data-number")?.trim() || node.textContent?.trim() || undefined;
+    return [{ content: <span key={key} className="verse-number">{node.textContent}</span>, startsVerse: true, verseNumber }];
   }
 
   if (node.tagName.toLowerCase() === "br") return [{ content: <br key={key} />, startsVerse: false }];
@@ -524,5 +609,6 @@ function ChevronDown() { return <svg viewBox="0 0 20 20" aria-hidden="true"><pat
 function ChevronLeft() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>; }
 function ChevronRight() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>; }
 function DownloadIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 14v3h14v-3" /></svg>; }
+function CopyIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="6" width="10" height="12" rx="1.5" /><path d="M13 3H4.5A1.5 1.5 0 0 0 3 4.5V15" /></svg>; }
 function FocusIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1v3m10-4h3a1 1 0 0 1 1 1v3M3 13v3a1 1 0 0 0 1 1h3m10-4v3a1 1 0 0 1-1 1h-3" /></svg>; }
 function BookIllustration() { return <svg viewBox="0 0 180 150"><path className="art-line" d="M90 27v94M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14 18-16 39-21 62-14V25c-23-7-44-2-62 14Z" /><path className="art-page" d="M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14zM90 39c18-16 39-21 62-14v76c-23-7-44-2-62 14z" /><path className="art-rule" d="M44 45c12-2 23 0 33 6M44 57c12-2 23 0 33 6M103 51c10-6 21-8 33-6M103 63c10-6 21-8 33-6" /></svg>; }
