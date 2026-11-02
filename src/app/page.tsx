@@ -299,6 +299,7 @@ export default function Home() {
     const text = verseText.textContent?.replace(/\s+/g, " ").trim();
     if (!text) return;
     const rect = verse.getBoundingClientRect();
+    setCopyStatus("");
     setSelectedVerse({
       key: verse.dataset.verseKey ?? "",
       text,
@@ -530,7 +531,7 @@ export default function Home() {
           <div className="dialog-content"><p className="eyebrow">JUMP TO</p><h2 id="chapterDialogTitle">{translation === "svd" ? svdBookName || currentBook.name : currentBook.name}</h2><div className="chapter-grid">{Array.from({ length: currentBook.chapters }, (_, index) => index + 1).map((item) => <button key={item} className={item === chapter ? "active" : ""} aria-current={item === chapter ? "page" : undefined} onClick={() => { setChapter(item); setChapterPickerOpen(false); }}>{item}</button>)}</div></div>
         </section>
       </div>}
-      {selectedVerse && <button className="verse-copy-popup" style={{ top: selectedVerse.top, left: selectedVerse.left }} onClick={() => void copySelectedVerse()} aria-label={`Copy ${selectedVerse.reference}`} title={`Copy ${selectedVerse.reference}`}><CopyIcon /></button>}
+      {selectedVerse && <button className={`verse-copy-popup${copyStatus.startsWith("Copied ") ? " copied" : ""}`} style={{ top: selectedVerse.top, left: selectedVerse.left }} onClick={() => void copySelectedVerse()} aria-label={`Copy ${selectedVerse.reference}`} title={`Copy ${selectedVerse.reference}`}><CopyIcon />{copyStatus.startsWith("Copied ") && <span>Copied</span>}</button>}
       <span className="visually-hidden" role="status" aria-live="polite">{copyStatus}</span>
 
     </div>
