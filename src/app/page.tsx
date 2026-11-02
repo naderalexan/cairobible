@@ -13,6 +13,7 @@ import {
   type BibleMetadata,
 } from "@/lib/scripture";
 import { loadSvdChapter } from "@/lib/svd";
+import { getBookName, translate } from "@/lib/translations";
 
 const FONT_SIZES = [18, 20, 22, 25, 29];
 const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
@@ -44,7 +45,7 @@ function isPaletteId(value: string | null): value is PaletteId {
 export default function Home() {
   const [currentBook, setCurrentBook] = useState(books[0]);
   const [chapter, setChapter] = useState(1);
-  const [translation, setTranslation] = useState<"niv" | "svd">("niv");
+  const [translation, setTranslation] = useState<"niv" | "svd">("svd");
   const [svdBookName, setSvdBookName] = useState("");
   const [query, setQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -73,10 +74,13 @@ export default function Home() {
   const selectedVerseKey = selectedVerse?.key;
   const downloadController = useRef<AbortController | null>(null);
   const settingsDropdownRef = useRef<HTMLElement | null>(null);
+  const language = translation === "svd" ? "ar" : "en";
+  const t = (message: string, values: Record<string, string | number> = {}) => translate(language, message, values);
+  const displayBookName = (book: (typeof books)[number]) => getBookName(book, language);
 
   useEffect(() => {
     const savedTranslation = localStorage.getItem("still-translation");
-    setTranslation(savedTranslation === "svd" ? "svd" : "niv");
+    setTranslation(savedTranslation === "niv" ? "niv" : "svd");
     const savedTheme = localStorage.getItem("still-theme");
     setTheme(savedTheme === "dark" ? "dark" : "light");
     const savedPalette = localStorage.getItem("still-palette");
@@ -136,6 +140,18 @@ export default function Home() {
       window.removeEventListener("offline", updateOnline);
     };
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
+    document.title = language === "ar" ? "Cairo Bible — قارئ الكتاب المقدس" : "Cairo Bible — Bible reader";
+    document.querySelector('meta[name="description"]')?.setAttribute(
+      "content",
+      language === "ar"
+        ? "قارئ دافئ للكتاب المقدس، يعمل دون اتصال ويضم ترجمة سميث وفاندايك العربية."
+        : "A warm, offline-ready Bible reader for NIV and Arabic SVD.",
+    );
+  }, [language]);
 
   useEffect(() => {
     if (ready) localStorage.setItem(POSITION_KEY, JSON.stringify({ bookId: currentBook.id, chapter }));
@@ -252,8 +268,8 @@ export default function Home() {
   }, [apiKey, chapter, currentBook, ready, refreshToken, translation]);
 
   const filteredBooks = useMemo(
-    () => books.filter((book) => book.name.toLowerCase().includes(query.toLowerCase().trim())),
-    [query],
+    () => books.filter((book) => book.name.toLowerCase().includes(query.toLowerCase().trim()) || getBookName(book, language).includes(query.trim())),
+    [language, query],
   );
   const oldTestament = filteredBooks.filter((book) => book.testament === "Old Testament");
   const newTestament = filteredBooks.filter((book) => book.testament === "New Testament");
@@ -303,7 +319,7 @@ export default function Home() {
     setSelectedVerse({
       key: verse.dataset.verseKey ?? "",
       text,
-      reference: `${currentBook.name} ${chapter}:${verseNumber}`,
+      reference: `${translation === "svd" ? svdBookName || displayBookName(currentBook) : currentBook.name} ${chapter}:${verseNumber}`,
       top: rect.top,
       left: Math.max(8, rect.left - 44),
     });
@@ -391,7 +407,7 @@ export default function Home() {
           aria-current={currentBook.id === book.id ? "page" : undefined}
           onClick={() => selectBook(book)}
         >
-          <span>{book.name}</span><span className="book-arrow" aria-hidden="true">›</span>
+          <span>{displayBookName(book)}</span><span className="book-arrow" aria-hidden="true">›</span>
         </button>
       </li>
     ));
@@ -405,134 +421,134 @@ export default function Home() {
   const isLastChapter = currentBook.id === "REV" && chapter === currentBook.chapters;
 
   return (
-    <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
-      <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label="Bible books">
+    <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
+      <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
         <div className="sidebar-top">
-          <Link className="brand" href="/" aria-label="Cairo Bible home">
+          <Link className="brand" href="/" aria-label={t("Cairo Bible home")}>
             <span className="brand-mark" aria-hidden="true"><BookMark /></span>
-            <span><strong>Cairo Bible</strong><small>READING, MADE QUIET</small></span>
+            <span><strong>Cairo Bible</strong><small>{t("READING, MADE QUIET")}</small></span>
           </Link>
-          <button className="icon-button sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close book list">×</button>
+          <button className="icon-button sidebar-close" onClick={() => setSidebarOpen(false)} aria-label={t("Close book list")}>×</button>
         </div>
         <label className="search-wrap" htmlFor="bookSearch">
-          <SearchIcon /><input id="bookSearch" type="search" placeholder="Find a book" value={query} onChange={(event) => setQuery(event.target.value)} />
+          <SearchIcon /><input id="bookSearch" type="search" placeholder={t("Find a book")} value={query} onChange={(event) => setQuery(event.target.value)} />
           <kbd>/</kbd>
         </label>
-        <nav className="book-nav" aria-label="Books of the Bible">
-          {oldTestament.length > 0 && <section className="book-group"><h2>OLD TESTAMENT</h2><ul className="book-list">{renderBooks(oldTestament)}</ul></section>}
-          {newTestament.length > 0 && <section className="book-group"><h2>NEW TESTAMENT</h2><ul className="book-list">{renderBooks(newTestament)}</ul></section>}
-          {filteredBooks.length === 0 && <p className="no-books">No books found.</p>}
+        <nav className="book-nav" aria-label={t("Books of the Bible")}>
+          {oldTestament.length > 0 && <section className="book-group"><h2>{t("OLD TESTAMENT")}</h2><ul className="book-list">{renderBooks(oldTestament)}</ul></section>}
+          {newTestament.length > 0 && <section className="book-group"><h2>{t("NEW TESTAMENT")}</h2><ul className="book-list">{renderBooks(newTestament)}</ul></section>}
+          {filteredBooks.length === 0 && <p className="no-books">{t("No books found.")}</p>}
         </nav>
-        <div className="sidebar-footer"><span className="version-dot" aria-hidden="true" />{translation === "svd" ? "SVD · Smith & Van Dyck" : "NIV · New International Version"}</div>
+        <div className="sidebar-footer"><span className="version-dot" aria-hidden="true" />{t(translation === "svd" ? "SVD · Smith & Van Dyck" : "NIV · New International Version")}</div>
       </aside>
-      {sidebarOpen && <button className="sidebar-scrim" aria-label="Close book list" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <button className="sidebar-scrim" aria-label={t("Close book list")} onClick={() => setSidebarOpen(false)} />}
 
       <main className="main-area">
         <header className="toolbar">
           <div className="toolbar-leading">
-            <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? "Hide book list" : "Show book list"} aria-expanded={sidebarOpen}><MenuIcon /></button>
+            <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t(sidebarOpen ? "Hide book list" : "Show book list")} aria-expanded={sidebarOpen}><MenuIcon /></button>
             <span className="toolbar-divider" aria-hidden="true" />
-            <span className="toolbar-label">A place to read</span>
+            <span className="toolbar-label">{t("A place to read")}</span>
           </div>
           <div className="toolbar-actions">
-            <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{isOnline ? "Online" : "Offline"}</span>
-            <button className="translation-trigger" onClick={() => setTranslation(translation === "niv" ? "svd" : "niv")} aria-label={`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`} title="Switch translation">{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
-            <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} appearance`} title={`Switch to ${theme === "light" ? "dark" : "light"} appearance`}>{theme === "light" ? <MoonIcon /> : <SunIcon />}</button>
-            <button className="focus-trigger" onClick={() => { setFocusMode(true); setSettingsOpen(false); setChapterPickerOpen(false); }}><FocusIcon /><span>Focus</span></button>
-            <button className="settings-trigger" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /><span>Settings</span></button>
+            <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{t(isOnline ? "Online" : "Offline")}</span>
+            <button className="translation-trigger" onClick={() => setTranslation(translation === "niv" ? "svd" : "niv")} aria-label={t(`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`)} title={t("Switch translation")}>{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
+            <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={t("Switch to {language} appearance", { language: t(theme === "light" ? "dark" : "light") })} title={t("Switch to {language} appearance", { language: t(theme === "light" ? "dark" : "light") })}>{theme === "light" ? <MoonIcon /> : <SunIcon />}</button>
+            <button className="focus-trigger" onClick={() => { setFocusMode(true); setSettingsOpen(false); setChapterPickerOpen(false); }}><FocusIcon /><span>{t("Focus")}</span></button>
+            <button className="settings-trigger" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /><span>{t("Settings")}</span></button>
           </div>
         </header>
 
         {settingsOpen && <section className="settings-dropdown" id="settingsDropdown" aria-labelledby="settingsTitle" ref={settingsDropdownRef}>
-          <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close settings">×</button>
+          <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label={t("Close settings")}>×</button>
           <div className="dialog-content">
-            <p className="eyebrow">YOUR READING SPACE</p><h2 id="settingsTitle">Settings</h2>
+            <p className="eyebrow">{t("YOUR READING SPACE")}</p><h2 id="settingsTitle">{t("Settings")}</h2>
             <section className="setting-block appearance-setting">
-              <div className="setting-heading"><div><h3 id="appearanceTitle">Appearance</h3><p>Choose light or dark mode.</p></div><output>{theme === "light" ? "Light" : "Dark"}</output></div>
+              <div className="setting-heading"><div><h3 id="appearanceTitle">{t("Appearance")}</h3><p>{t("Choose light or dark mode.")}</p></div><output>{t(theme === "light" ? "Light" : "Dark")}</output></div>
               <div className="appearance-options" role="radiogroup" aria-labelledby="appearanceTitle">
                 {(["light", "dark"] as const).map((option) => <label className="appearance-option" key={option}>
                   <input type="radio" name="appearance" value={option} checked={theme === option} onChange={() => setTheme(option)} />
-                  <span>{option === "light" ? "Light" : "Dark"}</span>
+                  <span>{t(option === "light" ? "Light" : "Dark")}</span>
                 </label>)}
               </div>
             </section>
             <section className="setting-block palette-setting">
-              <div className="setting-heading"><div><h3 id="paletteTitle">Color palette</h3><p>Choose the colors for your reading space.</p></div><output>{selectedPalette.name}</output></div>
+              <div className="setting-heading"><div><h3 id="paletteTitle">{t("Color palette")}</h3><p>{t("Choose the colors for your reading space.")}</p></div><output>{t(selectedPalette.name)}</output></div>
               <div className="palette-options" role="radiogroup" aria-labelledby="paletteTitle">
                 {PALETTES.map((option) => <label className="palette-option" key={option.id}>
                   <input type="radio" name="color-palette" value={option.id} checked={palette === option.id} onChange={() => setPalette(option.id)} />
                   <span className="palette-swatch" data-palette-swatch={option.id} aria-hidden="true" />
-                  <span className="palette-name">{option.name}</span>
+                  <span className="palette-name">{t(option.name)}</span>
                 </label>)}
               </div>
             </section>
-            <section className="setting-block">            <div className="setting-heading"><div><h3>Reading size</h3><p>Choose what feels comfortable.</p></div><output>{FONT_LABELS[fontLevel]}</output></div>
-              <div className="slider-row"><span className="slider-small" aria-hidden="true">A</span><input type="range" min="0" max="4" step="1" value={fontLevel} aria-label="Reading text size, five levels" onChange={(event) => setFontLevel(Number(event.target.value))} /><span className="slider-large" aria-hidden="true">A</span></div><div className="slider-levels"><span>Small</span><span>Large</span></div>
+            <section className="setting-block"><div className="setting-heading"><div><h3>{t("Reading size")}</h3><p>{t("Choose what feels comfortable.")}</p></div><output>{t(FONT_LABELS[fontLevel])}</output></div>
+              <div className="slider-row"><span className="slider-small" aria-hidden="true">A</span><input type="range" min="0" max="4" step="1" value={fontLevel} aria-label={t("Reading text size, five levels")} onChange={(event) => setFontLevel(Number(event.target.value))} /><span className="slider-large" aria-hidden="true">A</span></div><div className="slider-levels"><span>{t("Small")}</span><span>{t("Large")}</span></div>
             </section>
             <section className="setting-block">
-              <div className="setting-heading"><div><h3>Line spacing</h3><p>Adjust the space between lines.</p></div><output>{selectedLineHeight.label}</output></div>
-              <div className="line-height-options" role="radiogroup" aria-label="Reader line spacing">
+              <div className="setting-heading"><div><h3>{t("Line spacing")}</h3><p>{t("Adjust the space between lines.")}</p></div><output>{t(selectedLineHeight.label)}</output></div>
+              <div className="line-height-options" role="radiogroup" aria-label={t("Reader line spacing")}>
                 {LINE_HEIGHT_OPTIONS.map((option) => <label className="line-height-option" key={option.value}>
                   <input type="radio" name="reading-line-height" value={option.value} checked={lineHeight === option.value} onChange={(event) => { const value = Number(event.target.value); if (isLineHeightValue(value)) setLineHeight(value); }} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </label>)}
               </div>
             </section>
-            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>NIV access</h3><p>Use an API.Bible key that includes NIV.</p></div></div><label className="field-label" htmlFor="apiKeyInput">API key</label><div className="key-field"><input id="apiKeyInput" type="password" autoComplete="off" placeholder="Paste your API.Bible key" value={apiInput} onChange={(event) => setApiInput(event.target.value)} /><button className="small-button" onClick={() => void connect()} disabled={!apiInput.trim()}>{connected ? "Check key" : "Connect"}</button></div>{connected && <button className="text-button" onClick={disconnect}>Remove saved key</button>}<p className="privacy-note">Stored only on this device. NIV chapters are cached in this browser for up to 29 days to respect API.Bible’s licensing terms.</p>{metadata?.copyright && <p className="privacy-note">{metadata.copyright}</p>}</section>
-            <section className="setting-block offline-setting"><div className="setting-heading"><div><h3>Offline reading</h3><p>{savedCount} fresh chapters saved on this device.</p></div></div>{downloadProgress ? <><p className="download-status">Saving {downloadProgress.book} · {downloadProgress.complete} of {downloadProgress.total} chapters</p><progress max={downloadProgress.total} value={downloadProgress.complete} aria-label="Offline download progress" /><button className="secondary-button" onClick={pauseDownload}>Pause download</button></> : <button className="secondary-button" onClick={() => void saveOffline()} disabled={!apiKey}>Save the whole NIV offline</button>}</section>
-            {settingsStatus && <p className="settings-status" role="status">{settingsStatus}</p>}
+            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>{t("NIV access")}</h3><p>{t("Use an API.Bible key that includes NIV.")}</p></div></div><label className="field-label" htmlFor="apiKeyInput">{t("API key")}</label><div className="key-field"><input id="apiKeyInput" type="password" autoComplete="off" dir="ltr" placeholder={t("Paste your API.Bible key")} value={apiInput} onChange={(event) => setApiInput(event.target.value)} /><button className="small-button" onClick={() => void connect()} disabled={!apiInput.trim()}>{t(connected ? "Check key" : "Connect")}</button></div>{connected && <button className="text-button" onClick={disconnect}>{t("Remove saved key")}</button>}<p className="privacy-note">{t("Stored only on this device. NIV chapters are cached in this browser for up to 29 days to respect API.Bible’s licensing terms.")}</p>{metadata?.copyright && <p className="privacy-note">{metadata.copyright}</p>}</section>
+            <section className="setting-block offline-setting"><div className="setting-heading"><div><h3>{t("Offline reading")}</h3><p>{t("{count} fresh chapters saved on this device.", { count: savedCount })}</p></div></div>{downloadProgress ? <><p className="download-status">{t("Saving {book} · {complete} of {total} chapters", { book: displayBookName(books.find((book) => book.name === downloadProgress.book) ?? currentBook), complete: downloadProgress.complete, total: downloadProgress.total })}</p><progress max={downloadProgress.total} value={downloadProgress.complete} aria-label={t("Offline download progress")} /><button className="secondary-button" onClick={pauseDownload}>{t("Pause download")}</button></> : <button className="secondary-button" onClick={() => void saveOffline()} disabled={!apiKey}>{t("Save the whole NIV offline")}</button>}</section>
+            {settingsStatus && <p className="settings-status" role="status">{t(settingsStatus)}</p>}
           </div>
         </section>}
 
         <div className="reader-scroll">
           <section className="reader">
             <div className="reader-heading">
-              <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${currentBook.testament.toUpperCase()} · NIV`}</p><h1 dir={translation === "svd" ? "rtl" : "ltr"}>{translation === "svd" ? (svdBookName || currentBook.name) : currentBook.name} <span>{chapter}</span></h1></div>
-              <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{translation === "svd" ? `الإصحاح ${chapter}` : `Chapter ${chapter}`}</span><ChevronDown /></button>
+              <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
+              <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{t("Chapter {chapter}", { chapter })}</span><ChevronDown /></button>
             </div>
             {chapterData ? (
-              <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} dir={translation === "svd" ? "rtl" : "ltr"} lang={translation === "svd" ? "ar" : "en"} aria-label={`${currentBook.name} chapter ${chapter}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
+              <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
                 {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined}>{paragraph.content}</p>)}
-                {paragraphs.length === 0 && <p>This chapter has no readable text.</p>}
+                {paragraphs.length === 0 && <p>{t("This chapter has no readable text.")}</p>}
                 {translation === "niv" && metadata?.copyright && <p className="copyright">{metadata.copyright}</p>}
               </article>
             ) : loading ? (
-              <section className="reader-message" role="status"><span className="loading-mark" /><p>{isOnline ? "Opening your chapter…" : "Looking for a saved chapter…"}</p></section>
+              <section className="reader-message" role="status"><span className="loading-mark" /><p>{t(isOnline ? "Opening your chapter…" : "Looking for a saved chapter…")}</p></section>
             ) : loadError ? (
-              <section className="reader-message" role="alert"><p>{loadError}</p><button className="secondary-button" onClick={() => setRefreshToken((value) => value + 1)}>Try again</button></section>
+              <section className="reader-message" role="alert"><p>{t(loadError)}</p><button className="secondary-button" onClick={() => setRefreshToken((value) => value + 1)}>{t("Try again")}</button></section>
             ) : (
               <section className="welcome">
                 <div className="welcome-art" aria-hidden="true"><BookIllustration /></div>
-                <p className="eyebrow">MAKE ROOM FOR THE WORD</p>
-                <h2>{isOnline ? <>Read without<br />the noise.</> : <>No saved chapter<br />yet.</>}</h2>
-                <p className="welcome-copy">{isOnline ? "A simple, quiet place for the NIV. Pick up where you left off, or find a book and settle in." : "Connect and save chapters while online to read them here later."}</p>
-                <button className="primary-button" onClick={() => setSettingsOpen(true)}>{connected ? "Open reading settings" : "Connect your NIV access"} <span aria-hidden="true">→</span></button>
-                <p className="setup-note">Requires an API.Bible key with NIV access. Your key stays in this browser.</p>
+                <p className="eyebrow">{t("MAKE ROOM FOR THE WORD")}</p>
+                <h2>{t(isOnline ? "Read without" : "No saved chapter")}<br />{t(isOnline ? "the noise." : "yet.")}</h2>
+                <p className="welcome-copy">{t(isOnline ? "A simple, quiet place for the NIV. Pick up where you left off, or find a book and settle in." : "Connect and save chapters while online to read them here later.")}</p>
+                <button className="primary-button" onClick={() => setSettingsOpen(true)}>{t(connected ? "Open reading settings" : "Connect your NIV access")} <span aria-hidden="true">→</span></button>
+                <p className="setup-note">{t("Requires an API.Bible key with NIV access. Your key stays in this browser.")}</p>
               </section>
             )}
           </section>
         </div>
         <footer className="reader-footer">
-          <button className="chapter-step" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label="Previous chapter"><ChevronLeft /><span>Previous</span></button>
-          {translation === "svd" ? <span className="offline-ready" aria-label="SVD Bible stored on this device">SVD · On this device</span> : <button className="offline-button" onClick={() => apiKey ? void saveOffline() : setSettingsOpen(true)} disabled={Boolean(downloadProgress)}><DownloadIcon /><span>{downloadProgress ? `${downloadProgress.complete} / ${downloadProgress.total}` : savedCount ? `${savedCount} chapters saved` : "Save Bible offline"}</span></button>}
-          <button className="chapter-step" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label="Next chapter"><span>Next</span><ChevronRight /></button>
+          <button className="chapter-step" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label={t("Previous chapter")}><ChevronLeft /><span>{t("Previous")}</span></button>
+          {translation === "svd" ? <span className="offline-ready" aria-label={t("SVD Bible stored on this device")}>{t("SVD · On this device")}</span> : <button className="offline-button" onClick={() => apiKey ? void saveOffline() : setSettingsOpen(true)} disabled={Boolean(downloadProgress)}><DownloadIcon /><span>{downloadProgress ? `${downloadProgress.complete} / ${downloadProgress.total}` : savedCount ? t("{count} chapters saved", { count: savedCount }) : t("Save Bible offline")}</span></button>}
+          <button className="chapter-step" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label={t("Next chapter")}><span>{t("Next")}</span><ChevronRight /></button>
         </footer>
-        {focusMode && <nav className="focus-actions" aria-label="Focus reading controls">
-          <button className="focus-exit" onClick={() => setFocusMode(false)}>Exit focus</button>
-          <button className="focus-arrow" onClick={() => setSettingsOpen(!settingsOpen)} aria-label={settingsOpen ? "Close settings" : "Open settings"} aria-expanded={settingsOpen} aria-controls="settingsDropdown" title="Settings"><GearIcon /></button>
-          <button className="focus-arrow" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label="Previous chapter"><ChevronLeft /></button>
-          <button className="focus-arrow" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label="Next chapter"><ChevronRight /></button>
+        {focusMode && <nav className="focus-actions" aria-label={t("Focus reading controls")}>
+          <button className="focus-exit" onClick={() => setFocusMode(false)}>{t("Exit focus")}</button>
+          <button className="focus-arrow" onClick={() => setSettingsOpen(!settingsOpen)} aria-label={t(settingsOpen ? "Close settings" : "Open settings")} aria-expanded={settingsOpen} aria-controls="settingsDropdown" title={t("Settings")}><GearIcon /></button>
+          <button className="focus-arrow chapter-stepper" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label={t("Previous chapter")}><ChevronLeft /></button>
+          <button className="focus-arrow chapter-stepper" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label={t("Next chapter")}><ChevronRight /></button>
         </nav>}
       </main>
 
       {chapterPickerOpen && <div className="dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setChapterPickerOpen(false); }}>
-        <section className="app-dialog chapter-dialog" role="dialog" aria-modal="true" aria-labelledby="chapterDialogTitle" dir={translation === "svd" ? "rtl" : "ltr"}>
-          <button className="dialog-close icon-button" onClick={() => setChapterPickerOpen(false)} aria-label="Close chapter list">×</button>
-          <div className="dialog-content"><p className="eyebrow">JUMP TO</p><h2 id="chapterDialogTitle">{translation === "svd" ? svdBookName || currentBook.name : currentBook.name}</h2><div className="chapter-grid">{Array.from({ length: currentBook.chapters }, (_, index) => index + 1).map((item) => <button key={item} className={item === chapter ? "active" : ""} aria-current={item === chapter ? "page" : undefined} onClick={() => { setChapter(item); setChapterPickerOpen(false); }}>{item}</button>)}</div></div>
+        <section className="app-dialog chapter-dialog" role="dialog" aria-modal="true" aria-labelledby="chapterDialogTitle">
+          <button className="dialog-close icon-button" onClick={() => setChapterPickerOpen(false)} aria-label={t("Close chapter list")}>×</button>
+          <div className="dialog-content"><p className="eyebrow">{t("JUMP TO")}</p><h2 id="chapterDialogTitle">{translation === "svd" ? svdBookName || displayBookName(currentBook) : currentBook.name}</h2><div className="chapter-grid">{Array.from({ length: currentBook.chapters }, (_, index) => index + 1).map((item) => <button key={item} className={item === chapter ? "active" : ""} aria-current={item === chapter ? "page" : undefined} onClick={() => { setChapter(item); setChapterPickerOpen(false); }}>{item}</button>)}</div></div>
         </section>
       </div>}
-      {selectedVerse && <button className={`verse-copy-popup${copyStatus.startsWith("Copied ") ? " copied" : ""}`} style={{ top: selectedVerse.top, left: selectedVerse.left }} onClick={() => void copySelectedVerse()} aria-label={`Copy ${selectedVerse.reference}`} title={`Copy ${selectedVerse.reference}`}><CopyIcon />{copyStatus.startsWith("Copied ") && <span>Copied</span>}</button>}
-      <span className="visually-hidden" role="status" aria-live="polite">{copyStatus}</span>
+      {selectedVerse && <button className={`verse-copy-popup${copyStatus.startsWith("Copied ") ? " copied" : ""}`} style={{ top: selectedVerse.top, left: selectedVerse.left }} onClick={() => void copySelectedVerse()} aria-label={t("Copy {reference}", { reference: selectedVerse.reference })} title={t("Copy {reference}", { reference: selectedVerse.reference })}><CopyIcon />{copyStatus.startsWith("Copied ") && <span>{t("Copied")}</span>}</button>}
+      <span className="visually-hidden" role="status" aria-live="polite">{copyStatus.startsWith("Copied ") ? t("Copied {reference}", { reference: copyStatus.slice(7) }) : t(copyStatus)}</span>
 
     </div>
   );
