@@ -74,6 +74,7 @@ export default function Home() {
   const selectedVerseKey = selectedVerse?.key;
   const downloadController = useRef<AbortController | null>(null);
   const settingsDropdownRef = useRef<HTMLElement | null>(null);
+  const readerScrollRef = useRef<HTMLDivElement | null>(null);
   const language = translation === "svd" ? "ar" : "en";
   const t = (message: string, values: Record<string, string | number> = {}) => translate(language, message, values);
   const displayBookName = (book: (typeof books)[number]) => getBookName(book, language);
@@ -211,6 +212,10 @@ export default function Home() {
     setSelectedVerse(null);
     setCopyStatus("");
   }, [chapter, currentBook.id, translation]);
+
+  useEffect(() => {
+    readerScrollRef.current?.scrollTo(0, 0);
+  }, [chapter, currentBook.id]);
 
   useEffect(() => {
     if (!selectedVerseKey) return;
@@ -500,7 +505,7 @@ export default function Home() {
           </div>
         </section>}
 
-        <div className="reader-scroll">
+        <div className="reader-scroll" ref={readerScrollRef}>
           <section className="reader">
             <div className="reader-heading">
               <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
