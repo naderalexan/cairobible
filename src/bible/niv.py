@@ -60,8 +60,16 @@ def _refresh_corpus() -> dict[str, Any]:
         for chapter in book["chapters"]:
             chapter_id = chapter.get("id")
             number = chapter.get("number")
-            if not isinstance(chapter_id, str) or not isinstance(number, str) or not number.isdecimal():
-                raise RuntimeError("API.Bible returned incomplete NIV chapter data.")
+            if not isinstance(chapter_id, str):
+                raise RuntimeError(f"API.Bible returned an invalid chapter ID for {book_id}: {chapter_id!r}.")
+            if isinstance(number, int):
+                number = str(number)
+            if not isinstance(number, str) or not number.isdecimal():
+                number = chapter_id.removeprefix(f"{book_id}.")
+            if not number.isdecimal():
+                raise RuntimeError(
+                    f"API.Bible returned an invalid chapter number for {book_id}/{chapter_id}: {number!r}."
+                )
             response = fetch_api_bible(
                 f"/bibles/{NIV_BIBLE_ID}/chapters/{quote(chapter_id, safe='.')}"
                 "?content-type=html&include-notes=false&include-titles=true"
