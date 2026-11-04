@@ -1,4 +1,4 @@
-const CACHE_NAME = "cairo-bible-shell-v4";
+const CACHE_NAME = "cairo-bible-shell-v5";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/cairo-bible.svg", "/fonts/montserrat-latin.woff2", "/fonts/yellowtail-latin.woff2"];
 
 self.addEventListener("install", (event) => {
@@ -8,10 +8,12 @@ self.addEventListener("install", (event) => {
     const response = await fetch("/");
     if (!response.ok) throw new Error("Could not cache the reader shell.");
     await cache.put("/", response.clone());
-    try {
-      const dataResponse = await fetch("/data/arb-vd.json");
-      if (dataResponse.ok) await cache.put("/data/arb-vd.json", dataResponse);
-    } catch { /* The data will be cached on its first successful request. */ }
+    for (const path of ["/data/arb-vd.json", "/data/arb-vd-verses.json"]) {
+      try {
+        const dataResponse = await fetch(path);
+        if (dataResponse.ok) await cache.put(path, dataResponse);
+      } catch { /* The data will be cached on its first successful request. */ }
+    }
     const html = await response.text();
     const assets = [...html.matchAll(/(?:src|href)=["']([^"']*\/_next\/static\/[^"']+)["']/g)]
       .map((match) => new URL(match[1], self.location.origin).href);
@@ -37,7 +39,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  if (url.pathname === "/data/arb-vd.json") {
+  if (url.pathname === "/data/arb-vd.json" || url.pathname === "/data/arb-vd-verses.json") {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         const cached = await cache.match(request);

@@ -4,7 +4,7 @@ A warm, installable Next.js Bible reader with NIV and Arabic Smith & Van Dyck (S
 
 ## Arabic Smith & Van Dyck (SVD)
 
-The complete Arabic Van Dyck Bible is bundled locally at `public/data/arb-vd.json` and served with the app—no account, API key, or backend is required. The service worker precaches this file, so the SVD remains available offline after the app has been opened online once.
+The Litestar API serves the Arabic Van Dyck Bible from `public/data/arb-vd.json` and preserves verse markers from `public/data/arb-vd-verses.json`. The app fetches chapters from that API and uses its locally cached corpus when the browser is offline.
 
 Source: [eBible.org Arabic Van Dyck Bible](https://ebible.org/Scriptures/details.php?id=arb-vd), downloaded from the [read-aloud text archive](https://ebible.org/Scriptures/arb-vd_readaloud.zip). eBible.org lists this translation as public domain; the source credits the Syrian Mission and American Bible Society.
 
@@ -18,10 +18,21 @@ API.Bible requires licensed translations and appropriate attribution. Its cachin
 
 ```sh
 npm install
-npm run dev
 ```
 
-Open <http://localhost:3000>, choose **Settings** to select one of five color palettes or connect an API.Bible key with NIV enabled. The app is configured for static export (`npm run build` creates `out/`) and can be hosted on any static HTTPS host. A service worker caches the app shell and Next.js static assets; Scripture chapters are cached separately in IndexedDB for up to 29 days.
+Start the Litestar API in one terminal:
+
+```sh
+uv run litestar --app-dir src --app bible:app run --host 127.0.0.1 --port 8000
+```
+
+Start the reader in another terminal:
+
+```sh
+NEXT_PUBLIC_BIBLE_API_URL=http://localhost:8000 npm run dev
+```
+
+Open <http://localhost:3000>, choose **Settings** to select one of five color palettes or connect an API.Bible key with NIV enabled. The app is configured for static export (`npm run build` creates `out/`); set `NEXT_PUBLIC_BIBLE_API_URL` at build time to the deployed Litestar API URL, or route `/api` to the backend on the reader's origin. A service worker caches the app shell, SVD corpus, verse boundaries, and Next.js static assets; NIV chapters are cached separately in IndexedDB for up to 29 days.
 
 ## Offline use
 

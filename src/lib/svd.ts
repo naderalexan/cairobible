@@ -55,7 +55,7 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export async function loadSvdChapter(bookId: string, chapter: number): Promise<SvdChapter> {
+async function loadLocalSvdChapter(bookId: string, chapter: number): Promise<SvdChapter> {
   const [corpus, verseMap] = await Promise.all([loadCorpus(), loadVerseMap().catch(() => undefined)]);
   const book = corpus.books[bookId];
   const chapterKey = [String(chapter), String(chapter).padStart(2, "0"), String(chapter).padStart(3, "0")]
@@ -65,4 +65,16 @@ export async function loadSvdChapter(bookId: string, chapter: number): Promise<S
 
   const offsets = verseMap?.books[bookId]?.[chapterKey];
   return { bookId, chapter, bookName: book.name, content: offsets ? addVerseMarkers(content, offsets) : content };
+}
+
+export async function loadSvdChapter(bookId: string, chapter: number): Promise<SvdChapter> {
+  const apiRoot = (process.env.NEXT_PUBLIC_BIBLE_API_URL ?? "").replace(/\/+$/, "");
+  try {
+    const response = await fetch(`${apiRoot}/api/svd/books/${encodeURIComponent(bookId)}/chapters/${chapter}`);
+    if (!response.ok) throw new Error("Could not load the Arabic SVD chapter.");
+    return (await response.json()) as SvdChapter;
+  } catch (error) {
+    if (typeof navigator === "undefined" || navigator.onLine) throw error;
+    return loadLocalSvdChapter(bookId, chapter);
+  }
 }

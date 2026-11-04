@@ -9,10 +9,8 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "litestar>=2.25.0",
+    "uvicorn>=0.34.0",
 ]
-
-[project.scripts]
-bible = "bible:main"
 
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]
