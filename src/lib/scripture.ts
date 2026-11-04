@@ -19,7 +19,12 @@ declare global {
 
 export async function loadChapter(book: BibleBook, chapter: number): Promise<BibleChapter> {
   const apiRoot = (process.env.NEXT_PUBLIC_BIBLE_API_URL ?? "").replace(/\/+$/, "");
-  const response = await fetch(`${apiRoot}/api/niv/books/${encodeURIComponent(book.id)}/chapters/${chapter}`);
+  let response: Response;
+  try {
+    response = await fetch(`${apiRoot}/api/niv/books/${encodeURIComponent(book.id)}/chapters/${chapter}`);
+  } catch {
+    throw new Error("Could not reach the Bible server. Check your connection and try again.");
+  }
   let result: Partial<BibleChapter> & { detail?: string };
   try {
     result = (await response.json()) as Partial<BibleChapter> & { detail?: string };
