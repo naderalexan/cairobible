@@ -141,7 +141,21 @@ jobs:
             'echo "HTTP/HTTPS listeners:"; ss -ltnp "( sport = :80 or sport = :443 )" || true; echo "Docker containers:"; docker ps --format "table {{.Names}}\t{{.Ports}}"; echo "Proxy services:"; for service in caddy nginx apache2; do printf "%s: " "$service"; systemctl is-active "$service" || true; done'
 
       - name: Verify public API
+        id: verify
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
         run: |
           curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+            --resolve "api.thegoodshepard.site:443:${DROPLET_IPV4}" \
             --output /dev/null \
             https://api.thegoodshepard.site/api/svd/books/GEN/chapters/1
+
+      - name: Diagnose failed API check
+        if: failure() && steps.verify.outcome == 'failure'
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
+        run: |
+          ssh -i "$RUNNER_TEMP/droplet_key" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
+            "${DROPLET_SSH_USER}@${DROPLET_IPV4}" \
+            'cd "$HOME/cairo-bible" && docker compose -f compose.backend.yaml ps && docker compose -f compose.backend.yaml logs --tail=80 caddy api'
