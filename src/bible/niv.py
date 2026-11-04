@@ -42,6 +42,28 @@ def _load_cached() -> dict[str, Any] | None:
     return None
 
 
+def _chapter_number(book_id: str, chapter: dict[str, Any]) -> tuple[str, str] | None:
+    chapter_id = chapter.get("id")
+    number = chapter.get("number")
+    if not isinstance(chapter_id, str):
+        raise RuntimeError(f"API.Bible returned an invalid chapter ID for {book_id}: {chapter_id!r}.")
+    if (
+        isinstance(number, str)
+        and number.casefold() == "intro"
+        and chapter_id.casefold() == f"{book_id}.intro".casefold()
+    ):
+        return None
+    if isinstance(number, int):
+        number = str(number)
+    if not isinstance(number, str) or not number.isdecimal():
+        number = chapter_id.removeprefix(f"{book_id}.")
+    if not number.isdecimal():
+        raise RuntimeError(
+            f"API.Bible returned an invalid chapter number for {book_id}/{chapter_id}: {number!r}."
+        )
+    return chapter_id, number
+
+
 def _refresh_corpus() -> dict[str, Any]:
     bible = fetch_api_bible(f"/bibles/{NIV_BIBLE_ID}").get("data", {})
     copyright = bible.get("copyright")
@@ -58,18 +80,10 @@ def _refresh_corpus() -> dict[str, Any]:
             raise RuntimeError("API.Bible returned incomplete NIV book data.")
         chapters: dict[str, Any] = {}
         for chapter in book["chapters"]:
-            chapter_id = chapter.get("id")
-            number = chapter.get("number")
-            if not isinstance(chapter_id, str):
-                raise RuntimeError(f"API.Bible returned an invalid chapter ID for {book_id}: {chapter_id!r}.")
-            if isinstance(number, int):
-                number = str(number)
-            if not isinstance(number, str) or not number.isdecimal():
-                number = chapter_id.removeprefix(f"{book_id}.")
-            if not number.isdecimal():
-                raise RuntimeError(
-                    f"API.Bible returned an invalid chapter number for {book_id}/{chapter_id}: {number!r}."
-                )
+            chapter_data = _chapter_number(book_id, chapter)
+            if chapter_data is None:
+                continue
+            chapter_id, number = chapter_data
             response = fetch_api_bible(
                 f"/bibles/{NIV_BIBLE_ID}/chapters/{quote(chapter_id, safe='.')}"
                 "?content-type=html&include-notes=false&include-titles=true"
