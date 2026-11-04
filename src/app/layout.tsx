@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "قارئ دافئ للكتاب المقدس، يعمل دون اتصال ويضم ترجمة سميث وفاندايك العربية.",
   applicationName: "Cairo Bible",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icons/cairo-bible.svg", apple: "/icons/cairo-bible.svg" },
+  icons: { icon: "/icons/cairo-bible-192.png", apple: "/icons/cairo-bible-180.png" },
 };
 
 export const viewport: Viewport = {

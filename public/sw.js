@@ -1,5 +1,5 @@
-const CACHE_NAME = "cairo-bible-shell-v5";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/cairo-bible.svg", "/fonts/montserrat-latin.woff2", "/fonts/yellowtail-latin.woff2"];
+const CACHE_NAME = "cairo-bible-shell-v6";
+const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/cairo-bible-mark.png", "/icons/cairo-bible-180.png", "/icons/cairo-bible-192.png", "/icons/cairo-bible-512.png", "/fonts/montserrat-latin.woff2", "/fonts/yellowtail-latin.woff2"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
@@ -39,7 +39,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  if (url.pathname === "/data/arb-vd.json" || url.pathname === "/data/arb-vd-verses.json") {
+  if (APP_SHELL.slice(1).includes(url.pathname) || url.pathname === "/data/arb-vd.json" || url.pathname === "/data/arb-vd-verses.json") {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         const cached = await cache.match(request);

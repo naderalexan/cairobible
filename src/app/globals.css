@@ -23,7 +23,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .sidebar-top { display: flex; align-items: center; justify-content: space-between; padding: 0 9px 26px; }
 .brand { color: inherit; display: inline-flex; gap: 11px; align-items: center; text-decoration: none; }
 .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: var(--accent); color: var(--surface); }
-.brand-mark svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+.brand-mark::after { content: ''; width: 27px; height: 27px; background: currentColor; mask: url('/icons/cairo-bible-mark.png') center / contain no-repeat; }
 .brand strong { display: block; font: 400 27px/1 Yellowtail, cursive; letter-spacing: 0; }
 .brand small { display: block; margin-top: 4px; color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .14em; }
 .icon-button { width: 42px; height: 42px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--muted); transition: color .15s ease, background .15s ease; }
