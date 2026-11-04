@@ -34,6 +34,20 @@ NEXT_PUBLIC_BIBLE_API_URL=http://localhost:8000 npm run dev
 
 Open <http://localhost:3000> and choose **Settings** to select one of five color palettes. The app is configured for static export (`npm run build` creates `out/`); set `NEXT_PUBLIC_BIBLE_API_URL` at build time to the deployed Litestar API URL, or route `/api` to the backend on the reader's origin. A service worker caches the app shell, SVD corpus, verse boundaries, and Next.js static assets. NIV is not cached in the browser.
 
+## Production deployment
+
+The frontend deploys to Cloudflare Workers on pushes to `main` and uses `https://api.thegoodshepard.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml`; that workflow also maintains the Cloudflare DNS A record and serves HTTPS through Caddy.
+
+Before the first backend deployment, the Droplet needs Docker Engine with the Compose plugin, `rsync`, a Linux user allowed to run Docker, and inbound TCP ports 22, 80, and 443. Add these GitHub repository secrets:
+
+- `DIGITALOCEAN_API_TOKEN`: read access to the Droplet.
+- `DIGITALOCEAN_DROPLET_ID`: the Droplet ID.
+- `DROPLET_SSH_PRIVATE_KEY`: private key whose public key is authorized for the deployment user.
+- `DROPLET_SSH_KNOWN_HOSTS`: the verified SSH host key line for the Droplet IPv4 address.
+- `CLOUDFLARE_DNS_API_TOKEN`: `Zone:Read` and `DNS:Edit` access for `thegoodshepard.site`.
+
+The optional repository variable `DROPLET_SSH_USER` selects the SSH user; it defaults to `root`. The DNS record is DNS-only so Caddy can obtain and renew the HTTPS certificate. The deployment keeps the backend's `var/` directory on the Droplet between releases. NIV stays disabled unless its license gate is deliberately configured on the Droplet.
+
 ## Offline use
 
 SVD chapters remain available offline after the app shell and corpus have been cached. NIV requires an online backend and remains unavailable while its full-corpus license gate is off. Open the app online at least once after a deployment so the service worker can cache the shell.

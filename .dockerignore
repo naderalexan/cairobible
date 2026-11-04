@@ -1,0 +1,10 @@
+.git
+.venv
+node_modules
+.next
+out
+dist
+var
+.env*
+__pycache__
+*.py[cod]

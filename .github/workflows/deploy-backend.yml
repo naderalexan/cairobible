@@ -1,0 +1,136 @@
+name: Deploy backend to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DROPLET_SSH_USER: ${{ vars.DROPLET_SSH_USER || 'root' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Resolve droplet IPv4 address
+        id: droplet
+        env:
+          DIGITALOCEAN_API_TOKEN: ${{ secrets.DIGITALOCEAN_API_TOKEN }}
+          DIGITALOCEAN_DROPLET_ID: ${{ secrets.DIGITALOCEAN_DROPLET_ID }}
+        run: |
+          set -euo pipefail
+          : "${DIGITALOCEAN_API_TOKEN:?Add the DIGITALOCEAN_API_TOKEN repository secret}"
+          : "${DIGITALOCEAN_DROPLET_ID:?Add the DIGITALOCEAN_DROPLET_ID repository secret}"
+          response="$(curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${DIGITALOCEAN_API_TOKEN}" \
+            "https://api.digitalocean.com/v2/droplets/${DIGITALOCEAN_DROPLET_ID}")"
+          status="$(jq -r '.droplet.status' <<< "$response")"
+          if [[ "$status" != "active" ]]; then
+            echo "Droplet ${DIGITALOCEAN_DROPLET_ID} is not active (status: ${status})." >&2
+            exit 1
+          fi
+          ipv4="$(jq -er '[.droplet.networks.v4[] | select(.type == "public") | .ip_address][0] // empty' <<< "$response")"
+          echo "ipv4=${ipv4}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare SSH
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
+          DROPLET_SSH_PRIVATE_KEY: ${{ secrets.DROPLET_SSH_PRIVATE_KEY }}
+          DROPLET_SSH_KNOWN_HOSTS: ${{ secrets.DROPLET_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${DROPLET_SSH_PRIVATE_KEY:?Add the DROPLET_SSH_PRIVATE_KEY repository secret}"
+          : "${DROPLET_SSH_KNOWN_HOSTS:?Add the DROPLET_SSH_KNOWN_HOSTS repository secret}"
+          if [[ ! "$DROPLET_SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+            echo "DROPLET_SSH_USER must be a valid Linux username." >&2
+            exit 1
+          fi
+          printf '%s\n' "$DROPLET_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/droplet_key"
+          chmod 600 "$RUNNER_TEMP/droplet_key"
+          printf '%s\n' "$DROPLET_SSH_KNOWN_HOSTS" > "$RUNNER_TEMP/known_hosts"
+          chmod 600 "$RUNNER_TEMP/known_hosts"
+          ssh-keygen -F "$DROPLET_IPV4" -f "$RUNNER_TEMP/known_hosts" >/dev/null || {
+            echo "DROPLET_SSH_KNOWN_HOSTS must contain the verified host key for ${DROPLET_IPV4}." >&2
+            exit 1
+          }
+          ssh -i "$RUNNER_TEMP/droplet_key" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
+            "${DROPLET_SSH_USER}@${DROPLET_IPV4}" 'mkdir -p "$HOME/cairo-bible/var"'
+
+      - name: Upload backend files
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
+        run: |
+          set -euo pipefail
+          rsync --archive --compress --delete \
+            --exclude='.git/' \
+            --exclude='.venv/' \
+            --exclude='node_modules/' \
+            --exclude='.next/' \
+            --exclude='out/' \
+            --exclude='var/' \
+            --exclude='.env*' \
+            -e "ssh -i $RUNNER_TEMP/droplet_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
+            ./ "${DROPLET_SSH_USER}@${DROPLET_IPV4}:~/cairo-bible/"
+
+      - name: Point API domain to droplet
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
+          CLOUDFLARE_DNS_API_TOKEN: ${{ secrets.CLOUDFLARE_DNS_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${CLOUDFLARE_DNS_API_TOKEN:?Add the CLOUDFLARE_DNS_API_TOKEN repository secret}"
+          headers=(--header "Authorization: Bearer ${CLOUDFLARE_DNS_API_TOKEN}" --header 'Content-Type: application/json')
+          zone_response="$(curl --fail --silent --show-error "${headers[@]}" \
+            'https://api.cloudflare.com/client/v4/zones?name=thegoodshepard.site&status=active')"
+          zone_id="$(jq -er '[.result[] | select(.name == "thegoodshepard.site")][0].id // empty' <<< "$zone_response")"
+          records="$(curl --fail --silent --show-error "${headers[@]}" \
+            "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=api.thegoodshepard.site&per_page=100")"
+          if jq -e '[.result[] | select(.type == "CNAME" or .type == "AAAA")] | length > 0' <<< "$records" >/dev/null; then
+            echo "Remove conflicting CNAME or AAAA records for api.thegoodshepard.site before deploying." >&2
+            exit 1
+          fi
+          record_ids="$(jq -r '.result[] | select(.type == "A") | .id' <<< "$records")"
+          if [[ "$(wc -l <<< "$record_ids" | tr -d ' ')" -gt 1 ]]; then
+            echo "Expected at most one A record for api.thegoodshepard.site; remove duplicates before deploying." >&2
+            exit 1
+          fi
+          payload="$(jq -nc --arg ip "$DROPLET_IPV4" \
+            '{type:"A", name:"api.thegoodshepard.site", content:$ip, ttl:1, proxied:false, comment:"Cairo Bible API"}')"
+          if [[ -n "$record_ids" ]]; then
+            record_id="$(tr -d '\n' <<< "$record_ids")"
+            response="$(curl --fail --silent --show-error --request PUT "${headers[@]}" \
+              --data "$payload" \
+              "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}")"
+          else
+            response="$(curl --fail --silent --show-error --request POST "${headers[@]}" \
+              --data "$payload" \
+              "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records")"
+          fi
+          jq -e '.success == true' <<< "$response" >/dev/null
+
+      - name: Start backend and HTTPS proxy
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/droplet_key" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
+            "${DROPLET_SSH_USER}@${DROPLET_IPV4}" \
+            'cd "$HOME/cairo-bible" && mkdir -p var && docker compose -f compose.backend.yaml up --detach --build --remove-orphans'
+
+      - name: Verify public API
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+            --output /dev/null \
+            https://api.thegoodshepard.site/api/svd/books/GEN/chapters/1
