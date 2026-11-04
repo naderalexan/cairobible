@@ -4,6 +4,7 @@ type SvdCorpus = {
 };
 type SvdVerseMap = { books: Record<string, Record<string, number[]>> };
 
+const CHAPTER_CACHE = "cairo-bible-svd-chapters-v1";
 let corpusPromise: Promise<SvdCorpus> | undefined;
 let verseMapPromise: Promise<SvdVerseMap> | undefined;
 
@@ -69,9 +70,23 @@ async function loadLocalSvdChapter(bookId: string, chapter: number): Promise<Svd
 
 export async function loadSvdChapter(bookId: string, chapter: number): Promise<SvdChapter> {
   const apiRoot = (process.env.NEXT_PUBLIC_BIBLE_API_URL ?? "").replace(/\/+$/, "");
+  const url = `${apiRoot}/api/svd/books/${encodeURIComponent(bookId)}/chapters/${chapter}`;
+  let cache: Cache | undefined;
   try {
-    const response = await fetch(`${apiRoot}/api/svd/books/${encodeURIComponent(bookId)}/chapters/${chapter}`);
+    if (typeof caches !== "undefined") cache = await caches.open(CHAPTER_CACHE);
+  } catch { /* Continue online if browser caching is unavailable. */ }
+
+  if (cache) {
+    try {
+      const cached = await cache.match(url);
+      if (cached) return (await cached.json()) as SvdChapter;
+    } catch { /* Ignore an unreadable cached response and fetch a fresh copy. */ }
+  }
+
+  try {
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Could not load the Arabic SVD chapter.");
+    await cache?.put(url, response.clone()).catch(() => undefined);
     return (await response.json()) as SvdChapter;
   } catch (error) {
     if (typeof navigator === "undefined" || navigator.onLine) throw error;
