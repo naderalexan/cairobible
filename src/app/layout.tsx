@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body>{children}</body>
+      <body>
+        <Script id="api-bible-fums-queue" strategy="beforeInteractive">
+          {`window.fumsData = window.fumsData || []; window.fums = window.fums || function () { window.fumsData.push(arguments); };`}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

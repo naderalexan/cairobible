@@ -8,6 +8,8 @@ from typing import Any
 from litestar import Litestar, get
 from litestar.config.cors import CORSConfig
 from litestar.exceptions import NotFoundException
+from .niv import get_book_response as get_niv_book_response
+from .niv import get_chapter_response as get_niv_chapter_response
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "public" / "data"
 
@@ -70,6 +72,8 @@ def find_chapter(chapters: dict[str, str], number: int) -> tuple[str, str] | Non
 
 @get("/api/{translation:str}/books/{book_title:str}", sync_to_thread=True)
 def get_book(translation: str, book_title: str) -> dict[str, Any]:
+    if translation.casefold() == "niv":
+        return get_niv_book_response(book_title)
     book_id, book, verse_map = find_book(translation, book_title)
     chapters = {
         str(int(number)): chapter_content(number, content, verse_map)
@@ -81,6 +85,8 @@ def get_book(translation: str, book_title: str) -> dict[str, Any]:
 
 @get("/api/{translation:str}/books/{book_title:str}/chapters/{chapter:int}", sync_to_thread=True)
 def get_chapter(translation: str, book_title: str, chapter: int) -> dict[str, Any]:
+    if translation.casefold() == "niv":
+        return get_niv_chapter_response(book_title, chapter)
     book_id, book, verse_map = find_book(translation, book_title)
     found = find_chapter(book["chapters"], chapter)
     if chapter < 1 or found is None:

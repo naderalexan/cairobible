@@ -1,17 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { books } from "@/lib/books";
-import {
-  connectToNiv,
-  countFreshCachedChapters,
-  getFreshCachedChapter,
-  loadChapter,
-  saveWholeBibleOffline,
-  type BibleChapter,
-  type BibleMetadata,
-} from "@/lib/scripture";
+import { loadChapter, trackFums, type BibleChapter } from "@/lib/scripture";
 import { loadSvdChapter } from "@/lib/svd";
 import { getBookName, translate } from "@/lib/translations";
 import { VERSE_COPY_BUTTON_DURATION_MS } from "@/lib/config";
@@ -33,7 +26,6 @@ const LINE_HEIGHT_OPTIONS = [
 ] as const;
 type LineHeightValue = (typeof LINE_HEIGHT_OPTIONS)[number]["value"];
 const POSITION_KEY = "still-reading-position";
-const API_KEY_KEY = "still-api-key";
 
 function isLineHeightValue(value: number): value is LineHeightValue {
   return LINE_HEIGHT_OPTIONS.some((option) => option.value === value);
@@ -57,23 +49,15 @@ export default function Home() {
   const [palette, setPalette] = useState<PaletteId>("cairo");
   const [fontLevel, setFontLevel] = useState(2);
   const [lineHeight, setLineHeight] = useState<LineHeightValue>(LINE_HEIGHT_OPTIONS[0].value);
-  const [apiKey, setApiKey] = useState("");
-  const [apiInput, setApiInput] = useState("");
-  const [connected, setConnected] = useState(false);
   const [ready, setReady] = useState(false);
   const [chapterData, setChapterData] = useState<BibleChapter | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [settingsStatus, setSettingsStatus] = useState("");
-  const [metadata, setMetadata] = useState<BibleMetadata | null>(null);
   const [isOnline, setIsOnline] = useState(true);
-  const [savedCount, setSavedCount] = useState(0);
-  const [downloadProgress, setDownloadProgress] = useState<{ complete: number; total: number; book: string } | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [selectedVerse, setSelectedVerse] = useState<{ key: string; text: string; reference: string; top: number; left: number } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const selectedVerseKey = selectedVerse?.key;
-  const downloadController = useRef<AbortController | null>(null);
   const settingsDropdownRef = useRef<HTMLElement | null>(null);
   const readerScrollRef = useRef<HTMLDivElement | null>(null);
   const language = translation === "svd" ? "ar" : "en";
@@ -91,6 +75,10 @@ export default function Home() {
     if (Number.isInteger(savedFont) && savedFont >= 0 && savedFont <= 4) setFontLevel(savedFont);
     const savedLineHeight = Number(localStorage.getItem("still-line-height"));
     if (isLineHeightValue(savedLineHeight)) setLineHeight(savedLineHeight);
+    localStorage.removeItem("still-api-key");
+    try {
+      if (typeof indexedDB !== "undefined") indexedDB.deleteDatabase("still-niv");
+    } catch { /* Clearing the old cache must not prevent the reader from starting. */ }
     const savedPosition = localStorage.getItem(POSITION_KEY);
     if (savedPosition) {
       try {
@@ -102,13 +90,8 @@ export default function Home() {
         }
       } catch { localStorage.removeItem(POSITION_KEY); }
     }
-    const savedKey = localStorage.getItem(API_KEY_KEY) ?? "";
-    setApiKey(savedKey);
-    setApiInput(savedKey);
-    setConnected(Boolean(savedKey));
     setIsOnline(navigator.onLine);
     if (window.innerWidth < 760) setSidebarOpen(false);
-    void countFreshCachedChapters().then(setSavedCount).catch(() => undefined);
     setReady(true);
 
     const updateOnline = () => setIsOnline(navigator.onLine);
@@ -151,7 +134,7 @@ export default function Home() {
       "content",
       language === "ar"
         ? "قارئ دافئ للكتاب المقدس، يعمل دون اتصال ويضم ترجمة سميث وفاندايك العربية."
-        : "A warm, offline-ready Bible reader for NIV and Arabic SVD.",
+        : "A warm Bible reader for NIV and Arabic SVD.",
     );
   }, [language]);
 
@@ -162,10 +145,6 @@ export default function Home() {
   useEffect(() => {
     if (ready) localStorage.setItem("still-translation", translation);
   }, [ready, translation]);
-
-  useEffect(() => {
-    if (connected && apiKey) void connectToNiv(apiKey).then(setMetadata).catch(() => undefined);
-  }, [connected, apiKey]);
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -215,6 +194,10 @@ export default function Home() {
   }, [chapter, currentBook.id, translation]);
 
   useEffect(() => {
+    if (translation === "niv" && chapterData?.fumsToken) trackFums(chapterData.fumsToken);
+  }, [chapterData, translation]);
+
+  useEffect(() => {
     readerScrollRef.current?.scrollTo(0, 0);
   }, [chapter, currentBook.id]);
 
@@ -258,19 +241,15 @@ export default function Home() {
         if (translation === "svd") {
           const data = await loadSvdChapter(currentBook.id, chapter);
           if (!cancelled) {
-            setChapterData({ id: `${data.bookId}.${data.chapter}`, bookId: data.bookId, chapter: data.chapter, content: data.content, fetchedAt: 0 });
+            setChapterData({ id: `${data.bookId}.${data.chapter}`, bookId: data.bookId, chapter: data.chapter, content: data.content, fetchedAt: 0, copyright: "" });
             setSvdBookName(data.bookName);
           }
           return;
         }
-        const data = apiKey
-          ? await loadChapter(currentBook, chapter, apiKey)
-          : await getFreshCachedChapter(currentBook.id, chapter);
+        const data = await loadChapter(currentBook, chapter);
         if (!cancelled) {
           setChapterData(data ?? null);
           setSvdBookName("");
-          if (!data && apiKey) setLoadError("No chapter was returned. Check your connection and try again.");
-          setSavedCount(await countFreshCachedChapters().catch(() => 0));
         }
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : "Could not open this chapter.");
@@ -279,7 +258,7 @@ export default function Home() {
       }
     })();
     return () => { cancelled = true; };
-  }, [apiKey, chapter, currentBook, ready, refreshToken, translation]);
+  }, [chapter, currentBook, ready, refreshToken, translation]);
 
   const filteredBooks = useMemo(
     () => books.filter((book) => book.name.toLowerCase().includes(query.toLowerCase().trim()) || getBookName(book, language).includes(query.trim())),
@@ -367,57 +346,6 @@ export default function Home() {
     setCopyStatus(`Copied ${selectedVerse.reference}`);
   }
 
-  async function connect() {
-    setSettingsStatus("Checking your NIV access…");
-    try {
-      const result = await connectToNiv(apiInput);
-      localStorage.setItem(API_KEY_KEY, apiInput.trim());
-      setApiKey(apiInput.trim());
-      setConnected(true);
-      setMetadata(result);
-      setSettingsStatus("Connected. Your NIV chapter will load automatically.");
-    } catch (error) {
-      setSettingsStatus(error instanceof Error ? error.message : "Could not connect to API.Bible.");
-    }
-  }
-
-  function disconnect() {
-    localStorage.removeItem(API_KEY_KEY);
-    setApiKey("");
-    setApiInput("");
-    setConnected(false);
-    setMetadata(null);
-    setSettingsStatus("API key removed. Freshly cached chapters remain available on this device.");
-  }
-
-  async function saveOffline() {
-    if (!apiKey) {
-      setSettingsOpen(true);
-      setSettingsStatus("Connect an API.Bible key with NIV access before saving chapters.");
-      return;
-    }
-    const controller = new AbortController();
-    downloadController.current = controller;
-    setSettingsStatus("Saving the NIV chapter by chapter. You can pause at any time.");
-    try {
-      await saveWholeBibleOffline(apiKey, (complete, total, book) => {
-        setDownloadProgress({ complete, total, book });
-      }, controller.signal);
-      if (!controller.signal.aborted) setSettingsStatus("Offline download complete.");
-      else setSettingsStatus("Download paused. Completed chapters are saved and will be skipped next time.");
-      setSavedCount(await countFreshCachedChapters().catch(() => savedCount));
-    } catch (error) {
-      setSettingsStatus(error instanceof Error ? error.message : "The download stopped. Try again when you are online.");
-    } finally {
-      downloadController.current = null;
-      setDownloadProgress(null);
-    }
-  }
-
-  function pauseDownload() {
-    downloadController.current?.abort();
-  }
-
   function renderBooks(list: typeof books) {
     return list.map((book) => (
       <li key={book.id}>
@@ -441,6 +369,7 @@ export default function Home() {
 
   return (
     <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
+      {translation === "niv" && <Script src="https://pkg.api.bible/fumsV3.min.js" strategy="afterInteractive" />}
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
         <div className="sidebar-top">
           <Link className="brand" href="/" aria-label={t("Cairo Bible home")}>
@@ -513,9 +442,7 @@ export default function Home() {
                 </label>)}
               </div>
             </section>
-            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>{t("NIV access")}</h3><p>{t("Use an API.Bible key that includes NIV.")}</p></div></div><label className="field-label" htmlFor="apiKeyInput">{t("API key")}</label><div className="key-field"><input id="apiKeyInput" type="password" autoComplete="off" dir="ltr" placeholder={t("Paste your API.Bible key")} value={apiInput} onChange={(event) => setApiInput(event.target.value)} /><button className="small-button" onClick={() => void connect()} disabled={!apiInput.trim()}>{t(connected ? "Check key" : "Connect")}</button></div>{connected && <button className="text-button" onClick={disconnect}>{t("Remove saved key")}</button>}<p className="privacy-note">{t("Stored only on this device. NIV chapters are cached in this browser for up to 29 days to respect API.Bible’s licensing terms.")}</p>{metadata?.copyright && <p className="privacy-note">{metadata.copyright}</p>}</section>
-            <section className="setting-block offline-setting"><div className="setting-heading"><div><h3>{t("Offline reading")}</h3><p>{t("{count} fresh chapters saved on this device.", { count: savedCount })}</p></div></div>{downloadProgress ? <><p className="download-status">{t("Saving {book} · {complete} of {total} chapters", { book: displayBookName(books.find((book) => book.name === downloadProgress.book) ?? currentBook), complete: downloadProgress.complete, total: downloadProgress.total })}</p><progress max={downloadProgress.total} value={downloadProgress.complete} aria-label={t("Offline download progress")} /><button className="secondary-button" onClick={pauseDownload}>{t("Pause download")}</button></> : <button className="secondary-button" onClick={() => void saveOffline()} disabled={!apiKey}>{t("Save the whole NIV offline")}</button>}</section>
-            {settingsStatus && <p className="settings-status" role="status">{t(settingsStatus)}</p>}
+            <section className="setting-block api-setting"><div className="setting-heading"><div><h3>{t("NIV access")}</h3><p>{t("NIV access is configured on the Bible server.")}</p></div></div><p className="privacy-note">{t("The NIV corpus stays unavailable until the required license or written permission is confirmed.")}</p></section>
           </div>
         </section>}
 
@@ -529,10 +456,10 @@ export default function Home() {
               <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
                 {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined}>{paragraph.content}</p>)}
                 {paragraphs.length === 0 && <p>{t("This chapter has no readable text.")}</p>}
-                {translation === "niv" && metadata?.copyright && <p className="copyright">{metadata.copyright}</p>}
+                {translation === "niv" && chapterData.copyright && <p className="copyright">{chapterData.copyright}</p>}
               </article>
             ) : loading ? (
-              <section className="reader-message" role="status"><span className="loading-mark" /><p>{t(isOnline ? "Opening your chapter…" : "Looking for a saved chapter…")}</p></section>
+              <section className="reader-message" role="status"><span className="loading-mark" /><p>{t(isOnline ? "Opening your chapter…" : translation === "niv" ? "NIV requires an online Bible server." : "Looking for the SVD chapter…")}</p></section>
             ) : loadError ? (
               <section className="reader-message" role="alert"><p>{t(loadError)}</p><button className="secondary-button" onClick={() => setRefreshToken((value) => value + 1)}>{t("Try again")}</button></section>
             ) : (
@@ -541,15 +468,15 @@ export default function Home() {
                 <p className="eyebrow">{t("MAKE ROOM FOR THE WORD")}</p>
                 <h2>{t(isOnline ? "Read without" : "No saved chapter")}<br />{t(isOnline ? "the noise." : "yet.")}</h2>
                 <p className="welcome-copy">{t(isOnline ? "A simple, quiet place for the NIV. Pick up where you left off, or find a book and settle in." : "Connect and save chapters while online to read them here later.")}</p>
-                <button className="primary-button" onClick={() => setSettingsOpen(true)}>{t(connected ? "Open reading settings" : "Connect your NIV access")} <span aria-hidden="true">→</span></button>
-                <p className="setup-note">{t("Requires an API.Bible key with NIV access. Your key stays in this browser.")}</p>
+                <button className="primary-button" onClick={() => setSettingsOpen(true)}>{t("Open reading settings")} <span aria-hidden="true">→</span></button>
+                <p className="setup-note">{t("NIV access is managed by the Bible server and remains disabled until the required license is confirmed.")}</p>
               </section>
             )}
           </section>
         </div>
         <footer className="reader-footer">
           <button className="chapter-step" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label={t("Previous chapter")}><ChevronLeft /><span>{t("Previous")}</span></button>
-          {translation === "svd" ? <span className="offline-ready" aria-label={t("SVD Bible stored on this device")}>{t("SVD · On this device")}</span> : <button className="offline-button" onClick={() => apiKey ? void saveOffline() : setSettingsOpen(true)} disabled={Boolean(downloadProgress)}><DownloadIcon /><span>{downloadProgress ? `${downloadProgress.complete} / ${downloadProgress.total}` : savedCount ? t("{count} chapters saved", { count: savedCount }) : t("Save Bible offline")}</span></button>}
+          {translation === "svd" ? <span className="offline-ready" aria-label={t("SVD Bible stored on this device")}>{t("SVD · On this device")}</span> : <span className="offline-ready">{t("NIV · Server access")}</span>}
           <button className="chapter-step" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label={t("Next chapter")}><span>{t("Next")}</span><ChevronRight /></button>
         </footer>
         {focusMode && <nav className="focus-actions" aria-label={t("Focus reading controls")}>
@@ -658,7 +585,6 @@ function GearIcon() { return <svg viewBox="0 0 20 20" width="16" height="16" fil
 function ChevronDown() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" /></svg>; }
 function ChevronLeft() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>; }
 function ChevronRight() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>; }
-function DownloadIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 14v3h14v-3" /></svg>; }
 function CopyIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="6" width="10" height="12" rx="1.5" /><path d="M13 3H4.5A1.5 1.5 0 0 0 3 4.5V15" /></svg>; }
 function FocusIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1v3m10-4h3a1 1 0 0 1 1 1v3M3 13v3a1 1 0 0 0 1 1h3m10-4v3a1 1 0 0 1-1 1h-3" /></svg>; }
 function BookIllustration() { return <svg viewBox="0 0 180 150"><path className="art-line" d="M90 27v94M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14 18-16 39-21 62-14V25c-23-7-44-2-62 14Z" /><path className="art-page" d="M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14zM90 39c18-16 39-21 62-14v76c-23-7-44-2-62 14z" /><path className="art-rule" d="M44 45c12-2 23 0 33 6M44 57c12-2 23 0 33 6M103 51c10-6 21-8 33-6M103 63c10-6 21-8 33-6" /></svg>; }

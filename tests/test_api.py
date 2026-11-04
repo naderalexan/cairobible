@@ -61,7 +61,7 @@ class SvdApiTests(unittest.TestCase):
 
     def test_unsupported_translation_returns_not_found(self) -> None:
         with TestClient(app=app) as client:
-            response = client.get(f"/api/niv/books/{quote('التكوين')}")
+            response = client.get(f"/api/kjv/books/{quote('التكوين')}")
 
         self.assertEqual(response.status_code, 404)
 

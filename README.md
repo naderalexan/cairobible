@@ -1,6 +1,6 @@
 # Cairo Bible
 
-A warm, installable Next.js Bible reader with NIV and Arabic Smith & Van Dyck (SVD), quick book/chapter navigation, five color palettes, saved reading preferences, and offline reading. The Cairo Bible wordmark uses locally bundled Montserrat and Yellowtail fonts; their licenses are included in `public/fonts/`.
+A warm, installable Bible reader with Arabic Smith & Van Dyck (SVD), NIV support gated on API.Bible licensing, quick book/chapter navigation, five color palettes, saved reading preferences, and offline SVD reading. The Cairo Bible wordmark uses locally bundled Montserrat and Yellowtail fonts; their licenses are included in `public/fonts/`.
 
 ## Arabic Smith & Van Dyck (SVD)
 
@@ -10,9 +10,9 @@ Source: [eBible.org Arabic Van Dyck Bible](https://ebible.org/Scriptures/details
 
 ## NIV content
 
-The app does not bundle NIV text. Connect an API.Bible key for an account that includes NIV access. The browser sends that key directly to API.Bible and stores it only in this browser's local storage; do not use this setup for shared or public devices. The app displays the copyright statement returned with the NIV metadata when available.
+The app does not bundle NIV text. The Litestar backend reads `API_BIBLE_KEY`; the key is never sent to the browser. Full-corpus caching and NIV reader responses stay disabled unless `NIV_CORPUS_LICENSE_CONFIRMED=true` is set on the backend. Set that variable only after written permission confirms full-corpus storage, a 29-day refresh interval, reader distribution, and API.Bible's required web view tracking. The backend stores the corpus in `var/niv-corpus.json` by default; set `NIV_CORPUS_PATH` to choose another persistent location.
 
-API.Bible requires licensed translations and appropriate attribution. Its caching guidance requires Scripture content to be refreshed at least every 30 days. This app refreshes saved chapters after 29 days; it does not provide permanent offline NIV storage. For a deployment or use case requiring a different caching term, obtain the relevant rights and follow the publisher's license.
+API.Bible's current FAQ asks that cached content stay below 500 consecutive verses and recommends clearing caches within 14 days. Those general terms do not confirm the full-corpus, 29-day use in this feature. Until the needed permission is confirmed, leave the license variable unset; the NIV API returns `503` and makes no upstream requests. NIV is served only from the backend cache after the gate is enabled, and responses include API.Bible copyright information.
 
 ## Run locally
 
@@ -32,8 +32,8 @@ Start the reader in another terminal:
 NEXT_PUBLIC_BIBLE_API_URL=http://localhost:8000 npm run dev
 ```
 
-Open <http://localhost:3000>, choose **Settings** to select one of five color palettes or connect an API.Bible key with NIV enabled. The app is configured for static export (`npm run build` creates `out/`); set `NEXT_PUBLIC_BIBLE_API_URL` at build time to the deployed Litestar API URL, or route `/api` to the backend on the reader's origin. A service worker caches the app shell, SVD corpus, verse boundaries, and Next.js static assets; NIV chapters are cached separately in IndexedDB for up to 29 days.
+Open <http://localhost:3000> and choose **Settings** to select one of five color palettes. The app is configured for static export (`npm run build` creates `out/`); set `NEXT_PUBLIC_BIBLE_API_URL` at build time to the deployed Litestar API URL, or route `/api` to the backend on the reader's origin. A service worker caches the app shell, SVD corpus, verse boundaries, and Next.js static assets. NIV is not cached in the browser.
 
 ## Offline use
 
-Open a chapter online to save it automatically. **Save the whole NIV offline** in Settings can fill the cache chapter by chapter; it resumes by skipping chapters already fresh in the cache. The download can be paused. A full download makes many API requests and is subject to your API.Bible account's rate limits and license. Open the app online at least once after a deployment so the service worker can cache the shell.
+SVD chapters remain available offline after the app shell and corpus have been cached. NIV requires an online backend and remains unavailable while its full-corpus license gate is off. Open the app online at least once after a deployment so the service worker can cache the shell.
