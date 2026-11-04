@@ -14,6 +14,7 @@ import {
 } from "@/lib/scripture";
 import { loadSvdChapter } from "@/lib/svd";
 import { getBookName, translate } from "@/lib/translations";
+import { VERSE_COPY_BUTTON_DURATION_MS } from "@/lib/config";
 
 const FONT_SIZES = [18, 20, 22, 25, 29];
 const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
@@ -238,6 +239,14 @@ export default function Home() {
   }, [selectedVerseKey]);
 
   useEffect(() => {
+    if (!selectedVerseKey) return;
+    const timeout = window.setTimeout(() => {
+      setSelectedVerse((current) => current?.key === selectedVerseKey ? null : current);
+    }, VERSE_COPY_BUTTON_DURATION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [selectedVerseKey]);
+
+  useEffect(() => {
     let cancelled = false;
     void (async () => {
       if (!ready) return;
@@ -300,19 +309,7 @@ export default function Home() {
     setChapter(direction > 0 ? 1 : nextBook.chapters);
   }
 
-  function handleVerseSelection() {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !selection.toString().trim()) {
-      setSelectedVerse(null);
-      return;
-    }
-    const node = selection.getRangeAt(0).commonAncestorContainer;
-    const element = node instanceof Element ? node : node.parentElement;
-    const verse = element?.closest<HTMLElement>("p.verse[data-verse-number]");
-    if (!verse) {
-      setSelectedVerse(null);
-      return;
-    }
+  function showVerseCopyButton(verse: HTMLElement) {
     const verseNumber = verse.dataset.verseNumber;
     if (!verseNumber) return;
     const verseText = verse.cloneNode(true) as HTMLElement;
@@ -328,6 +325,23 @@ export default function Home() {
       top: rect.top,
       left: Math.max(8, rect.left - 44),
     });
+  }
+
+  function handleVerseHover(verse: HTMLElement) {
+    showVerseCopyButton(verse);
+  }
+
+  function handleVerseSelection() {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.toString().trim()) return;
+    const node = selection.getRangeAt(0).commonAncestorContainer;
+    const element = node instanceof Element ? node : node.parentElement;
+    const verse = element?.closest<HTMLElement>("p.verse[data-verse-number]");
+    if (!verse) {
+      setSelectedVerse(null);
+      return;
+    }
+    showVerseCopyButton(verse);
   }
 
   async function copySelectedVerse() {
@@ -513,7 +527,7 @@ export default function Home() {
             </div>
             {chapterData ? (
               <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
-                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined}>{paragraph.content}</p>)}
+                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined}>{paragraph.content}</p>)}
                 {paragraphs.length === 0 && <p>{t("This chapter has no readable text.")}</p>}
                 {translation === "niv" && metadata?.copyright && <p className="copyright">{metadata.copyright}</p>}
               </article>

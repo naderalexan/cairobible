@@ -1,0 +1,1 @@
+export const VERSE_COPY_BUTTON_DURATION_MS = 5_000;
