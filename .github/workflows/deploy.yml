@@ -33,7 +33,7 @@ jobs:
       - name: Build Worker
         run: npx cf build
         env:
-          NEXT_PUBLIC_BIBLE_API_URL: https://api.thegoodshepard.site
+          NEXT_PUBLIC_BIBLE_API_URL: https://api.bible.cairolove.site
 
       - name: Validate deployment build
         run: npx cf deploy --prebuilt --mode production --dry-run

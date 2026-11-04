@@ -36,7 +36,7 @@ Open <http://localhost:3000> and choose **Settings** to select one of five color
 
 ## Production deployment
 
-The frontend deploys to Cloudflare Workers on pushes to `main` and uses `https://api.thegoodshepard.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml`; that workflow also maintains the Cloudflare DNS A record and adds the API route to the Droplet's existing Caddy service.
+The frontend deploys to Cloudflare Workers on pushes to `main` and uses `https://api.bible.cairolove.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml`; that workflow maintains the Cloudflare DNS A record and the route in the Droplet's existing Caddy service.
 
 Before the first backend deployment, the Droplet needs Docker Engine with the Compose plugin, `rsync`, an active Caddy service, a Linux user allowed to run Docker and reload Caddy, and inbound TCP ports 22, 80, and 443. Add these GitHub repository secrets:
 
@@ -44,7 +44,7 @@ Before the first backend deployment, the Droplet needs Docker Engine with the Co
 - `DIGITALOCEAN_DROPLET_ID`: the Droplet ID.
 - `DROPLET_SSH_PRIVATE_KEY`: private key whose public key is authorized for the deployment user.
 - `DROPLET_SSH_KNOWN_HOSTS`: the verified SSH host key line for the Droplet IPv4 address.
-- `CLOUDFLARE_DNS_API_TOKEN`: `Zone:Read` and `DNS:Edit` access for `thegoodshepard.site`.
+- `CLOUDFLARE_DNS_API_TOKEN`: `Zone:Read`, `DNS:Read`, and `DNS:Write` access for `cairolove.site` and `thegoodshepard.site` (the old API record is removed during migration).
 
 The optional repository variable `DROPLET_SSH_USER` selects the SSH user; it defaults to `root`. The DNS record is DNS-only so Caddy can obtain and renew the HTTPS certificate. The deployment keeps the backend's `var/` directory on the Droplet between releases. NIV stays disabled unless its license gate is deliberately configured on the Droplet.
 

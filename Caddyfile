@@ -1,5 +1,5 @@
 # Managed by Cairo Bible deployment
-api.thegoodshepard.site {
+api.bible.cairolove.site {
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:8000
 }
