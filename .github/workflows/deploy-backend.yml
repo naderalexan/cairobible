@@ -119,7 +119,7 @@ jobs:
           fi
           jq -e '.success == true' <<< "$response" >/dev/null
 
-      - name: Start backend and HTTPS proxy
+      - name: Start API container
         id: start
         env:
           DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
@@ -128,10 +128,21 @@ jobs:
           ssh -i "$RUNNER_TEMP/droplet_key" -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
             "${DROPLET_SSH_USER}@${DROPLET_IPV4}" \
-            'cd "$HOME/cairo-bible" && mkdir -p var && docker compose -f compose.backend.yaml up --detach --build --remove-orphans'
+            'cd "$HOME/cairo-bible" && mkdir -p var && docker compose -f compose.backend.yaml up --detach --build --remove-orphans api'
 
-      - name: Diagnose failed proxy startup
-        if: failure() && steps.start.outcome == 'failure'
+      - name: Configure existing Caddy service
+        id: caddy
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/droplet_key" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
+            "${DROPLET_SSH_USER}@${DROPLET_IPV4}" \
+            'set -e; config=/etc/caddy/Caddyfile; SUDO=""; if [ "$(id -u)" -ne 0 ]; then SUDO="sudo -n"; fi; if ! grep -Fq "# Managed by Cairo Bible deployment" "$config"; then $SUDO cp -p "$config" "${config}.cairo-bible.bak"; $SUDO tee -a "$config" < "$HOME/cairo-bible/Caddyfile" >/dev/null; if ! $SUDO caddy validate --config "$config"; then $SUDO cp -p "${config}.cairo-bible.bak" "$config"; exit 1; fi; fi; $SUDO caddy validate --config "$config"; $SUDO systemctl reload caddy'
+
+      - name: Diagnose failed API or Caddy startup
+        if: failure() && (steps.start.outcome == 'failure' || steps.caddy.outcome == 'failure')
         env:
           DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
         run: |
@@ -158,4 +169,4 @@ jobs:
           ssh -i "$RUNNER_TEMP/droplet_key" -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
             "${DROPLET_SSH_USER}@${DROPLET_IPV4}" \
-            'cd "$HOME/cairo-bible" && docker compose -f compose.backend.yaml ps && docker compose -f compose.backend.yaml logs --tail=80 caddy api'
+            'set -e; cd "$HOME/cairo-bible"; docker compose -f compose.backend.yaml ps; docker compose -f compose.backend.yaml logs --tail=80 api; journalctl -u caddy --since "10 minutes ago" --no-pager'

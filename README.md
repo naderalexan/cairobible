@@ -36,9 +36,9 @@ Open <http://localhost:3000> and choose **Settings** to select one of five color
 
 ## Production deployment
 
-The frontend deploys to Cloudflare Workers on pushes to `main` and uses `https://api.thegoodshepard.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml`; that workflow also maintains the Cloudflare DNS A record and serves HTTPS through Caddy.
+The frontend deploys to Cloudflare Workers on pushes to `main` and uses `https://api.thegoodshepard.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml`; that workflow also maintains the Cloudflare DNS A record and adds the API route to the Droplet's existing Caddy service.
 
-Before the first backend deployment, the Droplet needs Docker Engine with the Compose plugin, `rsync`, a Linux user allowed to run Docker, and inbound TCP ports 22, 80, and 443. Add these GitHub repository secrets:
+Before the first backend deployment, the Droplet needs Docker Engine with the Compose plugin, `rsync`, an active Caddy service, a Linux user allowed to run Docker and reload Caddy, and inbound TCP ports 22, 80, and 443. Add these GitHub repository secrets:
 
 - `DIGITALOCEAN_API_TOKEN`: read access to the Droplet.
 - `DIGITALOCEAN_DROPLET_ID`: the Droplet ID.
