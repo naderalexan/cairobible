@@ -34,6 +34,12 @@ NEXT_PUBLIC_BIBLE_API_URL=http://localhost:8000 npm run dev
 
 Open <http://localhost:3000> and choose **Settings** to select one of five color palettes. The app is configured for static export (`npm run build` creates `out/`); set `NEXT_PUBLIC_BIBLE_API_URL` at build time to the deployed Litestar API URL, or route `/api` to the backend on the reader's origin. A service worker caches the app shell, SVD corpus, verse boundaries, and Next.js static assets. NIV is not cached in the browser.
 
+## Native iOS reader
+
+Open `ios/CairoBible/CairoBible.xcodeproj` in Xcode and run the shared **CairoBible** scheme on an iOS simulator. The app supports iOS 17 and later and reads NIV chapters from the Litestar backend; the `BIBLE_API_BASE_URL` build setting defaults to `https://api.bible.cairolove.site` and can point to a local backend during development. API.Bible credentials and requests stay on the backend. The server's NIV license gate still controls chapter availability.
+
+The **iOS** GitHub Actions workflow builds the app and runs its controlled-response reader tests on an iOS simulator whenever the native app changes.
+
 ## Production deployment
 
 The frontend deploys to Cloudflare Workers on pushes to `main` and uses `https://api.bible.cairolove.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml`; that workflow maintains the Cloudflare DNS A record and the route in the Droplet's existing Caddy service.

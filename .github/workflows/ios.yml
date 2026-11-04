@@ -1,0 +1,39 @@
+name: iOS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ios/CairoBible/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "ios/CairoBible/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Find an available iPhone simulator
+        id: simulator
+        run: |
+          simulator_id="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; groups=json.load(sys.stdin)["devices"].values(); print(next(device["udid"] for group in groups for device in group if device["isAvailable"] and device["name"].startswith("iPhone")))')"
+          echo "id=${simulator_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test on the iOS simulator
+        run: >-
+          xcodebuild
+          -project ios/CairoBible/CairoBible.xcodeproj
+          -scheme CairoBible
+          -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.id }}"
+          test
+          CODE_SIGNING_ALLOWED=NO
