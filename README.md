@@ -44,7 +44,7 @@ Before the first backend deployment, the Droplet needs Docker Engine with the Co
 - `DIGITALOCEAN_DROPLET_ID`: the Droplet ID.
 - `DROPLET_SSH_PRIVATE_KEY`: private key whose public key is authorized for the deployment user.
 - `DROPLET_SSH_KNOWN_HOSTS`: the verified SSH host key line for the Droplet IPv4 address.
-- `CLOUDFLARE_DNS_API_TOKEN`: `Zone:Read`, `DNS:Read`, and `DNS:Write` access for `cairolove.site` and `thegoodshepard.site` (the old API record is removed during migration).
+- `CLOUDFLARE_DNS_API_TOKEN`: `Zone:Read`, `DNS:Read`, and `DNS:Write` access for `cairolove.site`.
 
 The optional repository variable `DROPLET_SSH_USER` selects the SSH user; it defaults to `root`. The DNS record is DNS-only so Caddy can obtain and renew the HTTPS certificate. The deployment keeps the backend's `var/` directory on the Droplet between releases. NIV stays disabled unless its license gate is deliberately configured on the Droplet.
 
