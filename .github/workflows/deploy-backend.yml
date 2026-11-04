@@ -120,6 +120,7 @@ jobs:
           jq -e '.success == true' <<< "$response" >/dev/null
 
       - name: Start backend and HTTPS proxy
+        id: start
         env:
           DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
         run: |
@@ -128,6 +129,16 @@ jobs:
             -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
             "${DROPLET_SSH_USER}@${DROPLET_IPV4}" \
             'cd "$HOME/cairo-bible" && mkdir -p var && docker compose -f compose.backend.yaml up --detach --build --remove-orphans'
+
+      - name: Diagnose failed proxy startup
+        if: failure() && steps.start.outcome == 'failure'
+        env:
+          DROPLET_IPV4: ${{ steps.droplet.outputs.ipv4 }}
+        run: |
+          ssh -i "$RUNNER_TEMP/droplet_key" -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/known_hosts" \
+            "${DROPLET_SSH_USER}@${DROPLET_IPV4}" \
+            'echo "HTTP/HTTPS listeners:"; ss -ltnp "( sport = :80 or sport = :443 )" || true; echo "Docker containers:"; docker ps --format "table {{.Names}}\t{{.Ports}}"; echo "Proxy services:"; for service in caddy nginx apache2; do printf "%s: " "$service"; systemctl is-active "$service" || true; done'
 
       - name: Verify public API
         run: |
