@@ -1,6 +1,6 @@
 import Foundation
 
-struct NIVChapter: Decodable, Equatable {
+struct NIVChapter: Codable, Equatable {
     let bookName: String
     let chapter: Int
     let content: String
@@ -27,15 +27,33 @@ protocol NIVReadingClient {
 }
 
 struct NIVAPIClient: NIVReadingClient {
+    private static let cacheLifetime: TimeInterval = 29 * 24 * 60 * 60
+
     let baseURL: URL
     let session: URLSession
+    private let cacheDirectory: URL
+    private let now: () -> Date
 
-    init(baseURL: URL, session: URLSession = .shared) {
+    init(
+        baseURL: URL,
+        session: URLSession = .shared,
+        cacheDirectory: URL? = nil,
+        now: @escaping () -> Date = Date.init
+    ) {
         self.baseURL = baseURL
         self.session = session
+        self.cacheDirectory = cacheDirectory
+            ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("NIVChapters", isDirectory: true)
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent("NIVChapters", isDirectory: true)
+        self.now = now
     }
 
     func fetchChapter(book: BibleBook, number: Int) async throws -> NIVChapter {
+        if let cachedChapter = cachedChapter(book: book, number: number) {
+            return cachedChapter
+        }
+
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/api/niv/books/\(book.name)/chapters/\(number)"
         components?.query = nil
@@ -47,6 +65,7 @@ struct NIVAPIClient: NIVReadingClient {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.cachePolicy = .reloadIgnoringLocalCacheData
 
         let data: Data
         let response: URLResponse
@@ -55,7 +74,7 @@ struct NIVAPIClient: NIVReadingClient {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            throw NIVAPIError.connection
+            throw NIVAPIError.offlineUnavailable
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -71,11 +90,44 @@ struct NIVAPIClient: NIVReadingClient {
         }
 
         do {
-            return try JSONDecoder().decode(NIVChapter.self, from: data)
+            let chapter = try JSONDecoder().decode(NIVChapter.self, from: data)
+            cache(chapter, book: book, number: number)
+            return chapter
         } catch {
             throw NIVAPIError.invalidResponse
         }
     }
+
+    private func cachedChapter(book: BibleBook, number: Int) -> NIVChapter? {
+        let url = cacheURL(book: book, number: number)
+        guard let data = try? Data(contentsOf: url),
+              let cached = try? JSONDecoder().decode(CachedNIVChapter.self, from: data) else {
+            return nil
+        }
+        let age = now().timeIntervalSince(cached.fetchedAt)
+        return age >= 0 && age < Self.cacheLifetime ? cached.chapter : nil
+    }
+
+    private func cache(_ chapter: NIVChapter, book: BibleBook, number: Int) {
+        guard let data = try? JSONEncoder().encode(CachedNIVChapter(fetchedAt: now(), chapter: chapter)) else {
+            return
+        }
+        do {
+            try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+            try data.write(to: cacheURL(book: book, number: number), options: .atomic)
+        } catch {
+            // Keep a successfully fetched chapter readable if the device cannot write its cache.
+        }
+    }
+
+    private func cacheURL(book: BibleBook, number: Int) -> URL {
+        cacheDirectory.appendingPathComponent("niv-\(book.id)-\(number).json")
+    }
+}
+
+private struct CachedNIVChapter: Codable {
+    let fetchedAt: Date
+    let chapter: NIVChapter
 }
 
 private struct BackendError: Decodable {
@@ -83,15 +135,15 @@ private struct BackendError: Decodable {
 }
 
 private enum NIVAPIError: LocalizedError {
-    case connection
+    case offlineUnavailable
     case invalidURL
     case invalidResponse
     case backend(String)
 
     var errorDescription: String? {
         switch self {
-        case .connection:
-            "Could not connect to the Bible server. Check your connection and try again."
+        case .offlineUnavailable:
+            "This chapter is not available offline. Connect to the internet and try again."
         case .invalidURL:
             "The Bible server address is invalid."
         case .invalidResponse:

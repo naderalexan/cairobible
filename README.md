@@ -56,4 +56,4 @@ The optional repository variable `DROPLET_SSH_USER` selects the SSH user; it def
 
 ## Offline use
 
-SVD chapters remain available offline after the app shell and corpus have been cached. NIV requires an online backend and remains unavailable while its full-corpus license gate is off. Open the app online at least once after a deployment so the service worker can cache the shell.
+SVD chapters remain available offline after the app shell and corpus have been cached. The iOS app saves each NIV chapter when opened and can read that copy offline for up to 29 days; unopened or expired chapters need an online backend, and expired copies refresh when a connection is available. The web reader does not cache NIV. Open the web app online at least once after a deployment so the service worker can cache the shell.
