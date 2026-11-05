@@ -26,3 +26,8 @@ This is a single-context repo: check the root glossary and relevant ADRs in `doc
 | `ponytail-debt` | List deferred shortcuts | [`ponytail-debt.md`](docs/agents/ponytail-debt.md) |
 | `ponytail-gain` | Show the benchmark results | [`ponytail-gain.md`](docs/agents/ponytail-gain.md) |
 | `ponytail-help` | Show Ponytail commands and levels | [`ponytail-help.md`](docs/agents/ponytail-help.md) |
+
+## Implementation closeout
+
+- After each completed implementation, commit its changes with a concise message. Stage only changes from that implementation; preserve unrelated pre-existing worktree changes.
+- When the implementation completes a related GitHub issue, ask whether the user wants the issue closed and whether the commit should be pushed. Wait for the user's answer before closing or pushing.
