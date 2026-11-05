@@ -11,6 +11,15 @@ struct CairoBibleApp: App {
     var body: some Scene {
         WindowGroup {
             ReaderView(nivClient: NIVAPIClient(baseURL: apiBaseURL), preferences: preferences)
+                .preferredColorScheme(preferredColorScheme)
+        }
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch preferences.appearance {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
         }
     }
 }

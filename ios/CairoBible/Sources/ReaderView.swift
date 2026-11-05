@@ -72,18 +72,9 @@ struct ReaderView: View {
             .sheet(isPresented: $isShowingPreferences) {
                 ReadingPreferencesView(preferences: preferences)
             }
-            .preferredColorScheme(preferredColorScheme)
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
             }
-        }
-    }
-
-    private var preferredColorScheme: ColorScheme? {
-        switch preferences.appearance {
-        case .system: nil
-        case .light: .light
-        case .dark: .dark
         }
     }
 
@@ -101,7 +92,7 @@ struct ReaderView: View {
 
             case let .loaded(chapter):
                 Text("\(chapter.bookName) \(chapter.chapter)")
-                    .font(.title2.weight(.semibold))
+                    .font(readingFont.weight(.semibold))
                     .accessibilityAddTraits(.isHeader)
                     .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
                     .multilineTextAlignment(model.selectedTranslation.isRightToLeft ? .trailing : .leading)
@@ -150,6 +141,7 @@ struct ReaderView: View {
 
 private struct ReadingPreferencesView: View {
     @ObservedObject var preferences: ReadingPreferences
+    @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -166,6 +158,10 @@ private struct ReadingPreferencesView: View {
                     )
                     .accessibilityLabel("Reading text size")
                     .accessibilityValue("\(Int(preferences.fontSize)) points")
+
+                    Text("The Lord is my shepherd; I shall not want.")
+                        .font(.system(size: CGFloat(preferences.fontSize * dynamicTypeScale)))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 Section("Appearance") {
