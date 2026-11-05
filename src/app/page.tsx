@@ -66,6 +66,7 @@ export default function Home() {
   const displayBookName = (book: (typeof books)[number]) => getBookName(book, language);
 
   useEffect(() => {
+    setFocusMode(localStorage.getItem("still-focus-mode") === "true");
     const savedTranslation = localStorage.getItem("still-translation");
     setTranslation(savedTranslation === "niv" ? "niv" : "svd");
     const savedTheme = localStorage.getItem("still-theme");
@@ -146,6 +147,10 @@ export default function Home() {
   useEffect(() => {
     if (ready) localStorage.setItem("still-translation", translation);
   }, [ready, translation]);
+
+  useEffect(() => {
+    if (ready) localStorage.setItem("still-focus-mode", String(focusMode));
+  }, [ready, focusMode]);
 
   useEffect(() => {
     if (!settingsOpen) return;
