@@ -11,6 +11,18 @@ enum ReaderAppearance: String, CaseIterable, Identifiable {
     var title: String { rawValue.capitalized }
 }
 
+enum ReaderPalette: String, CaseIterable, Identifiable {
+    case cairo
+    case olive
+    case nile
+    case amethyst
+    case sandstone
+
+    var id: String { rawValue }
+
+    var title: String { rawValue.capitalized }
+}
+
 @MainActor
 final class ReadingPreferences: ObservableObject {
     static let fontSizeRange = 14.0...32.0
@@ -18,16 +30,19 @@ final class ReadingPreferences: ObservableObject {
 
     @Published private(set) var fontSize: Double
     @Published private(set) var appearance: ReaderAppearance
+    @Published private(set) var palette: ReaderPalette
 
     private let defaults: UserDefaults
     private let fontSizeKey = "readingFontSize"
     private let appearanceKey = "readerAppearance"
+    private let paletteKey = "readerPalette"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         let savedFontSize = defaults.object(forKey: fontSizeKey) as? Double ?? Self.defaultFontSize
         fontSize = min(max(savedFontSize, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
         appearance = ReaderAppearance(rawValue: defaults.string(forKey: appearanceKey) ?? "") ?? .system
+        palette = ReaderPalette(rawValue: defaults.string(forKey: paletteKey) ?? "") ?? .cairo
     }
 
     func setFontSize(_ size: Double) {
@@ -38,6 +53,11 @@ final class ReadingPreferences: ObservableObject {
     func setAppearance(_ appearance: ReaderAppearance) {
         self.appearance = appearance
         defaults.set(appearance.rawValue, forKey: appearanceKey)
+    }
+
+    func setPalette(_ palette: ReaderPalette) {
+        self.palette = palette
+        defaults.set(palette.rawValue, forKey: paletteKey)
     }
 }
 

@@ -71,12 +71,14 @@ final class ReaderFlowTests: XCTestCase {
             svdClient: StubSVDReadingClient(),
             preferences: preferences
         )
+        preferences.setPalette(.nile)
         await model.load()
         guard case .loaded = model.state else {
             return XCTFail("Expected the NIV chapter to load, got \(model.state)")
         }
         XCTAssertEqual(model.preferences.fontSize, 26)
         XCTAssertEqual(model.preferences.appearance, .dark)
+        XCTAssertEqual(model.preferences.palette, .nile)
 
         model.selectTranslation(.svd)
         await model.load()
@@ -86,10 +88,12 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertFalse(chapter.verses.isEmpty)
         XCTAssertEqual(model.preferences.fontSize, 26)
         XCTAssertEqual(model.preferences.appearance, .dark)
+        XCTAssertEqual(model.preferences.palette, .nile)
 
         let relaunchedPreferences = ReadingPreferences(defaults: UserDefaults(suiteName: suiteName)!)
         XCTAssertEqual(relaunchedPreferences.fontSize, 26)
         XCTAssertEqual(relaunchedPreferences.appearance, .dark)
+        XCTAssertEqual(relaunchedPreferences.palette, .nile)
     }
 
     func testReaderShowsBackendFailureMessage() async {
