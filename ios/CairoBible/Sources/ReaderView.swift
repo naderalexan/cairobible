@@ -114,7 +114,7 @@ struct ReaderView: View {
                     .font(readingFont.weight(.semibold))
                     .accessibilityAddTraits(.isHeader)
                     .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
-                    .multilineTextAlignment(model.selectedTranslation.isRightToLeft ? .trailing : .leading)
+                    .multilineTextAlignment(.leading)
                     .environment(\.locale, model.selectedTranslation.isRightToLeft ? Locale(identifier: "ar") : .current)
 
                 if model.selectedTranslation == .svd {
@@ -123,8 +123,8 @@ struct ReaderView: View {
                             + Text(verbatim: verse.text).font(readingFont))
                             .lineSpacing(6)
                             .listRowSeparator(.hidden)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
                             .environment(\.layoutDirection, .rightToLeft)
                             .environment(\.locale, Locale(identifier: "ar"))
                             .textSelection(.enabled)
@@ -183,9 +183,9 @@ private struct ReadingPreferencesView: View {
                     Text(sampleText)
                         .font(.system(size: CGFloat(preferences.fontSize * dynamicTypeScale)))
                         .environment(\.layoutDirection, translation.isRightToLeft ? .rightToLeft : .leftToRight)
-                        .multilineTextAlignment(translation.isRightToLeft ? .trailing : .leading)
+                        .multilineTextAlignment(.leading)
                         .environment(\.locale, translation.isRightToLeft ? Locale(identifier: "ar") : .current)
-                        .frame(maxWidth: .infinity, alignment: translation.isRightToLeft ? .trailing : .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 Section("Appearance") {
