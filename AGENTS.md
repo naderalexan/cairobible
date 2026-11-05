@@ -27,6 +27,10 @@ This is a single-context repo: check the root glossary and relevant ADRs in `doc
 | `ponytail-gain` | Show the benchmark results | [`ponytail-gain.md`](docs/agents/ponytail-gain.md) |
 | `ponytail-help` | Show Ponytail commands and levels | [`ponytail-help.md`](docs/agents/ponytail-help.md) |
 
+## Implementation default
+
+For every implementation, use `/ponytail` in full mode by default and follow [`ponytail.md`](docs/agents/ponytail.md). Honor a user-selected level or request to stop Ponytail.
+
 ## Implementation closeout
 
 - After each completed implementation, commit its changes with a concise message. Stage only changes from that implementation; preserve unrelated pre-existing worktree changes.
