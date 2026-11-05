@@ -1,6 +1,46 @@
 import Combine
 import Foundation
 
+enum ReaderAppearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String { rawValue.capitalized }
+}
+
+@MainActor
+final class ReadingPreferences: ObservableObject {
+    static let fontSizeRange = 14.0...32.0
+    static let defaultFontSize = 17.0
+
+    @Published private(set) var fontSize: Double
+    @Published private(set) var appearance: ReaderAppearance
+
+    private let defaults: UserDefaults
+    private let fontSizeKey = "readingFontSize"
+    private let appearanceKey = "readerAppearance"
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        let savedFontSize = defaults.object(forKey: fontSizeKey) as? Double ?? Self.defaultFontSize
+        fontSize = min(max(savedFontSize, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
+        appearance = ReaderAppearance(rawValue: defaults.string(forKey: appearanceKey) ?? "") ?? .system
+    }
+
+    func setFontSize(_ size: Double) {
+        fontSize = min(max(size, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
+        defaults.set(fontSize, forKey: fontSizeKey)
+    }
+
+    func setAppearance(_ appearance: ReaderAppearance) {
+        self.appearance = appearance
+        defaults.set(appearance.rawValue, forKey: appearanceKey)
+    }
+}
+
 enum ReaderState: Equatable {
     case idle
     case loading
@@ -53,12 +93,18 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var selectedChapter = 1
     @Published private(set) var state: ReaderState = .idle
 
+    let preferences: ReadingPreferences
     private let nivClient: any NIVReadingClient
     private let svdClient: any SVDReadingClient
 
-    init(nivClient: any NIVReadingClient, svdClient: any SVDReadingClient = BundledSVDReadingClient()) {
+    init(
+        nivClient: any NIVReadingClient,
+        svdClient: any SVDReadingClient = BundledSVDReadingClient(),
+        preferences: ReadingPreferences? = nil
+    ) {
         self.nivClient = nivClient
         self.svdClient = svdClient
+        self.preferences = preferences ?? ReadingPreferences()
     }
 
     func selectTranslation(_ translation: BibleTranslation) {

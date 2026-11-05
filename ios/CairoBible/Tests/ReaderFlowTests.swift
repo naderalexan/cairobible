@@ -58,6 +58,40 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(requestCount, 0)
     }
 
+    func testReadingPreferencesApplyAcrossTranslationsAndPersistAfterRelaunch() async {
+        let suiteName = "ReadingPreferencesTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = ReadingPreferences(defaults: defaults)
+        preferences.setFontSize(26)
+        preferences.setAppearance(.dark)
+
+        let model = ReaderModel(
+            nivClient: StubNIVReadingClient(),
+            svdClient: StubSVDReadingClient(),
+            preferences: preferences
+        )
+        await model.load()
+        guard case .loaded = model.state else {
+            return XCTFail("Expected the NIV chapter to load, got \(model.state)")
+        }
+        XCTAssertEqual(model.preferences.fontSize, 26)
+        XCTAssertEqual(model.preferences.appearance, .dark)
+
+        model.selectTranslation(.svd)
+        await model.load()
+        guard case let .loaded(chapter) = model.state else {
+            return XCTFail("Expected the SVD chapter to load, got \(model.state)")
+        }
+        XCTAssertFalse(chapter.verses.isEmpty)
+        XCTAssertEqual(model.preferences.fontSize, 26)
+        XCTAssertEqual(model.preferences.appearance, .dark)
+
+        let relaunchedPreferences = ReadingPreferences(defaults: UserDefaults(suiteName: suiteName)!)
+        XCTAssertEqual(relaunchedPreferences.fontSize, 26)
+        XCTAssertEqual(relaunchedPreferences.appearance, .dark)
+    }
+
     func testReaderShowsBackendFailureMessage() async {
         let cacheDirectory = makeCacheDirectory()
         defer { try? FileManager.default.removeItem(at: cacheDirectory) }
@@ -210,6 +244,23 @@ final class ReaderFlowTests: XCTestCase {
 
     private func makeCacheDirectory() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    }
+}
+
+private struct StubNIVReadingClient: NIVReadingClient {
+    func fetchChapter(book: BibleBook, number: Int) async throws -> NIVChapter {
+        NIVChapter(bookName: book.name, chapter: number, content: "In the beginning.", copyright: "NIV copyright")
+    }
+}
+
+private struct StubSVDReadingClient: SVDReadingClient {
+    func fetchChapter(book: BibleBook, number: Int) async throws -> SVDChapter {
+        SVDChapter(
+            bookName: book.name,
+            chapter: number,
+            verses: [ScriptureVerse(number: 1, text: "فِي ٱلْبَدْءِ")],
+            attribution: "SVD"
+        )
     }
 }
 

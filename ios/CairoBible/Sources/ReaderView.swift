@@ -2,9 +2,22 @@ import SwiftUI
 
 struct ReaderView: View {
     @StateObject private var model: ReaderModel
+    @ObservedObject private var preferences: ReadingPreferences
+    @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
+    @State private var isShowingPreferences = false
 
-    init(nivClient: any NIVReadingClient, svdClient: any SVDReadingClient = BundledSVDReadingClient()) {
-        _model = StateObject(wrappedValue: ReaderModel(nivClient: nivClient, svdClient: svdClient))
+    init(
+        nivClient: any NIVReadingClient,
+        svdClient: any SVDReadingClient = BundledSVDReadingClient(),
+        preferences: ReadingPreferences? = nil
+    ) {
+        let preferences = preferences ?? ReadingPreferences()
+        _model = StateObject(wrappedValue: ReaderModel(
+            nivClient: nivClient,
+            svdClient: svdClient,
+            preferences: preferences
+        ))
+        _preferences = ObservedObject(wrappedValue: preferences)
     }
 
     var body: some View {
@@ -46,10 +59,36 @@ struct ReaderView: View {
             }
             .navigationTitle("Cairo Bible")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingPreferences = true
+                    } label: {
+                        Image(systemName: "textformat.size")
+                    }
+                    .accessibilityLabel("Reading preferences")
+                }
+            }
+            .sheet(isPresented: $isShowingPreferences) {
+                ReadingPreferencesView(preferences: preferences)
+            }
+            .preferredColorScheme(preferredColorScheme)
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
             }
         }
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch preferences.appearance {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+
+    private var readingFont: Font {
+        .system(size: CGFloat(preferences.fontSize * dynamicTypeScale))
     }
 
     @ViewBuilder
@@ -71,7 +110,7 @@ struct ReaderView: View {
                 if model.selectedTranslation == .svd {
                     ForEach(chapter.verses) { verse in
                         (Text(verbatim: "\u{2068}\(verse.number)\u{2069} ").font(.footnote.weight(.semibold))
-                            + Text(verbatim: verse.text).font(.body))
+                            + Text(verbatim: verse.text).font(readingFont))
                             .lineSpacing(6)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .multilineTextAlignment(.trailing)
@@ -83,7 +122,7 @@ struct ReaderView: View {
                     }
                 } else {
                     Text(verbatim: chapter.text)
-                        .font(.body)
+                        .font(readingFont)
                         .lineSpacing(6)
                         .textSelection(.enabled)
                 }
@@ -103,6 +142,48 @@ struct ReaderView: View {
                     Button("Try again") {
                         Task { await model.load() }
                     }
+                }
+            }
+        }
+    }
+}
+
+private struct ReadingPreferencesView: View {
+    @ObservedObject var preferences: ReadingPreferences
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Text size") {
+                    Slider(
+                        value: Binding(
+                            get: { preferences.fontSize },
+                            set: { preferences.setFontSize($0) }
+                        ),
+                        in: ReadingPreferences.fontSizeRange,
+                        step: 1
+                    )
+                    .accessibilityLabel("Reading text size")
+                    .accessibilityValue("\(Int(preferences.fontSize)) points")
+                }
+
+                Section("Appearance") {
+                    Picker("Appearance", selection: Binding(
+                        get: { preferences.appearance },
+                        set: { preferences.setAppearance($0) }
+                    )) {
+                        ForEach(ReaderAppearance.allCases) { appearance in
+                            Text(appearance.title).tag(appearance)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Reading preferences")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
                 }
             }
         }
