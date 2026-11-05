@@ -122,6 +122,7 @@ struct ReaderView: View {
                         (Text(verbatim: "\u{2068}\(verse.number)\u{2069} ").font(.footnote.weight(.semibold))
                             + Text(verbatim: verse.text).font(readingFont))
                             .lineSpacing(6)
+                            .listRowSeparator(.hidden)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .multilineTextAlignment(.trailing)
                             .environment(\.layoutDirection, .rightToLeft)
