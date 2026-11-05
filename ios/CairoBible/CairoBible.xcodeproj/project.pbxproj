@@ -1,7 +1,8 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 56;
 	objects = {
 
@@ -13,10 +14,10 @@
 		A10000000000000000000005 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* ReaderView.swift */; };
 		A10000000000000000000006 /* ReaderFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* ReaderFlowTests.swift */; };
 		A10000000000000000000007 /* SVDReadingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* SVDReadingClient.swift */; };
-		A10000000000000000000008 /* arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* arb-vd.json */; };
-		A10000000000000000000009 /* arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* arb-vd-verses.json */; };
-		A1000000000000000000000A /* arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* arb-vd.json */; };
-		A1000000000000000000000B /* arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* arb-vd-verses.json */; };
+		A10000000000000000000008 /* ../../public/data/arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* ../../public/data/arb-vd.json */; };
+		A10000000000000000000009 /* ../../public/data/arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */; };
+		A1000000000000000000000A /* ../../public/data/arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* ../../public/data/arb-vd.json */; };
+		A1000000000000000000000B /* ../../public/data/arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,13 +41,25 @@
 		B10000000000000000000008 /* CairoBible.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CairoBible.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000009 /* CairoBibleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CairoBibleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000010 /* SVDReadingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVDReadingClient.swift; sourceTree = "<group>"; };
-		B10000000000000000000011 /* arb-vd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd.json"; sourceTree = "<group>"; };
-		B10000000000000000000012 /* arb-vd-verses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd-verses.json"; sourceTree = "<group>"; };
+		B10000000000000000000011 /* ../../public/data/arb-vd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd.json"; sourceTree = "<group>"; };
+		B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd-verses.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		F10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		F10000000000000000000002 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F10000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F10000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -61,35 +74,68 @@
 			);
 			sourceTree = "<group>";
 		};
-		G10000000000000000000002 /* Sources */ = {isa = PBXGroup; children = (
-			B10000000000000000000001 /* CairoBibleApp.swift */,
-			B10000000000000000000002 /* BibleBook.swift */,
-			B10000000000000000000003 /* NIVAPIClient.swift */,
-			B10000000000000000000004 /* ReaderModel.swift */,
-			B10000000000000000000005 /* ReaderView.swift */,
-			B10000000000000000000010 /* SVDReadingClient.swift */,
-		); path = Sources; sourceTree = "<group>"; };
-		G10000000000000000000003 /* Tests */ = {isa = PBXGroup; children = (
-			B10000000000000000000006 /* ReaderFlowTests.swift */,
-		); path = Tests; sourceTree = "<group>"; };
-		G10000000000000000000004 /* Configuration */ = {isa = PBXGroup; children = (B10000000000000000000007 /* Info.plist */,); path = Configuration; sourceTree = "<group>"; };
-		G10000000000000000000005 /* Products */ = {isa = PBXGroup; children = (
-			B10000000000000000000008 /* CairoBible.app */,
-			B10000000000000000000009 /* CairoBibleTests.xctest */,
-		); name = Products; sourceTree = "<group>"; };
-		G10000000000000000000006 /* Data */ = {isa = PBXGroup; children = (
-			B10000000000000000000011 /* arb-vd.json */,
-			B10000000000000000000012 /* arb-vd-verses.json */,
-		); name = Data; sourceTree = "<group>"; };
+		G10000000000000000000002 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000001 /* CairoBibleApp.swift */,
+				B10000000000000000000002 /* BibleBook.swift */,
+				B10000000000000000000003 /* NIVAPIClient.swift */,
+				B10000000000000000000004 /* ReaderModel.swift */,
+				B10000000000000000000005 /* ReaderView.swift */,
+				B10000000000000000000010 /* SVDReadingClient.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000003 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000006 /* ReaderFlowTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000004 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000007 /* Info.plist */,
+			);
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000008 /* CairoBible.app */,
+				B10000000000000000000009 /* CairoBibleTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000006 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000011 /* ../../public/data/arb-vd.json */,
+				B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */,
+			);
+			name = Data;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		E10000000000000000000001 /* CairoBible */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = H10000000000000000000002 /* Build configuration list for PBXNativeTarget "CairoBible" */;
-			buildPhases = (F10000000000000000000001 /* Frameworks */, I10000000000000000000001 /* Sources */, J10000000000000000000001 /* Resources */,);
-			buildRules = ();
-			dependencies = ();
+			buildPhases = (
+				F10000000000000000000001 /* Frameworks */,
+				I10000000000000000000001 /* Sources */,
+				J10000000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
 			name = CairoBible;
 			productName = CairoBible;
 			productReference = B10000000000000000000008 /* CairoBible.app */;
@@ -98,9 +144,16 @@
 		E10000000000000000000002 /* CairoBibleTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = H10000000000000000000003 /* Build configuration list for PBXNativeTarget "CairoBibleTests" */;
-			buildPhases = (F10000000000000000000002 /* Frameworks */, I10000000000000000000002 /* Sources */, J10000000000000000000002 /* Resources */,);
-			buildRules = ();
-			dependencies = (K10000000000000000000001 /* PBXTargetDependency */,);
+			buildPhases = (
+				F10000000000000000000002 /* Frameworks */,
+				I10000000000000000000002 /* Sources */,
+				J10000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				K10000000000000000000001 /* PBXTargetDependency */,
+			);
 			name = CairoBibleTests;
 			productName = CairoBibleTests;
 			productReference = B10000000000000000000009 /* CairoBibleTests.xctest */;
@@ -111,104 +164,210 @@
 /* Begin PBXProject section */
 		D10000000000000000000001 /* Project object */ = {
 			isa = PBXProject;
-			attributes = {BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 1600; TargetAttributes = {E10000000000000000000001 = {CreatedOnToolsVersion = 16.0; }; E10000000000000000000002 = {CreatedOnToolsVersion = 16.0; TestTargetID = E10000000000000000000001; }; }; };
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					E10000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					E10000000000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = E10000000000000000000001;
+					};
+				};
+			};
 			buildConfigurationList = H10000000000000000000001 /* Build configuration list for PBXProject "CairoBible" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
-			knownRegions = (en, Base,);
+			knownRegions = (
+				en,
+				Base,
+			);
 			mainGroup = G10000000000000000000001;
 			productRefGroup = G10000000000000000000005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (E10000000000000000000001 /* CairoBible */, E10000000000000000000002 /* CairoBibleTests */,);
+			targets = (
+				E10000000000000000000001 /* CairoBible */,
+				E10000000000000000000002 /* CairoBibleTests */,
+			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		J10000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (
-			A10000000000000000000008 /* arb-vd.json in Resources */,
-			A10000000000000000000009 /* arb-vd-verses.json in Resources */,
-		); runOnlyForDeploymentPostprocessing = 0; };
-		J10000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (
-			A1000000000000000000000A /* arb-vd.json in Resources */,
-			A1000000000000000000000B /* arb-vd-verses.json in Resources */,
-		); runOnlyForDeploymentPostprocessing = 0; };
+		J10000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000008 /* ../../public/data/arb-vd.json in Resources */,
+				A10000000000000000000009 /* ../../public/data/arb-vd-verses.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		J10000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000A /* ../../public/data/arb-vd.json in Resources */,
+				A1000000000000000000000B /* ../../public/data/arb-vd-verses.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		I10000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (
-			A10000000000000000000001 /* CairoBibleApp.swift in Sources */,
-			A10000000000000000000002 /* BibleBook.swift in Sources */,
-			A10000000000000000000003 /* NIVAPIClient.swift in Sources */,
-			A10000000000000000000004 /* ReaderModel.swift in Sources */,
-			A10000000000000000000005 /* ReaderView.swift in Sources */,
-			A10000000000000000000007 /* SVDReadingClient.swift in Sources */,
-		); runOnlyForDeploymentPostprocessing = 0; };
-		I10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000006 /* ReaderFlowTests.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+		I10000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* CairoBibleApp.swift in Sources */,
+				A10000000000000000000002 /* BibleBook.swift in Sources */,
+				A10000000000000000000003 /* NIVAPIClient.swift in Sources */,
+				A10000000000000000000004 /* ReaderModel.swift in Sources */,
+				A10000000000000000000005 /* ReaderView.swift in Sources */,
+				A10000000000000000000007 /* SVDReadingClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		I10000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000006 /* ReaderFlowTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		K10000000000000000000001 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = E10000000000000000000001 /* CairoBible */; targetProxy = C10000000000000000000001 /* PBXContainerItemProxy */; };
+		K10000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E10000000000000000000001 /* CairoBible */;
+			targetProxy = C10000000000000000000001 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		L10000000000000000000001 /* Debug project */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Debug; };
-		L10000000000000000000002 /* Release project */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Release; };
-		L10000000000000000000003 /* Debug app */ = {isa = XCBuildConfiguration; buildSettings = {
-			BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
-			CODE_SIGN_STYLE = Automatic;
-			CURRENT_PROJECT_VERSION = 1;
-			ENABLE_TESTABILITY = YES;
-			INFOPLIST_FILE = Configuration/Info.plist;
-			IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-			PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.reader;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-			SWIFT_VERSION = 5.0;
-			SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-			TARGETED_DEVICE_FAMILY = "1,2";
-		}; name = Debug; };
-		L10000000000000000000004 /* Release app */ = {isa = XCBuildConfiguration; buildSettings = {
-			BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
-			CODE_SIGN_STYLE = Automatic;
-			CURRENT_PROJECT_VERSION = 1;
-			INFOPLIST_FILE = Configuration/Info.plist;
-			IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-			PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.reader;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-			SWIFT_VERSION = 5.0;
-			TARGETED_DEVICE_FAMILY = "1,2";
-		}; name = Release; };
-		L10000000000000000000005 /* Debug tests */ = {isa = XCBuildConfiguration; buildSettings = {
-			BUNDLE_LOADER = "$(TEST_HOST)";
-			CODE_SIGN_STYLE = Automatic;
-			GENERATE_INFOPLIST_FILE = YES;
-			IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-			PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.readerTests;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-			SWIFT_VERSION = 5.0;
-			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CairoBible.app/CairoBible";
-		}; name = Debug; };
-		L10000000000000000000006 /* Release tests */ = {isa = XCBuildConfiguration; buildSettings = {
-			BUNDLE_LOADER = "$(TEST_HOST)";
-			CODE_SIGN_STYLE = Automatic;
-			GENERATE_INFOPLIST_FILE = YES;
-			IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-			PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.readerTests;
-			PRODUCT_NAME = "$(TARGET_NAME)";
-			SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-			SWIFT_VERSION = 5.0;
-			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CairoBible.app/CairoBible";
-		}; name = Release; };
+		L10000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		L10000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		L10000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B8D538RWZ3;
+				ENABLE_TESTABILITY = YES;
+				INFOPLIST_FILE = Configuration/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.reader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		L10000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = B8D538RWZ3;
+				INFOPLIST_FILE = Configuration/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.reader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		L10000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.readerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CairoBible.app/CairoBible";
+			};
+			name = Debug;
+		};
+		L10000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.readerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CairoBible.app/CairoBible";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		H10000000000000000000001 /* Build configuration list for PBXProject "CairoBible" */ = {isa = XCConfigurationList; buildConfigurations = (L10000000000000000000001 /* Debug project */, L10000000000000000000002 /* Release project */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		H10000000000000000000002 /* Build configuration list for PBXNativeTarget "CairoBible" */ = {isa = XCConfigurationList; buildConfigurations = (L10000000000000000000003 /* Debug app */, L10000000000000000000004 /* Release app */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		H10000000000000000000003 /* Build configuration list for PBXNativeTarget "CairoBibleTests" */ = {isa = XCConfigurationList; buildConfigurations = (L10000000000000000000005 /* Debug tests */, L10000000000000000000006 /* Release tests */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H10000000000000000000001 /* Build configuration list for PBXProject "CairoBible" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				L10000000000000000000001 /* Debug */,
+				L10000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		H10000000000000000000002 /* Build configuration list for PBXNativeTarget "CairoBible" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				L10000000000000000000003 /* Debug */,
+				L10000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		H10000000000000000000003 /* Build configuration list for PBXNativeTarget "CairoBibleTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				L10000000000000000000005 /* Debug */,
+				L10000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 	};
 	rootObject = D10000000000000000000001 /* Project object */;
