@@ -158,6 +158,7 @@
 		L10000000000000000000003 /* Debug app */ = {isa = XCBuildConfiguration; buildSettings = {
 			BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
 			CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 1;
 			ENABLE_TESTABILITY = YES;
 			INFOPLIST_FILE = Configuration/Info.plist;
 			IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -171,6 +172,7 @@
 		L10000000000000000000004 /* Release app */ = {isa = XCBuildConfiguration; buildSettings = {
 			BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
 			CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 1;
 			INFOPLIST_FILE = Configuration/Info.plist;
 			IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 			PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.reader;

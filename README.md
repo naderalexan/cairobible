@@ -38,7 +38,16 @@ Open <http://localhost:3000> and choose **Settings** to select one of five color
 
 Open `ios/CairoBible/CairoBible.xcodeproj` in Xcode and run the shared **CairoBible** scheme on an iOS simulator. The app supports iOS 17 and later and reads NIV chapters from the Litestar backend; the `BIBLE_API_BASE_URL` build setting defaults to `https://api.bible.cairolove.site` and can point to a local backend during development. API.Bible credentials and requests stay on the backend. The server's NIV license gate still controls chapter availability.
 
-The **iOS** GitHub Actions workflow builds the app and runs its controlled-response reader tests on an iOS simulator whenever the native app changes.
+The **iOS** GitHub Actions workflow builds the app and runs its controlled-response reader tests on an iOS simulator whenever the native app changes. On pushes to `main`, it also archives and uploads a build to TestFlight after the simulator tests pass. Build numbers come from the GitHub Actions run number and attempt; update `CFBundleShortVersionString` in `ios/CairoBible/Configuration/Info.plist` when preparing a new app version.
+
+Before enabling uploads, enroll in the Apple Developer Program and create an App Store Connect app record for bundle ID `site.cairolove.bible.reader`. Add these repository secrets under **Settings → Secrets and variables → Actions**:
+
+- `APPLE_DEVELOPER_TEAM_ID`: the Apple Developer team ID.
+- `APP_STORE_CONNECT_API_KEY_ID`: the key ID for a team App Store Connect API key.
+- `APP_STORE_CONNECT_ISSUER_ID`: the API key issuer ID.
+- `APP_STORE_CONNECT_API_PRIVATE_KEY`: the complete contents of the key's `.p8` file; store it only as a GitHub secret.
+
+The API key must allow Xcode to manage signing assets and upload builds. The first successful upload may need processing in App Store Connect before testers can install it. Configure tester groups and invite testers there; this workflow uploads builds but does not distribute invitations or automatically release a build.
 
 ## Production deployment
 
