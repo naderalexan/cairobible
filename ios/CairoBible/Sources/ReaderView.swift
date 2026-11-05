@@ -50,12 +50,12 @@ struct ReaderView: View {
                 ProgressView("Loading \(model.selectedBook.name) \(model.selectedChapter)…")
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-            case let .loaded(chapter):
+            case let .loaded(chapter, plainText):
                 Text("\(chapter.bookName) \(chapter.chapter)")
                     .font(.title2.weight(.semibold))
                     .accessibilityAddTraits(.isHeader)
 
-                Text(chapter.plainText)
+                Text(verbatim: plainText)
                     .font(.body)
                     .lineSpacing(6)
                     .textSelection(.enabled)

@@ -18,7 +18,7 @@ final class ReaderFlowTests: XCTestCase {
         model.selectChapter(3)
         await model.load()
 
-        guard case let .loaded(chapter) = model.state else {
+        guard case let .loaded(chapter, _) = model.state else {
             return XCTFail("Expected the selected chapter to load, got \(model.state)")
         }
         XCTAssertEqual(chapter.bookName, "John")
@@ -66,7 +66,7 @@ final class ReaderFlowTests: XCTestCase {
         reopenedReader.selectChapter(3)
         await reopenedReader.load()
 
-        guard case let .loaded(chapter) = reopenedReader.state else {
+        guard case let .loaded(chapter, _) = reopenedReader.state else {
             return XCTFail("Expected the fresh saved chapter to load, got \(reopenedReader.state)")
         }
         XCTAssertEqual(chapter.plainText, "Saved chapter")
@@ -96,7 +96,7 @@ final class ReaderFlowTests: XCTestCase {
         reopenedReader.selectChapter(3)
         await reopenedReader.load()
 
-        guard case let .loaded(chapter) = reopenedReader.state else {
+        guard case let .loaded(chapter, _) = reopenedReader.state else {
             return XCTFail("Expected the refreshed chapter to load, got \(reopenedReader.state)")
         }
         XCTAssertEqual(chapter.plainText, "Refreshed chapter")

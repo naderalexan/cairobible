@@ -4,7 +4,7 @@ import Foundation
 enum ReaderState: Equatable {
     case idle
     case loading
-    case loaded(NIVChapter)
+    case loaded(NIVChapter, String)
     case failed(String)
 }
 
@@ -36,7 +36,7 @@ final class ReaderModel: ObservableObject {
         do {
             let chapter = try await client.fetchChapter(book: selectedBook, number: selectedChapter)
             guard !Task.isCancelled else { return }
-            state = .loaded(chapter)
+            state = .loaded(chapter, chapter.plainText)
         } catch {
             guard !Task.isCancelled else { return }
             state = .failed(error.localizedDescription)
