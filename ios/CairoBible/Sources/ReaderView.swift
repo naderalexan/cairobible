@@ -115,6 +115,7 @@ struct ReaderView: View {
                     .accessibilityAddTraits(.isHeader)
                     .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
                     .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .environment(\.locale, model.selectedTranslation.isRightToLeft ? Locale(identifier: "ar") : .current)
 
                 if model.selectedTranslation == .svd {
