@@ -3,6 +3,7 @@ import SwiftUI
 struct ReaderView: View {
     @StateObject private var model: ReaderModel
     @ObservedObject private var preferences: ReadingPreferences
+    @Environment(\.colorScheme) private var systemColorScheme
     @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @State private var isShowingPreferences = false
 
@@ -70,11 +71,29 @@ struct ReaderView: View {
                 }
             }
             .sheet(isPresented: $isShowingPreferences) {
-                ReadingPreferencesView(preferences: preferences)
+                ReadingPreferencesView(preferences: preferences, translation: model.selectedTranslation)
             }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
             }
+        }
+        .environment(\.colorScheme, effectiveColorScheme)
+        .preferredColorScheme(preferredColorScheme)
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch preferences.appearance {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+
+    private var effectiveColorScheme: ColorScheme {
+        switch preferences.appearance {
+        case .system: systemColorScheme
+        case .light: .light
+        case .dark: .dark
         }
     }
 
@@ -141,6 +160,7 @@ struct ReaderView: View {
 
 private struct ReadingPreferencesView: View {
     @ObservedObject var preferences: ReadingPreferences
+    let translation: BibleTranslation
     @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @Environment(\.dismiss) private var dismiss
 
@@ -159,9 +179,12 @@ private struct ReadingPreferencesView: View {
                     .accessibilityLabel("Reading text size")
                     .accessibilityValue("\(Int(preferences.fontSize)) points")
 
-                    Text("The Lord is my shepherd; I shall not want.")
+                    Text(sampleText)
                         .font(.system(size: CGFloat(preferences.fontSize * dynamicTypeScale)))
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .environment(\.layoutDirection, translation.isRightToLeft ? .rightToLeft : .leftToRight)
+                        .multilineTextAlignment(translation.isRightToLeft ? .trailing : .leading)
+                        .environment(\.locale, translation.isRightToLeft ? Locale(identifier: "ar") : .current)
+                        .frame(maxWidth: .infinity, alignment: translation.isRightToLeft ? .trailing : .leading)
                 }
 
                 Section("Appearance") {
@@ -177,11 +200,27 @@ private struct ReadingPreferencesView: View {
             }
             .navigationTitle("Reading preferences")
             .navigationBarTitleDisplayMode(.inline)
+            .preferredColorScheme(preferredColorScheme)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
             }
+        }
+    }
+
+    private var sampleText: String {
+        switch translation {
+        case .niv: "The Lord is my shepherd"
+        case .svd: "ٱلرَّبُّ رَاعِيَّ فَلَا يُعْوِزُنِي شَيْءٌ."
+        }
+    }
+
+    private var preferredColorScheme: ColorScheme? {
+        switch preferences.appearance {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
         }
     }
 }
