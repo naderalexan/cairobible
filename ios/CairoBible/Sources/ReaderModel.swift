@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UserNotifications
 
 enum ReaderAppearance: String, CaseIterable, Identifiable {
     case system
@@ -58,6 +59,123 @@ final class ReadingPreferences: ObservableObject {
     func setPalette(_ palette: ReaderPalette) {
         self.palette = palette
         defaults.set(palette.rawValue, forKey: paletteKey)
+    }
+}
+
+@MainActor
+protocol DailyReminderScheduling {
+    func requestAuthorization() async throws -> Bool
+    func scheduleDailyReminder(at time: DateComponents) async throws
+    func cancelDailyReminder()
+}
+
+@MainActor
+private struct LocalDailyReminderScheduler: DailyReminderScheduling {
+    private var center: UNUserNotificationCenter { .current() }
+    private let identifier = "daily-reading-reminder"
+
+    func requestAuthorization() async throws -> Bool {
+        try await center.requestAuthorization(options: [.alert, .sound])
+    }
+
+    func scheduleDailyReminder(at time: DateComponents) async throws {
+        let content = UNMutableNotificationContent()
+        content.title = "Time to read the Bible"
+        content.body = "Take a moment for your daily reading."
+        content.sound = .default
+        try await center.add(UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: UNCalendarNotificationTrigger(dateMatching: time, repeats: true)
+        ))
+    }
+
+    func cancelDailyReminder() {
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
+    }
+}
+
+@MainActor
+final class DailyReminderManager: ObservableObject {
+    private static let defaultMinuteOfDay = 9 * 60
+
+    @Published private(set) var isEnabled: Bool
+    @Published private(set) var time: Date
+    @Published private(set) var message: String?
+    @Published private(set) var isRequestingAuthorization = false
+
+    private let defaults: UserDefaults
+    private let scheduler: any DailyReminderScheduling
+    private let enabledKey = "dailyReadingReminderEnabled"
+    private let minuteOfDayKey = "dailyReadingReminderMinuteOfDay"
+    private var minuteOfDay: Int
+
+    init(defaults: UserDefaults = .standard, scheduler: (any DailyReminderScheduling)? = nil) {
+        self.defaults = defaults
+        self.scheduler = scheduler ?? LocalDailyReminderScheduler()
+        isEnabled = defaults.bool(forKey: enabledKey)
+        minuteOfDay = min(max(defaults.object(forKey: minuteOfDayKey) as? Int ?? Self.defaultMinuteOfDay, 0), 1439)
+        time = Self.date(for: minuteOfDay)
+    }
+
+    func setEnabled(_ enabled: Bool) async {
+        guard !isRequestingAuthorization else { return }
+        guard enabled != isEnabled else { return }
+
+        message = nil
+        guard enabled else {
+            isEnabled = false
+            defaults.set(false, forKey: enabledKey)
+            scheduler.cancelDailyReminder()
+            return
+        }
+
+        isRequestingAuthorization = true
+        defer { isRequestingAuthorization = false }
+
+        do {
+            guard try await scheduler.requestAuthorization() else {
+                message = "Notifications are disabled. Allow them in Settings to receive daily reminders."
+                return
+            }
+            try await scheduleReminder()
+            isEnabled = true
+            defaults.set(true, forKey: enabledKey)
+        } catch {
+            message = "Couldn't schedule the reminder. Please try again."
+        }
+    }
+
+    func setReminderTime(_ date: Date) async {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        minuteOfDay = (components.hour ?? 0) * 60 + (components.minute ?? 0)
+        defaults.set(minuteOfDay, forKey: minuteOfDayKey)
+        time = Self.date(for: minuteOfDay)
+        message = nil
+        if isEnabled {
+            do {
+                try await scheduleReminder()
+            } catch {
+                message = "Couldn't update the reminder. Please try again."
+            }
+        }
+    }
+
+    private func scheduleReminder() async throws {
+        var components = DateComponents()
+        components.hour = minuteOfDay / 60
+        components.minute = minuteOfDay % 60
+        try await scheduler.scheduleDailyReminder(at: components)
+    }
+
+    private static func date(for minuteOfDay: Int) -> Date {
+        let now = Date()
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: now)
+        components.hour = minuteOfDay / 60
+        components.minute = minuteOfDay % 60
+        components.second = 0
+        return Calendar.current.date(from: components) ?? now
     }
 }
 

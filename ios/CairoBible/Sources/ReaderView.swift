@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ReaderView: View {
     @StateObject private var model: ReaderModel
+    @StateObject private var reminderManager: DailyReminderManager
     @ObservedObject private var preferences: ReadingPreferences
     @Environment(\.colorScheme) private var systemColorScheme
     @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
@@ -10,15 +11,18 @@ struct ReaderView: View {
     init(
         nivClient: any NIVReadingClient,
         svdClient: any SVDReadingClient = BundledSVDReadingClient(),
-        preferences: ReadingPreferences? = nil
+        preferences: ReadingPreferences? = nil,
+        reminderManager: DailyReminderManager? = nil
     ) {
         let preferences = preferences ?? ReadingPreferences()
+        let reminderManager = reminderManager ?? DailyReminderManager()
         _model = StateObject(wrappedValue: ReaderModel(
             nivClient: nivClient,
             svdClient: svdClient,
             preferences: preferences
         ))
         _preferences = ObservedObject(wrappedValue: preferences)
+        _reminderManager = StateObject(wrappedValue: reminderManager)
     }
 
     var body: some View {
@@ -74,7 +78,11 @@ struct ReaderView: View {
                 }
             }
             .sheet(isPresented: $isShowingPreferences) {
-                ReadingPreferencesView(preferences: preferences, translation: model.selectedTranslation)
+                ReadingPreferencesView(
+                    preferences: preferences,
+                    reminders: reminderManager,
+                    translation: model.selectedTranslation
+                )
             }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
@@ -184,6 +192,7 @@ struct ReaderView: View {
 
 private struct ReadingPreferencesView: View {
     @ObservedObject var preferences: ReadingPreferences
+    @ObservedObject var reminders: DailyReminderManager
     let translation: BibleTranslation
     @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @Environment(\.dismiss) private var dismiss
@@ -267,6 +276,26 @@ private struct ReadingPreferencesView: View {
                         ForEach(ReaderAppearance.allCases) { appearance in
                             Text(appearance.title).tag(appearance)
                         }
+                    }
+                }
+
+                Section("Daily reminder") {
+                    Toggle("Daily reading reminder", isOn: Binding(
+                        get: { reminders.isEnabled },
+                        set: { enabled in Task { await reminders.setEnabled(enabled) } }
+                    ))
+                    .disabled(reminders.isRequestingAuthorization)
+
+                    DatePicker("Reminder time", selection: Binding(
+                        get: { reminders.time },
+                        set: { time in Task { await reminders.setReminderTime(time) } }
+                    ), displayedComponents: .hourAndMinute)
+                    .disabled(!reminders.isEnabled || reminders.isRequestingAuthorization)
+
+                    if let message = reminders.message {
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

@@ -232,6 +232,77 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertTrue(message.contains("Connect to the internet"))
     }
 
+    func testDailyReminderEnableRequestsPermissionSchedulesLocalTimeAndPersists() async {
+        let suiteName = "DailyReminderTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let scheduler = StubDailyReminderScheduler()
+        let reminders = DailyReminderManager(defaults: defaults, scheduler: scheduler)
+
+        await reminders.setEnabled(true)
+
+        XCTAssertTrue(reminders.isEnabled)
+        XCTAssertEqual(scheduler.authorizationRequestCount, 1)
+        XCTAssertEqual(scheduler.scheduledTimes.count, 1)
+        XCTAssertEqual(scheduler.scheduledTimes[0].hour, 9)
+        XCTAssertEqual(scheduler.scheduledTimes[0].minute, 0)
+        XCTAssertNil(scheduler.scheduledTimes[0].timeZone)
+        XCTAssertNil(scheduler.scheduledTimes[0].calendar)
+        XCTAssertTrue(defaults.bool(forKey: "dailyReadingReminderEnabled"))
+    }
+
+    func testDailyReminderTimeChangeReschedulesAndPersists() async {
+        let suiteName = "DailyReminderTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let scheduler = StubDailyReminderScheduler()
+        let reminders = DailyReminderManager(defaults: defaults, scheduler: scheduler)
+        await reminders.setEnabled(true)
+        let selectedTime = Calendar.current.date(bySettingHour: 20, minute: 15, second: 0, of: Date())!
+
+        await reminders.setReminderTime(selectedTime)
+
+        XCTAssertEqual(scheduler.scheduledTimes.count, 2)
+        XCTAssertEqual(scheduler.scheduledTimes.last?.hour, 20)
+        XCTAssertEqual(scheduler.scheduledTimes.last?.minute, 15)
+        let relaunched = DailyReminderManager(defaults: defaults, scheduler: StubDailyReminderScheduler())
+        XCTAssertTrue(relaunched.isEnabled)
+        XCTAssertEqual(Calendar.current.component(.hour, from: relaunched.time), 20)
+        XCTAssertEqual(Calendar.current.component(.minute, from: relaunched.time), 15)
+    }
+
+    func testDisablingDailyReminderCancelsAndPersists() async {
+        let suiteName = "DailyReminderTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let scheduler = StubDailyReminderScheduler()
+        let reminders = DailyReminderManager(defaults: defaults, scheduler: scheduler)
+        await reminders.setEnabled(true)
+
+        await reminders.setEnabled(false)
+
+        XCTAssertFalse(reminders.isEnabled)
+        XCTAssertEqual(scheduler.cancellationCount, 1)
+        XCTAssertFalse(defaults.bool(forKey: "dailyReadingReminderEnabled"))
+    }
+
+    func testDeniedDailyReminderPermissionShowsGuidanceWithoutScheduling() async {
+        let suiteName = "DailyReminderTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let scheduler = StubDailyReminderScheduler()
+        scheduler.authorizationGranted = false
+        let reminders = DailyReminderManager(defaults: defaults, scheduler: scheduler)
+
+        await reminders.setEnabled(true)
+
+        XCTAssertFalse(reminders.isEnabled)
+        XCTAssertEqual(scheduler.authorizationRequestCount, 1)
+        XCTAssertTrue(scheduler.scheduledTimes.isEmpty)
+        XCTAssertFalse(defaults.bool(forKey: "dailyReadingReminderEnabled"))
+        XCTAssertTrue(reminders.message?.contains("Allow them in Settings") == true)
+    }
+
     private func makeClient(
         cacheDirectory: URL? = nil,
         now: @escaping () -> Date = Date.init
@@ -248,6 +319,27 @@ final class ReaderFlowTests: XCTestCase {
 
     private func makeCacheDirectory() -> URL {
         FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    }
+}
+
+@MainActor
+private final class StubDailyReminderScheduler: DailyReminderScheduling {
+    var authorizationGranted = true
+    var authorizationRequestCount = 0
+    var scheduledTimes: [DateComponents] = []
+    var cancellationCount = 0
+
+    func requestAuthorization() async throws -> Bool {
+        authorizationRequestCount += 1
+        return authorizationGranted
+    }
+
+    func scheduleDailyReminder(at time: DateComponents) async throws {
+        scheduledTimes.append(time)
+    }
+
+    func cancelDailyReminder() {
+        cancellationCount += 1
     }
 }
 
