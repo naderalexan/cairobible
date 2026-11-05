@@ -12,6 +12,11 @@
 		A10000000000000000000004 /* ReaderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ReaderModel.swift */; };
 		A10000000000000000000005 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* ReaderView.swift */; };
 		A10000000000000000000006 /* ReaderFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* ReaderFlowTests.swift */; };
+		A10000000000000000000007 /* SVDReadingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* SVDReadingClient.swift */; };
+		A10000000000000000000008 /* arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* arb-vd.json */; };
+		A10000000000000000000009 /* arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* arb-vd-verses.json */; };
+		A1000000000000000000000A /* arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* arb-vd.json */; };
+		A1000000000000000000000B /* arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* arb-vd-verses.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +39,9 @@
 		B10000000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000008 /* CairoBible.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CairoBible.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000009 /* CairoBibleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CairoBibleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000010 /* SVDReadingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVDReadingClient.swift; sourceTree = "<group>"; };
+		B10000000000000000000011 /* arb-vd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd.json"; sourceTree = "<group>"; };
+		B10000000000000000000012 /* arb-vd-verses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd-verses.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +57,7 @@
 				G10000000000000000000003 /* Tests */,
 				G10000000000000000000004 /* Configuration */,
 				G10000000000000000000005 /* Products */,
+				G10000000000000000000006 /* Data */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,6 +67,7 @@
 			B10000000000000000000003 /* NIVAPIClient.swift */,
 			B10000000000000000000004 /* ReaderModel.swift */,
 			B10000000000000000000005 /* ReaderView.swift */,
+			B10000000000000000000010 /* SVDReadingClient.swift */,
 		); path = Sources; sourceTree = "<group>"; };
 		G10000000000000000000003 /* Tests */ = {isa = PBXGroup; children = (
 			B10000000000000000000006 /* ReaderFlowTests.swift */,
@@ -67,6 +77,10 @@
 			B10000000000000000000008 /* CairoBible.app */,
 			B10000000000000000000009 /* CairoBibleTests.xctest */,
 		); name = Products; sourceTree = "<group>"; };
+		G10000000000000000000006 /* Data */ = {isa = PBXGroup; children = (
+			B10000000000000000000011 /* arb-vd.json */,
+			B10000000000000000000012 /* arb-vd-verses.json */,
+		); name = Data; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -112,8 +126,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		J10000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		J10000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		J10000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (
+			A10000000000000000000008 /* arb-vd.json in Resources */,
+			A10000000000000000000009 /* arb-vd-verses.json in Resources */,
+		); runOnlyForDeploymentPostprocessing = 0; };
+		J10000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (
+			A1000000000000000000000A /* arb-vd.json in Resources */,
+			A1000000000000000000000B /* arb-vd-verses.json in Resources */,
+		); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -123,6 +143,7 @@
 			A10000000000000000000003 /* NIVAPIClient.swift in Sources */,
 			A10000000000000000000004 /* ReaderModel.swift in Sources */,
 			A10000000000000000000005 /* ReaderView.swift in Sources */,
+			A10000000000000000000007 /* SVDReadingClient.swift in Sources */,
 		); runOnlyForDeploymentPostprocessing = 0; };
 		I10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000006 /* ReaderFlowTests.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */

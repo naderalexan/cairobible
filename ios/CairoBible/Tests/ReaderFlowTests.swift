@@ -5,6 +5,8 @@ import XCTest
 @MainActor
 final class ReaderFlowTests: XCTestCase {
     func testReaderLoadsSelectedNIVChapterFromBackend() async {
+        let cacheDirectory = makeCacheDirectory()
+        defer { try? FileManager.default.removeItem(at: cacheDirectory) }
         StubURLProtocol.responder = { request in
             guard request.url?.path == "/api/niv/books/John/chapters/3" else {
                 return (404, Data(#"{"detail":"Unexpected request"}"#.utf8))
@@ -13,27 +15,58 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let model = ReaderModel(client: makeClient())
+        let model = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
         model.selectBook(BibleBook.all.first { $0.name == "John" }!)
         model.selectChapter(3)
         await model.load()
 
-        guard case let .loaded(chapter, _) = model.state else {
+        guard case let .loaded(chapter) = model.state else {
             return XCTFail("Expected the selected chapter to load, got \(model.state)")
         }
         XCTAssertEqual(chapter.bookName, "John")
         XCTAssertEqual(chapter.chapter, 3)
-        XCTAssertEqual(chapter.plainText, "For God so loved the world.")
-        XCTAssertEqual(chapter.copyright, "NIV copyright")
+        XCTAssertEqual(chapter.text, "For God so loved the world.")
+        XCTAssertEqual(chapter.attribution, "NIV copyright")
+    }
+
+    func testReaderLoadsBundledSVDChapterWithoutNetwork() async {
+        var requestCount = 0
+        StubURLProtocol.responder = { _ in
+            requestCount += 1
+            throw URLError(.notConnectedToInternet)
+        }
+        defer { StubURLProtocol.responder = nil }
+
+        let model = ReaderModel(
+            nivClient: makeClient(),
+            svdClient: BundledSVDReadingClient(bundle: Bundle(for: ReaderFlowTests.self))
+        )
+        model.selectTranslation(.svd)
+        model.selectBook(BibleBook.all.first { $0.name == "Genesis" }!)
+        model.selectChapter(1)
+        await model.load()
+
+        guard case let .loaded(chapter) = model.state else {
+            return XCTFail("Expected the bundled SVD chapter to load, got \(model.state)")
+        }
+        XCTAssertEqual(chapter.bookName, "اَلتَّكْوِينُ.")
+        XCTAssertEqual(chapter.chapter, 1)
+        XCTAssertEqual(chapter.verses.count, 31)
+        XCTAssertEqual(chapter.verses.first?.number, 1)
+        XCTAssertTrue(chapter.verses.first?.text.hasPrefix("فِي ٱلْبَدْءِ خَلَقَ ٱللهُ") == true)
+        XCTAssertTrue(chapter.attribution.contains("ebible.org"))
+        XCTAssertEqual(requestCount, 0)
     }
 
     func testReaderShowsBackendFailureMessage() async {
+        let cacheDirectory = makeCacheDirectory()
+        defer { try? FileManager.default.removeItem(at: cacheDirectory) }
         StubURLProtocol.responder = { _ in
             (503, Data(#"{"detail":"NIV access is not enabled on the Bible server."}"#.utf8))
         }
         defer { StubURLProtocol.responder = nil }
 
-        let model = ReaderModel(client: makeClient())
+        let model = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
         await model.load()
 
         guard case let .failed(message) = model.state else {
@@ -52,7 +85,7 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let firstReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory))
+        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
         firstReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         firstReader.selectChapter(3)
         await firstReader.load()
@@ -61,15 +94,15 @@ final class ReaderFlowTests: XCTestCase {
             requestCount += 1
             throw URLError(.notConnectedToInternet)
         }
-        let reopenedReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory))
+        let reopenedReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
         reopenedReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         reopenedReader.selectChapter(3)
         await reopenedReader.load()
 
-        guard case let .loaded(chapter, _) = reopenedReader.state else {
+        guard case let .loaded(chapter) = reopenedReader.state else {
             return XCTFail("Expected the fresh saved chapter to load, got \(reopenedReader.state)")
         }
-        XCTAssertEqual(chapter.plainText, "Saved chapter")
+        XCTAssertEqual(chapter.text, "Saved chapter")
         XCTAssertEqual(requestCount, 1)
     }
 
@@ -85,21 +118,21 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let firstReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
         firstReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         firstReader.selectChapter(3)
         await firstReader.load()
         now.addTimeInterval(30 * 24 * 60 * 60)
 
-        let reopenedReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let reopenedReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
         reopenedReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         reopenedReader.selectChapter(3)
         await reopenedReader.load()
 
-        guard case let .loaded(chapter, _) = reopenedReader.state else {
+        guard case let .loaded(chapter) = reopenedReader.state else {
             return XCTFail("Expected the refreshed chapter to load, got \(reopenedReader.state)")
         }
-        XCTAssertEqual(chapter.plainText, "Refreshed chapter")
+        XCTAssertEqual(chapter.text, "Refreshed chapter")
         XCTAssertEqual(requestCount, 2)
     }
 
@@ -114,7 +147,7 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let firstReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
         firstReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         firstReader.selectChapter(3)
         await firstReader.load()
@@ -124,7 +157,7 @@ final class ReaderFlowTests: XCTestCase {
             throw URLError(.notConnectedToInternet)
         }
 
-        let offlineReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let offlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
         offlineReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         offlineReader.selectChapter(3)
         await offlineReader.load()
@@ -144,13 +177,13 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let onlineReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory))
+        let onlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
         onlineReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         onlineReader.selectChapter(3)
         await onlineReader.load()
         StubURLProtocol.responder = { _ in throw URLError(.notConnectedToInternet) }
 
-        let offlineReader = ReaderModel(client: makeClient(cacheDirectory: cacheDirectory))
+        let offlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
         offlineReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         offlineReader.selectChapter(4)
         await offlineReader.load()

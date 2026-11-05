@@ -8,7 +8,7 @@ struct CairoBibleApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ReaderView(client: NIVAPIClient(baseURL: apiBaseURL))
+            ReaderView(nivClient: NIVAPIClient(baseURL: apiBaseURL))
         }
     }
 }
