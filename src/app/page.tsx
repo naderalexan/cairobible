@@ -7,7 +7,7 @@ import { books } from "@/lib/books";
 import { loadChapter, trackFums, type BibleChapter } from "@/lib/scripture";
 import { loadSvdChapter } from "@/lib/svd";
 import { getBookName, translate } from "@/lib/translations";
-import { VERSE_COPY_BUTTON_DURATION_MS } from "@/lib/config";
+import { VERSE_COPY_BUTTON_DURATION_MS, VERSE_COPY_HOVER_DELAY_MS } from "@/lib/config";
 
 const FONT_SIZES = [18, 20, 22, 25, 29];
 const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
@@ -58,6 +58,7 @@ export default function Home() {
   const [selectedVerse, setSelectedVerse] = useState<{ key: string; text: string; reference: string; top: number; left: number } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const selectedVerseKey = selectedVerse?.key;
+  const verseHoverTimeoutRef = useRef<number | null>(null);
   const settingsDropdownRef = useRef<HTMLElement | null>(null);
   const readerScrollRef = useRef<HTMLDivElement | null>(null);
   const language = translation === "svd" ? "ar" : "en";
@@ -189,8 +190,18 @@ export default function Home() {
   }, [ready, lineHeight]);
 
   useEffect(() => {
+    if (verseHoverTimeoutRef.current !== null) {
+      window.clearTimeout(verseHoverTimeoutRef.current);
+      verseHoverTimeoutRef.current = null;
+    }
     setSelectedVerse(null);
     setCopyStatus("");
+    return () => {
+      if (verseHoverTimeoutRef.current !== null) {
+        window.clearTimeout(verseHoverTimeoutRef.current);
+        verseHoverTimeoutRef.current = null;
+      }
+    };
   }, [chapter, currentBook.id, translation]);
 
   useEffect(() => {
@@ -307,7 +318,18 @@ export default function Home() {
   }
 
   function handleVerseHover(verse: HTMLElement) {
-    showVerseCopyButton(verse);
+    if (verseHoverTimeoutRef.current !== null) window.clearTimeout(verseHoverTimeoutRef.current);
+    setSelectedVerse(null);
+    verseHoverTimeoutRef.current = window.setTimeout(() => {
+      verseHoverTimeoutRef.current = null;
+      showVerseCopyButton(verse);
+    }, VERSE_COPY_HOVER_DELAY_MS);
+  }
+
+  function handleVerseLeave() {
+    if (verseHoverTimeoutRef.current === null) return;
+    window.clearTimeout(verseHoverTimeoutRef.current);
+    verseHoverTimeoutRef.current = null;
   }
 
   function handleVerseSelection() {
@@ -320,7 +342,6 @@ export default function Home() {
       setSelectedVerse(null);
       return;
     }
-    showVerseCopyButton(verse);
   }
 
   async function copySelectedVerse() {
@@ -454,7 +475,7 @@ export default function Home() {
             </div>
             {chapterData ? (
               <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
-                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined}>{paragraph.content}</p>)}
+                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined} onMouseLeave={paragraph.isVerse ? handleVerseLeave : undefined}>{paragraph.content}</p>)}
                 {paragraphs.length === 0 && <p>{t("This chapter has no readable text.")}</p>}
                 {translation === "niv" && chapterData.copyright && <p className="copyright">{chapterData.copyright}</p>}
               </article>
