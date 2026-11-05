@@ -18,6 +18,7 @@
 		A10000000000000000000009 /* ../../public/data/arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */; };
 		A1000000000000000000000A /* ../../public/data/arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* ../../public/data/arb-vd.json */; };
 		A1000000000000000000000B /* ../../public/data/arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */; };
+		A1000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +44,7 @@
 		B10000000000000000000010 /* SVDReadingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVDReadingClient.swift; sourceTree = "<group>"; };
 		B10000000000000000000011 /* ../../public/data/arb-vd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd.json"; sourceTree = "<group>"; };
 		B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd-verses.json"; sourceTree = "<group>"; };
+		B10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +71,7 @@
 				G10000000000000000000002 /* Sources */,
 				G10000000000000000000003 /* Tests */,
 				G10000000000000000000004 /* Configuration */,
+				B10000000000000000000013 /* Assets.xcassets */,
 				G10000000000000000000005 /* Products */,
 				G10000000000000000000006 /* Data */,
 			);
@@ -203,6 +206,7 @@
 			files = (
 				A10000000000000000000008 /* ../../public/data/arb-vd.json in Resources */,
 				A10000000000000000000009 /* ../../public/data/arb-vd-verses.json in Resources */,
+				A1000000000000000000000C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,6 +279,7 @@
 		L10000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -294,6 +299,7 @@
 		L10000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
