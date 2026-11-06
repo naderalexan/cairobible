@@ -32,11 +32,13 @@ final class ReadingPreferences: ObservableObject {
     @Published private(set) var fontSize: Double
     @Published private(set) var appearance: ReaderAppearance
     @Published private(set) var palette: ReaderPalette
+    @Published private(set) var translation: BibleTranslation
 
     private let defaults: UserDefaults
     private let fontSizeKey = "readingFontSize"
     private let appearanceKey = "readerAppearance"
     private let paletteKey = "readerPalette"
+    private let translationKey = "bibleTranslation"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -44,6 +46,7 @@ final class ReadingPreferences: ObservableObject {
         fontSize = min(max(savedFontSize, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
         appearance = ReaderAppearance(rawValue: defaults.string(forKey: appearanceKey) ?? "") ?? .system
         palette = ReaderPalette(rawValue: defaults.string(forKey: paletteKey) ?? "") ?? .cairo
+        translation = BibleTranslation(rawValue: defaults.string(forKey: translationKey) ?? "") ?? .niv
     }
 
     func setFontSize(_ size: Double) {
@@ -60,12 +63,17 @@ final class ReadingPreferences: ObservableObject {
         self.palette = palette
         defaults.set(palette.rawValue, forKey: paletteKey)
     }
+
+    func setTranslation(_ translation: BibleTranslation) {
+        self.translation = translation
+        defaults.set(translation.rawValue, forKey: translationKey)
+    }
 }
 
 @MainActor
 protocol DailyReminderScheduling {
     func requestAuthorization() async throws -> Bool
-    func scheduleDailyReminder(at time: DateComponents) async throws
+    func scheduleDailyReminder(at time: DateComponents, translation: BibleTranslation) async throws
     func cancelDailyReminder()
 }
 
@@ -78,10 +86,10 @@ private struct LocalDailyReminderScheduler: DailyReminderScheduling {
         try await center.requestAuthorization(options: [.alert, .sound])
     }
 
-    func scheduleDailyReminder(at time: DateComponents) async throws {
+    func scheduleDailyReminder(at time: DateComponents, translation: BibleTranslation) async throws {
         let content = UNMutableNotificationContent()
-        content.title = "Time to read the Bible"
-        content.body = "Take a moment for your daily reading."
+        content.title = translation.reminderTitle
+        content.body = translation.reminderBody
         content.sound = .default
         try await center.add(UNNotificationRequest(
             identifier: identifier,
@@ -110,10 +118,16 @@ final class DailyReminderManager: ObservableObject {
     private let enabledKey = "dailyReadingReminderEnabled"
     private let minuteOfDayKey = "dailyReadingReminderMinuteOfDay"
     private var minuteOfDay: Int
+    private var translation: BibleTranslation
 
-    init(defaults: UserDefaults = .standard, scheduler: (any DailyReminderScheduling)? = nil) {
+    init(
+        defaults: UserDefaults = .standard,
+        scheduler: (any DailyReminderScheduling)? = nil,
+        translation: BibleTranslation = .niv
+    ) {
         self.defaults = defaults
         self.scheduler = scheduler ?? LocalDailyReminderScheduler()
+        self.translation = translation
         isEnabled = defaults.bool(forKey: enabledKey)
         minuteOfDay = min(max(defaults.object(forKey: minuteOfDayKey) as? Int ?? Self.defaultMinuteOfDay, 0), 1439)
         time = Self.date(for: minuteOfDay)
@@ -147,6 +161,16 @@ final class DailyReminderManager: ObservableObject {
         }
     }
 
+    func setTranslation(_ translation: BibleTranslation) async {
+        self.translation = translation
+        guard isEnabled else { return }
+        do {
+            try await scheduleReminder()
+        } catch {
+            message = "Couldn't update the reminder. Please try again."
+        }
+    }
+
     func setReminderTime(_ date: Date) async {
         let components = Calendar.current.dateComponents([.hour, .minute], from: date)
         minuteOfDay = (components.hour ?? 0) * 60 + (components.minute ?? 0)
@@ -166,7 +190,7 @@ final class DailyReminderManager: ObservableObject {
         var components = DateComponents()
         components.hour = minuteOfDay / 60
         components.minute = minuteOfDay % 60
-        try await scheduler.scheduleDailyReminder(at: components)
+        try await scheduler.scheduleDailyReminder(at: components, translation: translation)
     }
 
     private static func date(for minuteOfDay: Int) -> Date {
@@ -207,6 +231,20 @@ enum BibleTranslation: String, CaseIterable, Identifiable {
     }
 
     var isRightToLeft: Bool { self == .svd }
+
+    var reminderTitle: String {
+        switch self {
+        case .niv: "Time to read the Bible"
+        case .svd: "حان وقت قراءة الكتاب المقدس"
+        }
+    }
+
+    var reminderBody: String {
+        switch self {
+        case .niv: "Take a moment for your daily reading."
+        case .svd: "خصص لحظة لقراءتك اليومية."
+        }
+    }
 }
 
 struct ScriptureVerse: Equatable, Identifiable {
@@ -226,7 +264,7 @@ struct ReaderChapter: Equatable {
 
 @MainActor
 final class ReaderModel: ObservableObject {
-    @Published private(set) var selectedTranslation = BibleTranslation.niv
+    @Published private(set) var selectedTranslation: BibleTranslation
     @Published private(set) var selectedBook = BibleBook.all[0]
     @Published private(set) var selectedChapter = 1
     @Published private(set) var state: ReaderState = .idle
@@ -242,11 +280,14 @@ final class ReaderModel: ObservableObject {
     ) {
         self.nivClient = nivClient
         self.svdClient = svdClient
-        self.preferences = preferences ?? ReadingPreferences()
+        let preferences = preferences ?? ReadingPreferences()
+        self.preferences = preferences
+        selectedTranslation = preferences.translation
     }
 
     func selectTranslation(_ translation: BibleTranslation) {
         selectedTranslation = translation
+        preferences.setTranslation(translation)
         state = .idle
     }
 

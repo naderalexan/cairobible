@@ -15,7 +15,7 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let model = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
+        let model = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory), preferences: makePreferences())
         model.selectBook(BibleBook.all.first { $0.name == "John" }!)
         model.selectChapter(3)
         await model.load()
@@ -39,7 +39,8 @@ final class ReaderFlowTests: XCTestCase {
 
         let model = ReaderModel(
             nivClient: makeClient(),
-            svdClient: BundledSVDReadingClient(bundle: Bundle(for: ReaderFlowTests.self))
+            svdClient: BundledSVDReadingClient(bundle: Bundle(for: ReaderFlowTests.self)),
+            preferences: makePreferences()
         )
         model.selectTranslation(.svd)
         model.selectBook(BibleBook.all.first { $0.name == "Genesis" }!)
@@ -94,6 +95,13 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(relaunchedPreferences.fontSize, 26)
         XCTAssertEqual(relaunchedPreferences.appearance, .dark)
         XCTAssertEqual(relaunchedPreferences.palette, .nile)
+        XCTAssertEqual(relaunchedPreferences.translation, .svd)
+        let relaunchedModel = ReaderModel(
+            nivClient: StubNIVReadingClient(),
+            svdClient: StubSVDReadingClient(),
+            preferences: relaunchedPreferences
+        )
+        XCTAssertEqual(relaunchedModel.selectedTranslation, .svd)
     }
 
     func testReaderShowsBackendFailureMessage() async {
@@ -104,7 +112,7 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let model = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
+        let model = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory), preferences: makePreferences())
         await model.load()
 
         guard case let .failed(message) = model.state else {
@@ -123,7 +131,7 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
+        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory), preferences: makePreferences())
         firstReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         firstReader.selectChapter(3)
         await firstReader.load()
@@ -132,7 +140,7 @@ final class ReaderFlowTests: XCTestCase {
             requestCount += 1
             throw URLError(.notConnectedToInternet)
         }
-        let reopenedReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
+        let reopenedReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory), preferences: makePreferences())
         reopenedReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         reopenedReader.selectChapter(3)
         await reopenedReader.load()
@@ -156,13 +164,13 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }), preferences: makePreferences())
         firstReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         firstReader.selectChapter(3)
         await firstReader.load()
         now.addTimeInterval(30 * 24 * 60 * 60)
 
-        let reopenedReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let reopenedReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }), preferences: makePreferences())
         reopenedReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         reopenedReader.selectChapter(3)
         await reopenedReader.load()
@@ -185,7 +193,7 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let firstReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }), preferences: makePreferences())
         firstReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         firstReader.selectChapter(3)
         await firstReader.load()
@@ -195,7 +203,7 @@ final class ReaderFlowTests: XCTestCase {
             throw URLError(.notConnectedToInternet)
         }
 
-        let offlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }))
+        let offlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory, now: { now }), preferences: makePreferences())
         offlineReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         offlineReader.selectChapter(3)
         await offlineReader.load()
@@ -215,13 +223,13 @@ final class ReaderFlowTests: XCTestCase {
         }
         defer { StubURLProtocol.responder = nil }
 
-        let onlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
+        let onlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory), preferences: makePreferences())
         onlineReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         onlineReader.selectChapter(3)
         await onlineReader.load()
         StubURLProtocol.responder = { _ in throw URLError(.notConnectedToInternet) }
 
-        let offlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory))
+        let offlineReader = ReaderModel(nivClient: makeClient(cacheDirectory: cacheDirectory), preferences: makePreferences())
         offlineReader.selectBook(BibleBook.all.first { $0.name == "John" }!)
         offlineReader.selectChapter(4)
         await offlineReader.load()
@@ -246,9 +254,22 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(scheduler.scheduledTimes.count, 1)
         XCTAssertEqual(scheduler.scheduledTimes[0].hour, 9)
         XCTAssertEqual(scheduler.scheduledTimes[0].minute, 0)
+        XCTAssertEqual(scheduler.scheduledTranslations, [.niv])
         XCTAssertNil(scheduler.scheduledTimes[0].timeZone)
         XCTAssertNil(scheduler.scheduledTimes[0].calendar)
         XCTAssertTrue(defaults.bool(forKey: "dailyReadingReminderEnabled"))
+    }
+
+    func testDailyReminderReschedulesUsingLastSelectedTranslation() async {
+        let scheduler = StubDailyReminderScheduler()
+        let reminders = DailyReminderManager(scheduler: scheduler)
+        await reminders.setEnabled(true)
+
+        await reminders.setTranslation(.svd)
+
+        XCTAssertEqual(scheduler.scheduledTranslations, [.niv, .svd])
+        XCTAssertEqual(BibleTranslation.svd.reminderTitle, "حان وقت قراءة الكتاب المقدس")
+        XCTAssertEqual(BibleTranslation.svd.reminderBody, "خصص لحظة لقراءتك اليومية.")
     }
 
     func testDailyReminderTimeChangeReschedulesAndPersists() async {
@@ -303,6 +324,10 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertTrue(reminders.message?.contains("Allow them in Settings") == true)
     }
 
+    private func makePreferences() -> ReadingPreferences {
+        ReadingPreferences(defaults: UserDefaults(suiteName: "ReaderFlowTests.\(UUID().uuidString)")!)
+    }
+
     private func makeClient(
         cacheDirectory: URL? = nil,
         now: @escaping () -> Date = Date.init
@@ -327,6 +352,7 @@ private final class StubDailyReminderScheduler: DailyReminderScheduling {
     var authorizationGranted = true
     var authorizationRequestCount = 0
     var scheduledTimes: [DateComponents] = []
+    var scheduledTranslations: [BibleTranslation] = []
     var cancellationCount = 0
 
     func requestAuthorization() async throws -> Bool {
@@ -334,8 +360,9 @@ private final class StubDailyReminderScheduler: DailyReminderScheduling {
         return authorizationGranted
     }
 
-    func scheduleDailyReminder(at time: DateComponents) async throws {
+    func scheduleDailyReminder(at time: DateComponents, translation: BibleTranslation) async throws {
         scheduledTimes.append(time)
+        scheduledTranslations.append(translation)
     }
 
     func cancelDailyReminder() {

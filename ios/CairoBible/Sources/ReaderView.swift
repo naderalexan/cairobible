@@ -15,7 +15,7 @@ struct ReaderView: View {
         reminderManager: DailyReminderManager? = nil
     ) {
         let preferences = preferences ?? ReadingPreferences()
-        let reminderManager = reminderManager ?? DailyReminderManager()
+        let reminderManager = reminderManager ?? DailyReminderManager(translation: preferences.translation)
         _model = StateObject(wrappedValue: ReaderModel(
             nivClient: nivClient,
             svdClient: svdClient,
@@ -83,6 +83,12 @@ struct ReaderView: View {
                     reminders: reminderManager,
                     translation: model.selectedTranslation
                 )
+            }
+            .task {
+                await reminderManager.setTranslation(model.selectedTranslation)
+            }
+            .onChange(of: model.selectedTranslation) { _, translation in
+                Task { await reminderManager.setTranslation(translation) }
             }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
