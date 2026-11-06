@@ -24,18 +24,68 @@ enum ReaderPalette: String, CaseIterable, Identifiable {
     var title: String { rawValue.capitalized }
 }
 
+enum ReaderFontSizePreset: String, CaseIterable, Identifiable {
+    case xs, s, m, l, xl
+
+    var id: String { rawValue }
+    var title: String { rawValue.uppercased() }
+
+    var size: Double {
+        switch self {
+        case .xs: 14
+        case .s: 18.5
+        case .m: 23
+        case .l: 27.5
+        case .xl: 32
+        }
+    }
+
+    static func nearest(to size: Double) -> Self {
+        allCases.min { abs($0.size - size) < abs($1.size - size) } ?? .m
+    }
+}
+
+enum ReaderLineSpacing: String, CaseIterable, Identifiable {
+    case small, medium, large
+
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+
+    var ratio: Double {
+        switch self {
+        case .small: 1.5
+        case .medium: 1.85
+        case .large: 2.0
+        }
+    }
+
+    var ratioText: String {
+        switch self {
+        case .small: "1.5"
+        case .medium: "1.85"
+        case .large: "2.0"
+        }
+    }
+
+    func extraSpacing(for fontSize: Double) -> Double {
+        fontSize * (ratio - 1)
+    }
+}
+
 @MainActor
 final class ReadingPreferences: ObservableObject {
     static let fontSizeRange = 14.0...32.0
     static let defaultFontSize = 17.0
 
     @Published private(set) var fontSize: Double
+    @Published private(set) var lineSpacing: ReaderLineSpacing
     @Published private(set) var appearance: ReaderAppearance
     @Published private(set) var palette: ReaderPalette
     @Published private(set) var translation: BibleTranslation
 
     private let defaults: UserDefaults
     private let fontSizeKey = "readingFontSize"
+    private let lineSpacingKey = "readingLineSpacing"
     private let appearanceKey = "readerAppearance"
     private let paletteKey = "readerPalette"
     private let translationKey = "bibleTranslation"
@@ -44,6 +94,7 @@ final class ReadingPreferences: ObservableObject {
         self.defaults = defaults
         let savedFontSize = defaults.object(forKey: fontSizeKey) as? Double ?? Self.defaultFontSize
         fontSize = min(max(savedFontSize, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
+        lineSpacing = ReaderLineSpacing(rawValue: defaults.string(forKey: lineSpacingKey) ?? "") ?? .medium
         appearance = ReaderAppearance(rawValue: defaults.string(forKey: appearanceKey) ?? "") ?? .system
         palette = ReaderPalette(rawValue: defaults.string(forKey: paletteKey) ?? "") ?? .cairo
         translation = BibleTranslation(rawValue: defaults.string(forKey: translationKey) ?? "") ?? .niv
@@ -52,6 +103,15 @@ final class ReadingPreferences: ObservableObject {
     func setFontSize(_ size: Double) {
         fontSize = min(max(size, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
         defaults.set(fontSize, forKey: fontSizeKey)
+    }
+
+    func setFontSize(_ preset: ReaderFontSizePreset) {
+        setFontSize(preset.size)
+    }
+
+    func setLineSpacing(_ lineSpacing: ReaderLineSpacing) {
+        self.lineSpacing = lineSpacing
+        defaults.set(lineSpacing.rawValue, forKey: lineSpacingKey)
     }
 
     func setAppearance(_ appearance: ReaderAppearance) {
@@ -305,6 +365,34 @@ final class ReaderModel: ObservableObject {
     func selectChapter(_ chapter: Int) {
         selectedChapter = min(max(chapter, 1), selectedBook.chapterCount)
         state = .idle
+    }
+
+    var canSelectPreviousChapter: Bool {
+        selectedChapter > 1 || selectedBook != BibleBook.all.first
+    }
+
+    var canSelectNextChapter: Bool {
+        selectedChapter < selectedBook.chapterCount || selectedBook != BibleBook.all.last
+    }
+
+    func selectPreviousChapter() {
+        if selectedChapter > 1 {
+            selectChapter(selectedChapter - 1)
+        } else if let index = BibleBook.all.firstIndex(of: selectedBook), index > 0 {
+            selectedBook = BibleBook.all[index - 1]
+            selectedChapter = selectedBook.chapterCount
+            state = .idle
+        }
+    }
+
+    func selectNextChapter() {
+        if selectedChapter < selectedBook.chapterCount {
+            selectChapter(selectedChapter + 1)
+        } else if let index = BibleBook.all.firstIndex(of: selectedBook), index < BibleBook.all.count - 1 {
+            selectedBook = BibleBook.all[index + 1]
+            selectedChapter = 1
+            state = .idle
+        }
     }
 
     func load() async {

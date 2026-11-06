@@ -7,6 +7,8 @@ struct ReaderView: View {
     @Environment(\.colorScheme) private var systemColorScheme
     @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @State private var isShowingPreferences = false
+    @State private var areReaderControlsVisible = true
+    @State private var lastScrollOffset: CGFloat?
 
     init(
         nivClient: any NIVReadingClient,
@@ -27,44 +29,50 @@ struct ReaderView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Choose a passage") {
-                    Picker("Translation", selection: Binding(
-                        get: { model.selectedTranslation },
-                        set: { model.selectTranslation($0) }
-                    )) {
-                        ForEach(BibleTranslation.allCases) { translation in
-                            Text(translation.title).tag(translation)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+            VStack(spacing: 0) {
+                chapterNavigation
 
-                    Picker("Book", selection: Binding(
-                        get: { model.selectedBook },
-                        set: { model.selectBook($0) }
-                    )) {
-                        ForEach(BibleBook.all) { book in
-                            Text(book.name).tag(book)
-                        }
-                    }
-                    .pickerStyle(.navigationLink)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Color.clear
+                            .frame(height: 0)
+                            .background {
+                                GeometryReader { proxy in
+                                    Color.clear.preference(
+                                        key: ReaderScrollOffsetKey.self,
+                                        value: proxy.frame(in: .named("readerScroll")).minY
+                                    )
+                                }
+                            }
 
-                    Picker("Chapter", selection: Binding(
-                        get: { model.selectedChapter },
-                        set: { model.selectChapter($0) }
-                    )) {
-                        ForEach(1...model.selectedBook.chapterCount, id: \.self) { number in
-                            Text("Chapter \(number)").tag(number)
-                        }
+                        readingContent
                     }
-                    .pickerStyle(.navigationLink)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-
-                readingSection
+                .coordinateSpace(name: "readerScroll")
+                .scrollIndicators(.hidden)
+                .background(paletteColors.surface)
+                .onPreferenceChange(ReaderScrollOffsetKey.self) { offset in
+                    if let lastScrollOffset, abs(lastScrollOffset - offset) > 0.5 {
+                        areReaderControlsVisible = false
+                    }
+                    lastScrollOffset = offset
+                }
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        areReaderControlsVisible = true
+                    }
+                }
             }
-            .scrollContentBackground(.hidden)
             .background(paletteColors.surface)
-            .tint(paletteColors.accent)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if areReaderControlsVisible {
+                    ReaderControlsBar(model: model, preferences: preferences, colors: paletteColors)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
             .navigationTitle("Cairo Bible")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -72,7 +80,7 @@ struct ReaderView: View {
                     Button {
                         isShowingPreferences = true
                     } label: {
-                        Image(systemName: "textformat.size")
+                        Image(systemName: "gearshape")
                     }
                     .accessibilityLabel("Reading preferences")
                 }
@@ -89,7 +97,10 @@ struct ReaderView: View {
             }
             .onChange(of: model.selectedTranslation) { _, translation in
                 Task { await reminderManager.setTranslation(translation) }
+                showReaderControls()
             }
+            .onChange(of: model.selectedBook) { _, _ in showReaderControls() }
+            .onChange(of: model.selectedChapter) { _, _ in showReaderControls() }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
             }
@@ -114,85 +125,252 @@ struct ReaderView: View {
         }
     }
 
+    private var readingFontSize: Double {
+        preferences.fontSize * dynamicTypeScale
+    }
+
     private var readingFont: Font {
-        .system(size: CGFloat(preferences.fontSize * dynamicTypeScale))
+        .system(size: CGFloat(readingFontSize))
+    }
+
+    private var lineSpacing: CGFloat {
+        CGFloat(preferences.lineSpacing.extraSpacing(for: readingFontSize))
     }
 
     private var paletteColors: ReaderPaletteColors {
         preferences.palette.colors(for: effectiveColorScheme)
     }
 
-    @ViewBuilder
-    private var readingSection: some View {
-        Section {
-            switch model.state {
-            case .idle, .loading:
-                ProgressView("Loading \(model.selectedTranslation.title), \(model.selectedBook.name) \(model.selectedChapter)…")
-                    .foregroundStyle(paletteColors.muted)
-                    .listRowBackground(paletteColors.surfaceRaised)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-            case let .loaded(chapter):
-                Text("\(chapter.bookName) \(chapter.chapter)")
-                    .font(readingFont.weight(.semibold))
-                    .foregroundStyle(paletteColors.ink)
-                    .listRowBackground(paletteColors.surfaceRaised)
-                    .accessibilityAddTraits(.isHeader)
-                    .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .environment(\.locale, model.selectedTranslation.isRightToLeft ? Locale(identifier: "ar") : .current)
-
-                if model.selectedTranslation == .svd {
-                    ForEach(chapter.verses) { verse in
-                        (Text(verbatim: "\u{2068}\(verse.number)\u{2069} ").font(.footnote.weight(.semibold))
-                            + Text(verbatim: verse.text).font(readingFont))
-                            .lineSpacing(6)
-                            .foregroundStyle(paletteColors.ink)
-                            .listRowBackground(paletteColors.surfaceRaised)
-                            .listRowSeparator(.hidden)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                            .environment(\.layoutDirection, .rightToLeft)
-                            .environment(\.locale, Locale(identifier: "ar"))
-                            .textSelection(.enabled)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("الآية \(verse.number). \(verse.text)")
-                    }
-                } else {
-                    Text(verbatim: chapter.text)
-                        .font(readingFont)
-                        .foregroundStyle(paletteColors.ink)
-                        .lineSpacing(6)
-                        .listRowBackground(paletteColors.surfaceRaised)
-                        .textSelection(.enabled)
-                }
-
-                Text(chapter.attribution)
-                    .font(.footnote)
-                    .foregroundStyle(paletteColors.muted)
-                    .listRowBackground(paletteColors.surfaceRaised)
-                    .textSelection(.enabled)
-                    .accessibilityLabel("Translation attribution. \(chapter.attribution)")
-
-            case let .failed(message):
-                ContentUnavailableView {
-                    Label("Chapter unavailable", systemImage: "wifi.exclamationmark")
-                        .foregroundStyle(paletteColors.ink)
-                } description: {
-                    Text(message)
-                        .foregroundStyle(paletteColors.muted)
-                } actions: {
-                    Button("Try again") {
-                        Task { await model.load() }
-                    }
-                }
-                .listRowBackground(paletteColors.surfaceRaised)
+    private var chapterNavigation: some View {
+        HStack {
+            Button(action: model.selectPreviousChapter) {
+                Label("Previous", systemImage: "chevron.left")
+                    .font(.subheadline)
             }
-        } header: {
-            Text(model.selectedTranslation.sectionTitle)
-                .foregroundStyle(paletteColors.accent)
+            .disabled(!model.canSelectPreviousChapter)
+            .accessibilityLabel("Previous chapter")
+
+            Spacer(minLength: 8)
+
+            Menu {
+                Picker("Book", selection: Binding(
+                    get: { model.selectedBook },
+                    set: { model.selectBook($0) }
+                )) {
+                    ForEach(BibleBook.all) { book in
+                        Text(book.name).tag(book)
+                    }
+                }
+                Picker("Chapter", selection: Binding(
+                    get: { model.selectedChapter },
+                    set: { model.selectChapter($0) }
+                )) {
+                    ForEach(1...model.selectedBook.chapterCount, id: \.self) { number in
+                        Text("Chapter \(number)").tag(number)
+                    }
+                }
+            } label: {
+                VStack(spacing: 2) {
+                    Text("\(currentBookName) \(model.selectedChapter)")
+                        .font(.headline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                }
+                .foregroundStyle(paletteColors.ink)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Choose passage")
+            .accessibilityValue("\(currentBookName) \(model.selectedChapter)")
+
+            Spacer(minLength: 8)
+
+            Button(action: model.selectNextChapter) {
+                Label("Next", systemImage: "chevron.right")
+                    .labelStyle(.titleAndIcon)
+                    .font(.subheadline)
+            }
+            .disabled(!model.canSelectNextChapter)
+            .accessibilityLabel("Next chapter")
         }
+        .environment(\.layoutDirection, .leftToRight)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(paletteColors.surfaceRaised)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(paletteColors.accent.opacity(0.18)).frame(height: 1)
+        }
+    }
+
+    private var currentBookName: String {
+        if case let .loaded(chapter) = model.state { chapter.bookName }
+        else { model.selectedBook.name }
+    }
+
+    @ViewBuilder
+    private var readingContent: some View {
+        Text(model.selectedTranslation.sectionTitle)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(paletteColors.accent)
+            .accessibilityAddTraits(.isHeader)
+
+        switch model.state {
+        case .idle, .loading:
+            ProgressView("Loading \(model.selectedTranslation.title), \(model.selectedBook.name) \(model.selectedChapter)…")
+                .foregroundStyle(paletteColors.muted)
+                .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
+
+        case let .loaded(chapter):
+            if model.selectedTranslation == .svd {
+                ForEach(chapter.verses) { verse in
+                    (Text(verbatim: "\u{2068}\(verse.number)\u{2069} ").font(.footnote.weight(.semibold))
+                        + Text(verbatim: verse.text).font(readingFont))
+                        .lineSpacing(lineSpacing)
+                        .foregroundStyle(paletteColors.ink)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .multilineTextAlignment(.leading)
+                        .environment(\.layoutDirection, .rightToLeft)
+                        .environment(\.locale, Locale(identifier: "ar"))
+                        .textSelection(.enabled)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("الآية \(verse.number). \(verse.text)")
+                }
+            } else {
+                Text(verbatim: chapter.text)
+                    .font(readingFont)
+                    .foregroundStyle(paletteColors.ink)
+                    .lineSpacing(lineSpacing)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                    .textSelection(.enabled)
+            }
+
+            Text(chapter.attribution)
+                .font(.footnote)
+                .foregroundStyle(paletteColors.muted)
+                .textSelection(.enabled)
+                .accessibilityLabel("Translation attribution. \(chapter.attribution)")
+
+        case let .failed(message):
+            ContentUnavailableView {
+                Label("Chapter unavailable", systemImage: "wifi.exclamationmark")
+                    .foregroundStyle(paletteColors.ink)
+            } description: {
+                Text(message)
+                    .foregroundStyle(paletteColors.muted)
+            } actions: {
+                Button("Try again") {
+                    Task { await model.load() }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 200)
+        }
+    }
+
+    private func showReaderControls() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            areReaderControlsVisible = true
+        }
+    }
+}
+
+private struct ReaderScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+private struct ReaderControlsBar: View {
+    @ObservedObject var model: ReaderModel
+    @ObservedObject var preferences: ReadingPreferences
+    let colors: ReaderPaletteColors
+
+    private var selectedFontSize: ReaderFontSizePreset {
+        ReaderFontSizePreset.nearest(to: preferences.fontSize)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Menu {
+                ForEach(BibleTranslation.allCases) { translation in
+                    Button {
+                        model.selectTranslation(translation)
+                    } label: {
+                        if model.selectedTranslation == translation {
+                            Label(translation.title, systemImage: "checkmark")
+                        } else {
+                            Text(translation.title)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    Text(model.selectedTranslation.title)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(colors.ink)
+            }
+            .accessibilityLabel("Translation")
+            .accessibilityValue(model.selectedTranslation.title)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 1) {
+                ForEach(ReaderFontSizePreset.allCases) { preset in
+                    let isSelected = selectedFontSize == preset
+                    Button {
+                        preferences.setFontSize(preset)
+                    } label: {
+                        Text(preset.title)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 7)
+                            .background(isSelected ? colors.accent : .clear, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(preset.title) reading text size")
+                    .accessibilityValue(isSelected ? "Selected" : "")
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
+            }
+
+            Menu {
+                ForEach(ReaderLineSpacing.allCases) { spacing in
+                    Button {
+                        preferences.setLineSpacing(spacing)
+                    } label: {
+                        if preferences.lineSpacing == spacing {
+                            Label("\(spacing.title) (\(spacing.ratioText))", systemImage: "checkmark")
+                        } else {
+                            Text("\(spacing.title) (\(spacing.ratioText))")
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(colors.ink)
+                    .frame(width: 30, height: 34)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Line spacing")
+            .accessibilityValue(preferences.lineSpacing.title)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(colors.surfaceRaised, in: Capsule())
+        .overlay(Capsule().stroke(colors.accent.opacity(0.2), lineWidth: 1))
+        .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 8)
     }
 }
 

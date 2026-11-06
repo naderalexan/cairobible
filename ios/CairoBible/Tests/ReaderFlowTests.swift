@@ -4,6 +4,50 @@ import XCTest
 
 @MainActor
 final class ReaderFlowTests: XCTestCase {
+    func testReaderToolbarPresetsAndLineSpacingPersistWithoutNormalizingSavedFontSize() {
+        let suiteName = "ReaderToolbarPreferencesTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(20.0, forKey: "readingFontSize")
+
+        let preferences = ReadingPreferences(defaults: defaults)
+        XCTAssertEqual(ReaderFontSizePreset.allCases.map(\.size), [14, 18.5, 23, 27.5, 32])
+        XCTAssertEqual(ReaderFontSizePreset.nearest(to: preferences.fontSize), .s)
+        XCTAssertEqual(preferences.fontSize, 20)
+        XCTAssertEqual(defaults.double(forKey: "readingFontSize"), 20)
+        XCTAssertEqual(preferences.lineSpacing, .medium)
+        XCTAssertEqual(ReaderLineSpacing.allCases.map(\.ratio), [1.5, 1.85, 2.0])
+
+        preferences.setFontSize(.xl)
+        preferences.setLineSpacing(.small)
+
+        let relaunched = ReadingPreferences(defaults: defaults)
+        XCTAssertEqual(relaunched.fontSize, 32)
+        XCTAssertEqual(relaunched.lineSpacing, .small)
+        XCTAssertEqual(ReaderLineSpacing.medium.extraSpacing(for: 20), 17)
+    }
+
+    func testReaderPreviousAndNextChapterNavigationCrossesBookBoundaries() {
+        let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: makePreferences())
+        XCTAssertFalse(model.canSelectPreviousChapter)
+        XCTAssertTrue(model.canSelectNextChapter)
+
+        model.selectNextChapter()
+        XCTAssertEqual(model.selectedChapter, 2)
+        model.selectPreviousChapter()
+        XCTAssertEqual(model.selectedChapter, 1)
+        model.selectPreviousChapter()
+        XCTAssertEqual(model.selectedBook, BibleBook.all[0])
+
+        model.selectChapter(model.selectedBook.chapterCount)
+        model.selectNextChapter()
+        XCTAssertEqual(model.selectedBook, BibleBook.all[1])
+        XCTAssertEqual(model.selectedChapter, 1)
+        model.selectPreviousChapter()
+        XCTAssertEqual(model.selectedBook, BibleBook.all[0])
+        XCTAssertEqual(model.selectedChapter, BibleBook.all[0].chapterCount)
+    }
+
     func testReaderLoadsSelectedNIVChapterFromBackend() async {
         let cacheDirectory = makeCacheDirectory()
         defer { try? FileManager.default.removeItem(at: cacheDirectory) }
