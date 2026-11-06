@@ -327,7 +327,6 @@ export default function Home() {
 
   function handleVerseHover(verse: HTMLElement) {
     if (verseHoverTimeoutRef.current !== null) window.clearTimeout(verseHoverTimeoutRef.current);
-    setSelectedVerse(null);
     verseHoverTimeoutRef.current = window.setTimeout(() => {
       verseHoverTimeoutRef.current = null;
       showVerseCopyButton(verse);
