@@ -163,7 +163,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .privacy-note { margin-top: 9px; }
 .secondary-button { margin-top: 15px; }
 .scripture { max-width: 680px; margin: 0 auto; color: var(--ink); font: 400 var(--reading-size) / var(--reading-line-height, 1.65) Georgia, 'Times New Roman', serif; letter-spacing: .002em; }
-.scripture p.verse { margin: 0 0 0.75em; }
+.scripture p.verse { margin: 0 0 0.75em; margin-block-end: 0.5lh; }
 .verse-number { padding-inline-end: 5px; color: var(--muted); font-weight: 525 }
 .verse-copy-popup { position: fixed; z-index: 8; width: 38px; height: 38px; min-width: 38px; min-height: 38px; aspect-ratio: 1 / 1; flex: 0 0 38px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-raised); color: var(--ink); box-shadow: var(--shadow); }
 .verse-copy-popup:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
@@ -175,7 +175,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .app-shell[lang="ar"] .dialog-content h2 { font-family: inherit; letter-spacing: 0; }
 .app-shell[lang="ar"] .eyebrow, .app-shell[lang="ar"] .book-group h2 { letter-spacing: 0; }
 .scripture.arabic-scripture { text-align: right; font-family: 'Geeza Pro', 'Noto Naskh Arabic', 'Times New Roman', serif; font-size: calc(var(--reading-size) + 2px); line-height: calc(var(--reading-line-height, 1.65) + .25); }
-.scripture.arabic-scripture p.verse { margin-bottom: 1.8em; }
+.scripture.arabic-scripture p.verse { margin-bottom: 1.8em; margin-block-end: 1.03lh; }
 .offline-ready { color: var(--muted); font-size: 11px; }
 .reader-message { min-height: 300px; padding: 50px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; color: var(--muted); }
 .reader-message p { max-width: 480px; margin: 0; line-height: 1.7; }
