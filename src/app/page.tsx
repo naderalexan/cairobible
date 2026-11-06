@@ -13,6 +13,7 @@ import {
   FONT_LABELS,
   FONT_SIZES,
   isLineHeightValue,
+  getLineSpacingPopupPosition,
   LINE_HEIGHT_OPTIONS,
   readerControlsVisibilityAfter,
   toggleFocusMode,
@@ -44,6 +45,8 @@ export default function Home() {
   const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [readerControlsVisible, setReaderControlsVisible] = useState(true);
+  const [lineSpacingOpen, setLineSpacingOpen] = useState(false);
+  const [lineSpacingPopupPosition, setLineSpacingPopupPosition] = useState({ top: 8, left: 8 });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [palette, setPalette] = useState<PaletteId>("cairo");
@@ -61,6 +64,8 @@ export default function Home() {
   const verseCopyButtonDuration = VERSE_COPY_BUTTON_DURATION_MS;
   const verseHoverTimeoutRef = useRef<number | null>(null);
   const settingsDropdownRef = useRef<HTMLElement | null>(null);
+  const lineSpacingButtonRef = useRef<HTMLButtonElement | null>(null);
+  const lineSpacingPopupRef = useRef<HTMLDivElement | null>(null);
   const readerScrollRef = useRef<HTMLDivElement | null>(null);
   const language = translation === "svd" ? "ar" : "en";
   const t = (message: string, values: Record<string, string | number> = {}) => translate(language, message, values);
@@ -165,6 +170,48 @@ export default function Home() {
     document.addEventListener("pointerdown", closeOnOutsideClick);
     return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
   }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!lineSpacingOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (lineSpacingPopupRef.current?.contains(target) || lineSpacingButtonRef.current?.contains(target)) return;
+      setLineSpacingOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setLineSpacingOpen(false);
+      lineSpacingButtonRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [lineSpacingOpen]);
+
+  useEffect(() => {
+    if (!lineSpacingOpen) return;
+    const updatePosition = () => {
+      const buttonRect = lineSpacingButtonRef.current?.getBoundingClientRect();
+      const popupRect = lineSpacingPopupRef.current?.getBoundingClientRect();
+      if (!buttonRect || !popupRect) return;
+      setLineSpacingPopupPosition(getLineSpacingPopupPosition(
+        buttonRect,
+        popupRect,
+        { width: window.innerWidth, height: window.innerHeight },
+      ));
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [lineSpacingOpen]);
 
   useEffect(() => {
     if (!settingsOpen && !chapterPickerOpen && !focusMode) return;
@@ -394,6 +441,7 @@ export default function Home() {
 
   const isFirstChapter = currentBook.id === "GEN" && chapter === 1;
   const isLastChapter = currentBook.id === "REV" && chapter === currentBook.chapters;
+  const toggleLineSpacingPopup = () => setLineSpacingOpen((open) => !open);
 
   return (
     <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
@@ -465,7 +513,7 @@ export default function Home() {
           ref={readerScrollRef}
           tabIndex={0}
           aria-label={t("Bible reading")}
-          onScroll={() => setReaderControlsVisible(readerControlsVisibilityAfter("scroll"))}
+          onScroll={() => { setReaderControlsVisible(readerControlsVisibilityAfter("scroll")); setLineSpacingOpen(false); }}
           onPointerDown={() => setReaderControlsVisible(readerControlsVisibilityAfter("interaction"))}
           onClick={() => setReaderControlsVisible(readerControlsVisibilityAfter("interaction"))}
           onFocusCapture={() => setReaderControlsVisible(readerControlsVisibilityAfter("interaction"))}
@@ -512,9 +560,16 @@ export default function Home() {
             <output aria-live="polite">{t(FONT_LABELS[fontLevel])}</output>
             <button onClick={() => setFontLevel((level) => adjustFontLevel(level, 1))} disabled={fontLevel === FONT_SIZES.length - 1} aria-label={t("Increase reading text size")} title={t("Increase reading text size")}>A+</button>
           </div>
-          <select className="reader-line-spacing" value={lineHeight} aria-label={t("Line spacing")} title={t("Line spacing")} onChange={(event) => { const value = Number(event.target.value); if (isLineHeightValue(value)) setLineHeight(value); }}>
-            {LINE_HEIGHT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t("Spacing")} - {t(option.label).charAt(0)}</option>)}
-          </select>
+          <button
+            ref={lineSpacingButtonRef}
+            className="reader-line-spacing-trigger"
+            aria-label={`${t("Line spacing")}: ${t(selectedLineHeight.label)}`}
+            title={t("Line spacing")}
+            aria-haspopup="dialog"
+            aria-expanded={lineSpacingOpen}
+            aria-controls="reader-line-spacing-popup"
+            onClick={toggleLineSpacingPopup}
+          ><span>{t("Spacing")} - {selectedLineHeight.label.charAt(0)}</span><ChevronDown /></button>
           <button
             className="reader-focus"
             aria-pressed={focusMode}
@@ -538,6 +593,31 @@ export default function Home() {
         </section>
       </div>}
       {selectedVerse && <button className={`verse-copy-popup${copyStatus.startsWith("Copied ") ? " copied" : ""}`} style={{ top: selectedVerse.top, left: selectedVerse.left }} onClick={() => void copySelectedVerse()} aria-label={t("Copy {reference}", { reference: selectedVerse.reference })} title={t("Copy {reference}", { reference: selectedVerse.reference })}><CopyIcon />{copyStatus.startsWith("Copied ") && <span>{t("Copied")}</span>}</button>}
+      {lineSpacingOpen && <div
+          className="reader-line-spacing-popup"
+          id="reader-line-spacing-popup"
+          role="dialog"
+          aria-labelledby="reader-line-spacing-title"
+          ref={lineSpacingPopupRef}
+          style={{ top: lineSpacingPopupPosition.top, left: lineSpacingPopupPosition.left }}
+        >
+          <h2 id="reader-line-spacing-title">{t("Line spacing")}</h2>
+          <p>{t("Adjust the space between lines.")}</p>
+          <div className="reader-line-spacing-options">
+            {LINE_HEIGHT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                className="reader-line-spacing-option"
+                aria-label={`${t("Spacing")} - ${option.label.charAt(0)} (${t(option.label)})`}
+                aria-pressed={lineHeight === option.value}
+                onClick={() => { setLineHeight(option.value); setLineSpacingOpen(false); }}
+              >
+                <span className="reader-spacing-sample" style={{ "--spacing-gap": `${option.ratio * 2}px` } as CSSProperties} aria-hidden="true"><span /><span /><span /></span>
+                <span>{t(option.label)} - {option.label.charAt(0)}</span>
+              </button>
+            ))}
+          </div>
+        </div>}
       <span className="visually-hidden" role="status" aria-live="polite">{copyStatus.startsWith("Copied ") ? t("Copied {reference}", { reference: copyStatus.slice(7) }) : t(copyStatus)}</span>
 
     </div>

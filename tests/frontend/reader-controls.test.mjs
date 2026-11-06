@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   adjustFontLevel,
   isLineHeightValue,
+  getLineSpacingPopupPosition,
   readerControlsVisibilityAfter,
   toggleFocusMode,
   toggleTranslation,
@@ -25,6 +26,25 @@ test("line spacing control accepts only the existing preference values", () => {
   assert.equal(isLineHeightValue(0.85), true);
   assert.equal(isLineHeightValue(1), true);
   assert.equal(isLineHeightValue(1.2), false);
+});
+
+test("line spacing popup remains within the viewport around its trigger", () => {
+  assert.deepEqual(
+    getLineSpacingPopupPosition(
+      { top: 590, bottom: 630, left: 651, width: 120 },
+      { width: 248, height: 150 },
+      { width: 1280, height: 720 },
+    ),
+    { top: 432, left: 587 },
+  );
+  assert.deepEqual(
+    getLineSpacingPopupPosition(
+      { top: 30, bottom: 70, left: 200, width: 100 },
+      { width: 248, height: 120 },
+      { width: 320, height: 600 },
+    ),
+    { top: 78, left: 64 },
+  );
 });
 
 test("focus control toggles the existing focus mode", () => {

@@ -25,6 +25,20 @@ export function toggleFocusMode(focusMode: boolean): boolean {
   return !focusMode;
 }
 
+export function getLineSpacingPopupPosition(
+  button: { top: number; bottom: number; left: number; width: number },
+  popup: { width: number; height: number },
+  viewport: { width: number; height: number },
+): { top: number; left: number } {
+  const top = button.top - popup.height - 8 >= 8
+    ? button.top - popup.height - 8
+    : Math.max(8, Math.min(button.bottom + 8, viewport.height - popup.height - 8));
+  return {
+    top,
+    left: Math.max(8, Math.min(button.left + button.width / 2 - popup.width / 2, viewport.width - popup.width - 8)),
+  };
+}
+
 export function readerControlsVisibilityAfter(action: "scroll" | "interaction"): boolean {
   return action === "interaction";
 }
