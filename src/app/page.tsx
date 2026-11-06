@@ -514,7 +514,7 @@ export default function Home() {
             <button onClick={() => setFontLevel((level) => adjustFontLevel(level, 1))} disabled={fontLevel === FONT_SIZES.length - 1} aria-label={t("Increase reading text size")} title={t("Increase reading text size")}>A+</button>
           </div>
           <select className="reader-line-spacing" value={lineHeight} aria-label={t("Line spacing")} title={t("Line spacing")} onChange={(event) => { const value = Number(event.target.value); if (isLineHeightValue(value)) setLineHeight(value); }}>
-            {LINE_HEIGHT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}
+            {LINE_HEIGHT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t("Spacing")} - {t(option.label).charAt(0)}</option>)}
           </select>
           <button
             className="reader-focus"

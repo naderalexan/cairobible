@@ -70,6 +70,7 @@ const arabic: Record<string, string> = {
   "Extra large": "كبير جداً",
   "Reading text size, five levels": "حجم نص القراءة، خمسة مستويات",
   "Line spacing": "تباعد الأسطر",
+  Spacing: "التباعد",
   "Adjust the space between lines.": "اضبط المسافة بين الأسطر.",
   "Reader line spacing": "تباعد أسطر القراءة",
   "NIV access": "الوصول إلى NIV",

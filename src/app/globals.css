@@ -97,7 +97,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .reader-size-controls { flex: 0 0 134px; width: 134px; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
 .reader-size-controls button { min-width: 34px; padding: 0 7px; font-size: 12px; }
 .reader-size-controls output { flex: 0 0 64px; width: 64px; color: var(--muted); font-size: 9px; text-align: center; white-space: nowrap; }
-.reader-line-spacing { flex: 0 0 80px; width: 80px; padding-inline: 8px; font-size: 10px; }
+.reader-line-spacing { flex: 0 0 104px; width: 104px; padding-inline: 8px; font-size: 10px; }
 .reader-focus { flex: 0 0 84px; width: 84px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding-inline: 4px; font-size: 11px; white-space: nowrap; }
 .reader-focus[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); }
 .app-shell.focus-mode .sidebar, .app-shell.focus-mode .toolbar, .app-shell.focus-mode .reader-heading, .app-shell.focus-mode .reader-footer { display: none; }
