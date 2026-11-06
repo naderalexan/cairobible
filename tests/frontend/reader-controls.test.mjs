@@ -2,16 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   adjustFontLevel,
+  FONT_LABELS,
+  FONT_SHORT_LABELS,
   isLineHeightValue,
   getLineSpacingPopupPosition,
   readerControlsVisibilityAfter,
   toggleFocusMode,
-  toggleTranslation,
 } from "../../src/lib/reader-controls.ts";
 
-test("translation control switches between SVD and NIV", () => {
-  assert.equal(toggleTranslation("svd"), "niv");
-  assert.equal(toggleTranslation("niv"), "svd");
+test("font size choices have compact labels and accessible names", () => {
+  assert.deepEqual(FONT_SHORT_LABELS, ["XS", "S", "M", "L", "XL"]);
+  assert.equal(FONT_LABELS.length, FONT_SHORT_LABELS.length);
 });
 
 test("text size control changes one level and stays within the available range", () => {

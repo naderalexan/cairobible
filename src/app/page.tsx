@@ -9,15 +9,14 @@ import { loadSvdChapter } from "@/lib/svd";
 import { getBookName, translate } from "@/lib/translations";
 import { VERSE_COPY_BUTTON_DURATION_MS, VERSE_COPY_HOVER_DELAY_MS } from "@/lib/config";
 import {
-  adjustFontLevel,
   FONT_LABELS,
+  FONT_SHORT_LABELS,
   FONT_SIZES,
   isLineHeightValue,
   getLineSpacingPopupPosition,
   LINE_HEIGHT_OPTIONS,
   readerControlsVisibilityAfter,
   toggleFocusMode,
-  toggleTranslation,
   type LineHeightValue,
 } from "@/lib/reader-controls";
 
@@ -554,24 +553,37 @@ export default function Home() {
         <nav className={`reader-controls${readerControlsVisible ? "" : " hidden"}`} aria-label={t("Reader controls")} aria-hidden={!readerControlsVisible}>
           {focusMode && <button className="reader-control-icon" onClick={() => setSettingsOpen(!settingsOpen)} aria-label={t(settingsOpen ? "Close settings" : "Open settings")} aria-expanded={settingsOpen} aria-controls="settingsDropdown" title={t("Settings")}><GearIcon /></button>}
           {focusMode && <button className="reader-control-icon chapter-stepper" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label={t("Previous chapter")}><ChevronLeft /></button>}
-          <button className="reader-translation" onClick={() => setTranslation(toggleTranslation(translation))} aria-label={t(`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`)} title={t("Switch translation")}>{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
-          <div className="reader-size-controls" role="group" aria-label={t("Reading text size")}>
-            <button onClick={() => setFontLevel((level) => adjustFontLevel(level, -1))} disabled={fontLevel === 0} aria-label={t("Decrease reading text size")} title={t("Decrease reading text size")}>A−</button>
-            <output aria-live="polite">{t(FONT_LABELS[fontLevel])}</output>
-            <button onClick={() => setFontLevel((level) => adjustFontLevel(level, 1))} disabled={fontLevel === FONT_SIZES.length - 1} aria-label={t("Increase reading text size")} title={t("Increase reading text size")}>A+</button>
+          <div className="reader-translation">
+            <select aria-label={t("Translation")} title={t("Translation")} value={translation} onChange={(event) => setTranslation(event.currentTarget.value as "niv" | "svd")}>
+              <option value="niv">NIV</option>
+              <option value="svd">SVD</option>
+            </select>
+            <ChevronDown />
           </div>
+          <div className="reader-size-controls" role="group" aria-label={t("Reading text size")}>
+            {FONT_SHORT_LABELS.map((label, index) => <button
+              key={label}
+              aria-pressed={fontLevel === index}
+              aria-label={t(`Set reading text size to ${FONT_LABELS[index]}`)}
+              title={t(`Set reading text size to ${FONT_LABELS[index]}`)}
+              onClick={() => setFontLevel(index)}
+            >{label}</button>)}
+          </div>
+          <span className="reader-controls-divider" aria-hidden="true" />
           <button
             ref={lineSpacingButtonRef}
             className="reader-line-spacing-trigger"
-            aria-label={`${t("Line spacing")}: ${t(selectedLineHeight.label)}`}
+            aria-label={`${t("Line spacing")}: ${selectedLineHeight.ratio}`}
             title={t("Line spacing")}
             aria-haspopup="dialog"
             aria-expanded={lineSpacingOpen}
             aria-controls="reader-line-spacing-popup"
             onClick={toggleLineSpacingPopup}
-          ><span>{t("Spacing")} - {selectedLineHeight.label.charAt(0)}</span><ChevronDown /></button>
+          ><SpacingIcon /><span>{selectedLineHeight.ratio}</span></button>
           <button
             className="reader-focus"
+            aria-label={t(focusMode ? "Exit focus mode" : "Enter focus mode")}
+            title={t(focusMode ? "Exit focus mode" : "Enter focus mode")}
             aria-pressed={focusMode}
             onClick={() => {
               const nextFocusMode = toggleFocusMode(focusMode);
@@ -581,7 +593,7 @@ export default function Home() {
                 setChapterPickerOpen(false);
               }
             }}
-          ><FocusIcon /><span>{t("Focus")}</span></button>
+          ><FocusIcon /></button>
           {focusMode && <button className="reader-control-icon chapter-stepper" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label={t("Next chapter")}><ChevronRight /></button>}
         </nav>
       </main>
@@ -710,4 +722,5 @@ function ChevronLeft() { return <svg viewBox="0 0 20 20" aria-hidden="true"><pat
 function ChevronRight() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>; }
 function CopyIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7" y="6" width="10" height="12" rx="1.5" /><path d="M13 3H4.5A1.5 1.5 0 0 0 3 4.5V15" /></svg>; }
 function FocusIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1v3m10-4h3a1 1 0 0 1 1 1v3M3 13v3a1 1 0 0 0 1 1h3m10-4v3a1 1 0 0 1-1 1h-3" /></svg>; }
+function SpacingIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h9M3 10h9M3 15h9M16 4v12m-2-10 2-2 2 2m-4 6 2 2 2-2" /></svg>; }
 function BookIllustration() { return <svg viewBox="0 0 180 150"><path className="art-line" d="M90 27v94M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14 18-16 39-21 62-14V25c-23-7-44-2-62 14Z" /><path className="art-page" d="M90 39c-18-16-39-21-62-14v76c23-7 44-2 62 14zM90 39c18-16 39-21 62-14v76c-23-7-44-2-62 14z" /><path className="art-rule" d="M44 45c12-2 23 0 33 6M44 57c12-2 23 0 33 6M103 51c10-6 21-8 33-6M103 63c10-6 21-8 33-6" /></svg>; }

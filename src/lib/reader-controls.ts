@@ -1,5 +1,6 @@
 export const FONT_SIZES = [18, 20, 22, 25, 29];
-export const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
+export const FONT_LABELS = ["Extra small", "Small", "Medium", "Large", "Extra large"];
+export const FONT_SHORT_LABELS = ["XS", "S", "M", "L", "XL"];
 export const LINE_HEIGHT_OPTIONS = [
   { label: "Small", value: 0.55, ratio: 1.5 },
   { label: "Medium", value: 0.85, ratio: 1.85 },
@@ -7,14 +8,8 @@ export const LINE_HEIGHT_OPTIONS = [
 ] as const;
 
 export type LineHeightValue = (typeof LINE_HEIGHT_OPTIONS)[number]["value"];
-export type ReaderTranslation = "niv" | "svd";
-
 export function isLineHeightValue(value: number): value is LineHeightValue {
   return LINE_HEIGHT_OPTIONS.some((option) => option.value === value);
-}
-
-export function toggleTranslation(translation: ReaderTranslation): ReaderTranslation {
-  return translation === "niv" ? "svd" : "niv";
 }
 
 export function adjustFontLevel(level: number, delta: -1 | 1): number {
