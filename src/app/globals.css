@@ -83,7 +83,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .primary-button span { font-size: 17px; }
 .setup-note { margin: 13px 0 0; color: var(--muted); font-size: 10px; }
 .reader-footer { min-height: 74px; padding: 0 clamp(20px, 4vw, 54px); display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); }
-.reader-controls { position: fixed; z-index: 6; left: 50%; bottom: calc(82px + env(safe-area-inset-bottom)); width: max-content; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 4px; overflow-x: auto; padding: 6px; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 999px; background: var(--surface-raised); box-shadow: var(--shadow); scrollbar-width: none; transition: opacity .16s ease, transform .16s ease, visibility .16s ease; }
+.reader-controls { position: fixed; z-index: 6; left: 50%; bottom: calc(82px + env(safe-area-inset-bottom)); width: max-content; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 4px; overflow-x: auto; padding: 6px; direction: ltr; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 999px; background: var(--surface-raised); box-shadow: var(--shadow); scrollbar-width: none; transition: opacity .16s ease, transform .16s ease, visibility .16s ease; }
 .reader-controls::-webkit-scrollbar { display: none; }
 .reader-controls.hidden { opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 10px); }
 .reader-controls button, .reader-controls select { min-height: 40px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); }
@@ -93,12 +93,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .reader-control-icon { min-width: 40px; display: grid; place-items: center; }
 .reader-control-icon svg, .reader-focus svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
 .reader-control-icon.chapter-stepper svg { width: 19px; height: 19px; }
-.reader-translation { flex: 0 0 auto; min-width: 54px; padding-inline: 9px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.reader-size-controls { flex: 0 0 auto; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.reader-translation { flex: 0 0 88px; width: 88px; padding-inline: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.reader-size-controls { flex: 0 0 134px; width: 134px; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
 .reader-size-controls button { min-width: 34px; padding: 0 7px; font-size: 12px; }
-.reader-size-controls output { min-width: 57px; color: var(--muted); font-size: 9px; text-align: center; white-space: nowrap; }
-.reader-line-spacing { flex: 0 0 auto; min-width: 72px; padding-inline: 8px; font-size: 10px; }
-.reader-focus { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding-inline: 10px; font-size: 11px; white-space: nowrap; }
+.reader-size-controls output { flex: 0 0 64px; width: 64px; color: var(--muted); font-size: 9px; text-align: center; white-space: nowrap; }
+.reader-line-spacing { flex: 0 0 80px; width: 80px; padding-inline: 8px; font-size: 10px; }
+.reader-focus { flex: 0 0 84px; width: 84px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding-inline: 4px; font-size: 11px; white-space: nowrap; }
 .reader-focus[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); }
 .app-shell.focus-mode .sidebar, .app-shell.focus-mode .toolbar, .app-shell.focus-mode .reader-heading, .app-shell.focus-mode .reader-footer { display: none; }
 .app-shell.focus-mode .reader { width: min(100% - 48px, 760px); padding: 64px 0 calc(112px + env(safe-area-inset-bottom)); }
