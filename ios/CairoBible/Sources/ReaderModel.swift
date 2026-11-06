@@ -235,14 +235,14 @@ enum BibleTranslation: String, CaseIterable, Identifiable {
     var reminderTitle: String {
         switch self {
         case .niv: "Time to read the Bible"
-        case .svd: "حان وقت قراءة الكتاب المقدس"
+        case .svd: "\u{200F}حان وقت قراءة الكتاب المقدس"
         }
     }
 
     var reminderBody: String {
         switch self {
         case .niv: "Take a moment for your daily reading."
-        case .svd: "خصص لحظة لقراءتك اليومية."
+        case .svd: "\u{200F}خصص لحظة لقراءتك اليومية."
         }
     }
 }

@@ -268,8 +268,8 @@ final class ReaderFlowTests: XCTestCase {
         await reminders.setTranslation(.svd)
 
         XCTAssertEqual(scheduler.scheduledTranslations, [.niv, .svd])
-        XCTAssertEqual(BibleTranslation.svd.reminderTitle, "حان وقت قراءة الكتاب المقدس")
-        XCTAssertEqual(BibleTranslation.svd.reminderBody, "خصص لحظة لقراءتك اليومية.")
+        XCTAssertEqual(BibleTranslation.svd.reminderTitle, "\u{200F}حان وقت قراءة الكتاب المقدس")
+        XCTAssertEqual(BibleTranslation.svd.reminderBody, "\u{200F}خصص لحظة لقراءتك اليومية.")
     }
 
     func testDailyReminderTimeChangeReschedulesAndPersists() async {
