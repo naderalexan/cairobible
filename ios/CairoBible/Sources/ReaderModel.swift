@@ -87,9 +87,14 @@ private struct LocalDailyReminderScheduler: DailyReminderScheduling {
     }
 
     func scheduleDailyReminder(at time: DateComponents, translation: BibleTranslation) async throws {
+        let category = UNNotificationCategory(identifier: identifier, actions: [], intentIdentifiers: [])
+        center.setNotificationCategories([category])
+
         let content = UNMutableNotificationContent()
         content.title = translation.reminderTitle
         content.body = translation.reminderBody
+        content.categoryIdentifier = identifier
+        content.userInfo = ["translation": translation.rawValue]
         content.sound = .default
         try await center.add(UNNotificationRequest(
             identifier: identifier,

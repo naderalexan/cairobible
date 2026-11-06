@@ -19,6 +19,9 @@
 		A1000000000000000000000A /* ../../public/data/arb-vd.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* ../../public/data/arb-vd.json */; };
 		A1000000000000000000000B /* ../../public/data/arb-vd-verses.json in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */; };
 		A1000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* Assets.xcassets */; };
+		A1000000000000000000000D /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* NotificationViewController.swift */; };
+		A1000000000000000000000E /* CairoBibleNotificationContent.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* CairoBibleNotificationContent.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A1000000000000000000000F /* NotificationViewController.swift in Tests */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* NotificationViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,6 +31,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = E10000000000000000000001;
 			remoteInfo = CairoBible;
+		};
+		C10000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E10000000000000000000003;
+			remoteInfo = CairoBibleNotificationContent;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -45,6 +55,9 @@
 		B10000000000000000000011 /* ../../public/data/arb-vd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd.json"; sourceTree = "<group>"; };
 		B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "../../public/data/arb-vd-verses.json"; sourceTree = "<group>"; };
 		B10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B10000000000000000000014 /* NotificationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationViewController.swift; sourceTree = "<group>"; };
+		B10000000000000000000015 /* NotificationContentExtension-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = NotificationContentExtension-Info.plist; sourceTree = "<group>"; };
+		B10000000000000000000016 /* CairoBibleNotificationContent.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = CairoBibleNotificationContent.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +73,24 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F10000000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F10000000000000000000004 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A1000000000000000000000E /* CairoBibleNotificationContent.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -86,6 +117,7 @@
 				B10000000000000000000004 /* ReaderModel.swift */,
 				B10000000000000000000005 /* ReaderView.swift */,
 				B10000000000000000000010 /* SVDReadingClient.swift */,
+				B10000000000000000000014 /* NotificationViewController.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -102,6 +134,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000000000000000000007 /* Info.plist */,
+				B10000000000000000000015 /* NotificationContentExtension-Info.plist */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
@@ -111,6 +144,7 @@
 			children = (
 				B10000000000000000000008 /* CairoBible.app */,
 				B10000000000000000000009 /* CairoBibleTests.xctest */,
+				B10000000000000000000016 /* CairoBibleNotificationContent.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -134,10 +168,12 @@
 				F10000000000000000000001 /* Frameworks */,
 				I10000000000000000000001 /* Sources */,
 				J10000000000000000000001 /* Resources */,
+				F10000000000000000000004 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				K10000000000000000000002 /* PBXTargetDependency */,
 			);
 			name = CairoBible;
 			productName = CairoBible;
@@ -162,6 +198,23 @@
 			productReference = B10000000000000000000009 /* CairoBibleTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		E10000000000000000000003 /* CairoBibleNotificationContent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = H10000000000000000000004 /* Build configuration list for PBXNativeTarget "CairoBibleNotificationContent" */;
+			buildPhases = (
+				F10000000000000000000003 /* Frameworks */,
+				I10000000000000000000003 /* Sources */,
+				J10000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CairoBibleNotificationContent;
+			productName = CairoBibleNotificationContent;
+			productReference = B10000000000000000000016 /* CairoBibleNotificationContent.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -177,6 +230,9 @@
 					E10000000000000000000002 = {
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = E10000000000000000000001;
+					};
+					E10000000000000000000003 = {
+						CreatedOnToolsVersion = 16.0;
 					};
 				};
 			};
@@ -195,6 +251,7 @@
 			targets = (
 				E10000000000000000000001 /* CairoBible */,
 				E10000000000000000000002 /* CairoBibleTests */,
+				E10000000000000000000003 /* CairoBibleNotificationContent */,
 			);
 		};
 /* End PBXProject section */
@@ -219,6 +276,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		J10000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -240,6 +304,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000006 /* ReaderFlowTests.swift in Sources */,
+				A1000000000000000000000F /* NotificationViewController.swift in Tests */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		I10000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000D /* NotificationViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +323,11 @@
 			isa = PBXTargetDependency;
 			target = E10000000000000000000001 /* CairoBible */;
 			targetProxy = C10000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		K10000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E10000000000000000000003 /* CairoBibleNotificationContent */;
+			targetProxy = C10000000000000000000002 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -344,6 +422,44 @@
 			};
 			name = Release;
 		};
+		L10000000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				DEVELOPMENT_TEAM = B8D538RWZ3;
+				INFOPLIST_FILE = Configuration/NotificationContentExtension-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.reader.NotificationContent;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		L10000000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				DEVELOPMENT_TEAM = B8D538RWZ3;
+				INFOPLIST_FILE = Configuration/NotificationContentExtension-Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = site.cairolove.bible.reader.NotificationContent;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -370,6 +486,15 @@
 			buildConfigurations = (
 				L10000000000000000000005 /* Debug */,
 				L10000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		H10000000000000000000004 /* Build configuration list for PBXNativeTarget "CairoBibleNotificationContent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				L10000000000000000000007 /* Debug */,
+				L10000000000000000000008 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

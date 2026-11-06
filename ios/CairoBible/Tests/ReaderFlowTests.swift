@@ -261,8 +261,11 @@ final class ReaderFlowTests: XCTestCase {
     }
 
     func testDailyReminderReschedulesUsingLastSelectedTranslation() async {
+        let suiteName = "DailyReminderTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
         let scheduler = StubDailyReminderScheduler()
-        let reminders = DailyReminderManager(scheduler: scheduler)
+        let reminders = DailyReminderManager(defaults: defaults, scheduler: scheduler)
         await reminders.setEnabled(true)
 
         await reminders.setTranslation(.svd)
@@ -270,6 +273,22 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(scheduler.scheduledTranslations, [.niv, .svd])
         XCTAssertEqual(BibleTranslation.svd.reminderTitle, "\u{200F}حان وقت قراءة الكتاب المقدس")
         XCTAssertEqual(BibleTranslation.svd.reminderBody, "\u{200F}خصص لحظة لقراءتك اليومية.")
+    }
+
+    func testNotificationContentUsesRightAlignmentForArabicAndLeftForEnglish() {
+        let viewController = NotificationViewController()
+        viewController.loadViewIfNeeded()
+
+        viewController.configure(title: "عنوان", body: "نص", isRightToLeft: true)
+        XCTAssertEqual(viewController.titleLabel.textAlignment, .right)
+        XCTAssertEqual(viewController.bodyLabel.textAlignment, .right)
+        XCTAssertEqual(viewController.titleLabel.semanticContentAttribute, .forceRightToLeft)
+        XCTAssertEqual(viewController.view.semanticContentAttribute, .forceRightToLeft)
+
+        viewController.configure(title: "Title", body: "Body", isRightToLeft: false)
+        XCTAssertEqual(viewController.titleLabel.textAlignment, .left)
+        XCTAssertEqual(viewController.bodyLabel.textAlignment, .left)
+        XCTAssertEqual(viewController.titleLabel.semanticContentAttribute, .forceLeftToRight)
     }
 
     func testDailyReminderTimeChangeReschedulesAndPersists() async {
