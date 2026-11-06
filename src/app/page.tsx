@@ -579,7 +579,7 @@ export default function Home() {
             aria-expanded={lineSpacingOpen}
             aria-controls="reader-line-spacing-popup"
             onClick={toggleLineSpacingPopup}
-          ><SpacingIcon /><span>{selectedLineHeight.ratio}</span></button>
+          ><SpacingIcon /></button>
           <button
             className="reader-focus"
             aria-label={t(focusMode ? "Exit focus mode" : "Enter focus mode")}
