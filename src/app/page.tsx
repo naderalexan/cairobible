@@ -8,9 +8,18 @@ import { loadChapter, trackFums, type BibleChapter } from "@/lib/scripture";
 import { loadSvdChapter } from "@/lib/svd";
 import { getBookName, translate } from "@/lib/translations";
 import { VERSE_COPY_BUTTON_DURATION_MS, VERSE_COPY_HOVER_DELAY_MS } from "@/lib/config";
+import {
+  adjustFontLevel,
+  FONT_LABELS,
+  FONT_SIZES,
+  isLineHeightValue,
+  LINE_HEIGHT_OPTIONS,
+  readerControlsVisibilityAfter,
+  toggleFocusMode,
+  toggleTranslation,
+  type LineHeightValue,
+} from "@/lib/reader-controls";
 
-const FONT_SIZES = [18, 20, 22, 25, 29];
-const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
 const PALETTES = [
   { id: "cairo", name: "Cairo" },
   { id: "olive", name: "Olive" },
@@ -19,17 +28,7 @@ const PALETTES = [
   { id: "sandstone", name: "Sandstone" },
 ] as const;
 type PaletteId = (typeof PALETTES)[number]["id"];
-const LINE_HEIGHT_OPTIONS = [
-  { label: "Small", value: 0.55, ratio: 1.5 },
-  { label: "Medium", value: 0.85, ratio: 1.85 },
-  { label: "Large", value: 1, ratio: 2 },
-] as const;
-type LineHeightValue = (typeof LINE_HEIGHT_OPTIONS)[number]["value"];
 const POSITION_KEY = "still-reading-position";
-
-function isLineHeightValue(value: number): value is LineHeightValue {
-  return LINE_HEIGHT_OPTIONS.some((option) => option.value === value);
-}
 
 function isPaletteId(value: string | null): value is PaletteId {
   return PALETTES.some((palette) => palette.id === value);
@@ -44,6 +43,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [chapterPickerOpen, setChapterPickerOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [readerControlsVisible, setReaderControlsVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [palette, setPalette] = useState<PaletteId>("cairo");
@@ -428,9 +428,7 @@ export default function Home() {
           </div>
           <div className="toolbar-actions">
             <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{t(isOnline ? "Online" : "Offline")}</span>
-            <button className="translation-trigger" onClick={() => setTranslation(translation === "niv" ? "svd" : "niv")} aria-label={t(`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`)} title={t("Switch translation")}>{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
             <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={t("Switch to {language} appearance", { language: t(theme === "light" ? "dark" : "light") })} title={t("Switch to {language} appearance", { language: t(theme === "light" ? "dark" : "light") })}>{theme === "light" ? <MoonIcon /> : <SunIcon />}</button>
-            <button className="focus-trigger" onClick={() => { setFocusMode(true); setSettingsOpen(false); setChapterPickerOpen(false); }}><FocusIcon /><span>{t("Focus")}</span></button>
             <button className="settings-trigger" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /><span>{t("Settings")}</span></button>
           </div>
         </header>
@@ -458,23 +456,21 @@ export default function Home() {
                 </label>)}
               </div>
             </section>
-            <section className="setting-block"><div className="setting-heading"><div><h3>{t("Reading size")}</h3><p>{t("Choose what feels comfortable.")}</p></div><output>{t(FONT_LABELS[fontLevel])}</output></div>
-              <div className="slider-row"><span className="slider-small" aria-hidden="true">A</span><input type="range" min="0" max="4" step="1" value={fontLevel} aria-label={t("Reading text size, five levels")} onChange={(event) => setFontLevel(Number(event.target.value))} /><span className="slider-large" aria-hidden="true">A</span></div><div className="slider-levels"><span>{t("Small")}</span><span>{t("Large")}</span></div>
-            </section>
-            <section className="setting-block">
-              <div className="setting-heading"><div><h3>{t("Line spacing")}</h3><p>{t("Adjust the space between lines.")}</p></div><output>{t(selectedLineHeight.label)}</output></div>
-              <div className="line-height-options" role="radiogroup" aria-label={t("Reader line spacing")}>
-                {LINE_HEIGHT_OPTIONS.map((option) => <label className="line-height-option" key={option.value}>
-                  <input type="radio" name="reading-line-height" value={option.value} checked={lineHeight === option.value} onChange={(event) => { const value = Number(event.target.value); if (isLineHeightValue(value)) setLineHeight(value); }} />
-                  <span>{t(option.label)}</span>
-                </label>)}
-              </div>
-            </section>
             <section className="setting-block api-setting"><div className="setting-heading"><div><h3>{t("NIV access")}</h3><p>{t("NIV access is configured on the Bible server.")}</p></div></div><p className="privacy-note">{t("The NIV corpus stays unavailable until the required license or written permission is confirmed.")}</p></section>
           </div>
         </section>}
 
-        <div className="reader-scroll" ref={readerScrollRef}>
+        <div
+          className="reader-scroll"
+          ref={readerScrollRef}
+          tabIndex={0}
+          aria-label={t("Bible reading")}
+          onScroll={() => setReaderControlsVisible(readerControlsVisibilityAfter("scroll"))}
+          onPointerDown={() => setReaderControlsVisible(readerControlsVisibilityAfter("interaction"))}
+          onClick={() => setReaderControlsVisible(readerControlsVisibilityAfter("interaction"))}
+          onFocusCapture={() => setReaderControlsVisible(readerControlsVisibilityAfter("interaction"))}
+          onKeyUp={() => setReaderControlsVisible(readerControlsVisibilityAfter("interaction"))}
+        >
           <section className="reader">
             <div className="reader-heading">
               <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
@@ -507,12 +503,32 @@ export default function Home() {
           {translation === "svd" ? <span className="offline-ready" aria-label={t("SVD Bible stored on this device")}>{t("SVD · On this device")}</span> : <span className="offline-ready">{t("NIV · Server access")}</span>}
           <button className="chapter-step" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label={t("Next chapter")}><span>{t("Next")}</span><ChevronRight /></button>
         </footer>
-        {focusMode && <nav className="focus-actions" aria-label={t("Focus reading controls")}>
-          <button className="focus-exit" onClick={() => setFocusMode(false)}>{t("Exit focus")}</button>
-          <button className="focus-arrow" onClick={() => setSettingsOpen(!settingsOpen)} aria-label={t(settingsOpen ? "Close settings" : "Open settings")} aria-expanded={settingsOpen} aria-controls="settingsDropdown" title={t("Settings")}><GearIcon /></button>
-          <button className="focus-arrow chapter-stepper" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label={t("Previous chapter")}><ChevronLeft /></button>
-          <button className="focus-arrow chapter-stepper" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label={t("Next chapter")}><ChevronRight /></button>
-        </nav>}
+        <nav className={`reader-controls${readerControlsVisible ? "" : " hidden"}`} aria-label={t("Reader controls")} aria-hidden={!readerControlsVisible}>
+          {focusMode && <button className="reader-control-icon" onClick={() => setSettingsOpen(!settingsOpen)} aria-label={t(settingsOpen ? "Close settings" : "Open settings")} aria-expanded={settingsOpen} aria-controls="settingsDropdown" title={t("Settings")}><GearIcon /></button>}
+          {focusMode && <button className="reader-control-icon chapter-stepper" onClick={() => stepChapter(-1)} disabled={isFirstChapter} aria-label={t("Previous chapter")}><ChevronLeft /></button>}
+          <button className="reader-translation" onClick={() => setTranslation(toggleTranslation(translation))} aria-label={t(`Switch to ${translation === "niv" ? "Arabic SVD" : "NIV"}`)} title={t("Switch translation")}>{translation === "niv" ? "SVD · العربية" : "NIV"}</button>
+          <div className="reader-size-controls" role="group" aria-label={t("Reading text size")}>
+            <button onClick={() => setFontLevel((level) => adjustFontLevel(level, -1))} disabled={fontLevel === 0} aria-label={t("Decrease reading text size")} title={t("Decrease reading text size")}>A−</button>
+            <output aria-live="polite">{t(FONT_LABELS[fontLevel])}</output>
+            <button onClick={() => setFontLevel((level) => adjustFontLevel(level, 1))} disabled={fontLevel === FONT_SIZES.length - 1} aria-label={t("Increase reading text size")} title={t("Increase reading text size")}>A+</button>
+          </div>
+          <select className="reader-line-spacing" value={lineHeight} aria-label={t("Line spacing")} title={t("Line spacing")} onChange={(event) => { const value = Number(event.target.value); if (isLineHeightValue(value)) setLineHeight(value); }}>
+            {LINE_HEIGHT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}
+          </select>
+          <button
+            className="reader-focus"
+            aria-pressed={focusMode}
+            onClick={() => {
+              const nextFocusMode = toggleFocusMode(focusMode);
+              setFocusMode(nextFocusMode);
+              if (nextFocusMode) {
+                setSettingsOpen(false);
+                setChapterPickerOpen(false);
+              }
+            }}
+          ><FocusIcon /><span>{t("Focus")}</span></button>
+          {focusMode && <button className="reader-control-icon chapter-stepper" onClick={() => stepChapter(1)} disabled={isLastChapter} aria-label={t("Next chapter")}><ChevronRight /></button>}
+        </nav>
       </main>
 
       {chapterPickerOpen && <div className="dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setChapterPickerOpen(false); }}>

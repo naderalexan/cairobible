@@ -1,0 +1,30 @@
+export const FONT_SIZES = [18, 20, 22, 25, 29];
+export const FONT_LABELS = ["Small", "Comfortable", "Medium", "Large", "Extra large"];
+export const LINE_HEIGHT_OPTIONS = [
+  { label: "Small", value: 0.55, ratio: 1.5 },
+  { label: "Medium", value: 0.85, ratio: 1.85 },
+  { label: "Large", value: 1, ratio: 2 },
+] as const;
+
+export type LineHeightValue = (typeof LINE_HEIGHT_OPTIONS)[number]["value"];
+export type ReaderTranslation = "niv" | "svd";
+
+export function isLineHeightValue(value: number): value is LineHeightValue {
+  return LINE_HEIGHT_OPTIONS.some((option) => option.value === value);
+}
+
+export function toggleTranslation(translation: ReaderTranslation): ReaderTranslation {
+  return translation === "niv" ? "svd" : "niv";
+}
+
+export function adjustFontLevel(level: number, delta: -1 | 1): number {
+  return Math.max(0, Math.min(FONT_SIZES.length - 1, level + delta));
+}
+
+export function toggleFocusMode(focusMode: boolean): boolean {
+  return !focusMode;
+}
+
+export function readerControlsVisibilityAfter(action: "scroll" | "interaction"): boolean {
+  return action === "interaction";
+}
