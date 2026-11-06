@@ -58,6 +58,7 @@ export default function Home() {
   const [selectedVerse, setSelectedVerse] = useState<{ key: string; text: string; reference: string; top: number; left: number } | null>(null);
   const [copyStatus, setCopyStatus] = useState("");
   const selectedVerseKey = selectedVerse?.key;
+  const verseCopyButtonDuration = VERSE_COPY_BUTTON_DURATION_MS;
   const verseHoverTimeoutRef = useRef<number | null>(null);
   const settingsDropdownRef = useRef<HTMLElement | null>(null);
   const readerScrollRef = useRef<HTMLDivElement | null>(null);
@@ -243,9 +244,9 @@ export default function Home() {
     if (!selectedVerseKey) return;
     const timeout = window.setTimeout(() => {
       setSelectedVerse((current) => current?.key === selectedVerseKey ? null : current);
-    }, VERSE_COPY_BUTTON_DURATION_MS);
+    }, verseCopyButtonDuration);
     return () => window.clearTimeout(timeout);
-  }, [selectedVerseKey]);
+  }, [selectedVerseKey, verseCopyButtonDuration]);
 
   useEffect(() => {
     let cancelled = false;
