@@ -228,11 +228,13 @@ export default function Home() {
       const rect = verse.getBoundingClientRect();
       setSelectedVerse((current) => current ? { ...current, top: rect.top, left: Math.max(8, rect.left - 44) } : null);
     };
-    const scrollArea = document.querySelector(".reader-scroll");
+    const scrollArea = readerScrollRef.current;
     scrollArea?.addEventListener("scroll", updatePosition, { passive: true });
+    window.addEventListener("scroll", updatePosition, { passive: true });
     window.addEventListener("resize", updatePosition);
     return () => {
       scrollArea?.removeEventListener("scroll", updatePosition);
+      window.removeEventListener("scroll", updatePosition);
       window.removeEventListener("resize", updatePosition);
     };
   }, [selectedVerseKey]);
