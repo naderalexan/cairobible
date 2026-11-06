@@ -379,7 +379,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BIBLE_API_BASE_URL = "https://api.bible.cairolove.site";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				PROVISIONING_PROFILE_SPECIFIER = "$(CI_APP_PROVISIONING_PROFILE_UUID)";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = B8D538RWZ3;
 				INFOPLIST_FILE = Configuration/Info.plist;
@@ -445,7 +447,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				PROVISIONING_PROFILE_SPECIFIER = "$(CI_EXTENSION_PROVISIONING_PROFILE_UUID)";
 				CURRENT_PROJECT_VERSION = 1;
 				MARKETING_VERSION = 1.0;
 				DEVELOPMENT_TEAM = B8D538RWZ3;

@@ -40,14 +40,18 @@ Open `ios/CairoBible/CairoBible.xcodeproj` in Xcode and run the shared **CairoBi
 
 The **iOS** GitHub Actions workflow builds the app and runs its controlled-response reader tests on an iOS simulator whenever the native app changes. On pushes to `main`, it also archives and uploads a build to TestFlight after the simulator tests pass. Build numbers come from the GitHub Actions run number and attempt; update `CFBundleShortVersionString` in `ios/CairoBible/Configuration/Info.plist` when preparing a new app version.
 
-Before enabling uploads, enroll in the Apple Developer Program and create an App Store Connect app record for bundle ID `site.cairolove.bible.reader`. Add these repository secrets under **Settings → Secrets and variables → Actions**:
+Before enabling uploads, enroll in the Apple Developer Program and create an App Store Connect app record for bundle ID `site.cairolove.bible.reader`. The TestFlight workflow reuses a manually provisioned Apple Distribution identity; it does not create or modify signing certificates. Export the existing certificate and its private key from Keychain Access as a password-protected `.p12`, and create App Store provisioning profiles for both `site.cairolove.bible.reader` and `site.cairolove.bible.reader.NotificationContent` that use that certificate. Add these repository secrets under **Settings → Secrets and variables → Actions**:
 
 - `APPLE_DEVELOPER_TEAM_ID`: the Apple Developer team ID.
+- `APPLE_CERTIFICATE_P12_BASE64`: base64-encoded `.p12` file containing the Apple Distribution certificate and private key.
+- `APPLE_CERTIFICATE_PASSWORD`: the password used to export the `.p12` file.
+- `APPLE_APP_PROVISIONING_PROFILE_BASE64`: base64-encoded App Store provisioning profile for the app.
+- `APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64`: base64-encoded App Store provisioning profile for the notification extension.
 - `APP_STORE_CONNECT_API_KEY_ID`: the key ID for a team App Store Connect API key.
 - `APP_STORE_CONNECT_ISSUER_ID`: the API key issuer ID.
 - `APP_STORE_CONNECT_API_PRIVATE_KEY`: the complete contents of the key's `.p8` file; store it only as a GitHub secret.
 
-The API key must allow Xcode to manage signing assets and upload builds. The first successful upload may need processing in App Store Connect before testers can install it. Configure tester groups and invite testers there; this workflow uploads builds but does not distribute invitations or automatically release a build.
+The API key needs App Store Connect upload access; signing assets are installed from the certificate and profiles above. The first successful upload may need processing in App Store Connect before testers can install it. Configure tester groups and invite testers there; this workflow uploads builds but does not distribute invitations or automatically release a build.
 
 ## Production deployment
 
