@@ -684,6 +684,7 @@ private struct ReadingPreferencesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     appearanceSection
+                    languageSection
                     paletteSection
                     reminderSection
                 }
@@ -720,6 +721,40 @@ private struct ReadingPreferencesView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityValue(isSelected ? preferences.appLanguage.localized("Selected") : "")
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
+            }
+            .padding(4)
+            .background(colors.surface, in: Capsule())
+            .overlay(Capsule().stroke(colors.muted.opacity(0.22), lineWidth: 1))
+        }
+    }
+
+    private var languageSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeading("App language")
+
+            HStack(spacing: 4) {
+                ForEach(AppLanguage.allCases) { language in
+                    let isSelected = preferences.appLanguage == language
+                    Button {
+                        preferences.setAppLanguage(language)
+                    } label: {
+                        Text(language.title)
+                            .font(.custom("Georgia", size: 17, relativeTo: .body))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                            .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background {
+                                if isSelected {
+                                    RoundedRectangle(cornerRadius: 12).fill(colors.accent)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(preferences.appLanguage.localized("App language"))
+                    .accessibilityValue(isSelected ? language.title : "")
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
