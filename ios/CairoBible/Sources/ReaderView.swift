@@ -74,12 +74,22 @@ struct ReaderView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Cairo Bible")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingPreferences = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Reading preferences")
+                }
+            }
             .sheet(isPresented: $isShowingPreferences) {
                 ReadingPreferencesView(
                     preferences: preferences,
-                    reminders: reminderManager,
-                    translation: model.selectedTranslation
+                    reminders: reminderManager
                 )
             }
             .task {
@@ -134,12 +144,6 @@ struct ReaderView: View {
     private var chapterNavigation: some View {
         HStack(spacing: 10) {
             Menu {
-                Button {
-                    isShowingPreferences = true
-                } label: {
-                    Label("Reading preferences", systemImage: "gearshape")
-                }
-                Divider()
                 Picker("Book", selection: Binding(
                     get: { model.selectedBook },
                     set: { model.selectBook($0) }
@@ -491,34 +495,12 @@ private struct ReaderControlsBar: View {
 private struct ReadingPreferencesView: View {
     @ObservedObject var preferences: ReadingPreferences
     @ObservedObject var reminders: DailyReminderManager
-    let translation: BibleTranslation
-    @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Text size") {
-                    Slider(
-                        value: Binding(
-                            get: { preferences.fontSize },
-                            set: { preferences.setFontSize($0) }
-                        ),
-                        in: ReadingPreferences.fontSizeRange,
-                        step: 1
-                    )
-                    .accessibilityLabel("Reading text size")
-                    .accessibilityValue("\(Int(preferences.fontSize)) points")
-
-                    Text(sampleText)
-                        .font(.system(size: CGFloat(preferences.fontSize * dynamicTypeScale), design: .serif))
-                        .environment(\.layoutDirection, translation.isRightToLeft ? .rightToLeft : .leftToRight)
-                        .multilineTextAlignment(.leading)
-                        .environment(\.locale, translation.isRightToLeft ? Locale(identifier: "ar") : .current)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
                 Section("Color palette") {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(ReaderPalette.allCases) { palette in
@@ -575,6 +557,7 @@ private struct ReadingPreferencesView: View {
                             Text(appearance.title).tag(appearance)
                         }
                     }
+                    .pickerStyle(.segmented)
                 }
 
                 Section("Daily reminder") {
@@ -589,11 +572,13 @@ private struct ReadingPreferencesView: View {
                         set: { time in Task { await reminders.setReminderTime(time) } }
                     ), displayedComponents: .hourAndMinute)
                     .disabled(!reminders.isEnabled || reminders.isRequestingAuthorization)
+                    .accessibilityHint(reminderTimeAccessibilityHint)
 
                     if let message = reminders.message {
                         Text(message)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -608,10 +593,13 @@ private struct ReadingPreferencesView: View {
         }
     }
 
-    private var sampleText: String {
-        switch translation {
-        case .niv: "The Lord is my shepherd"
-        case .svd: "ٱلرَّبُّ رَاعِيَّ فَلَا يُعْوِزُنِي شَيْءٌ."
+    private var reminderTimeAccessibilityHint: String {
+        if reminders.isRequestingAuthorization {
+            "Wait while notification permission is requested."
+        } else if reminders.isEnabled {
+            "Choose when your daily reading reminder is sent."
+        } else {
+            "Turn on the daily reading reminder to choose a time."
         }
     }
 
