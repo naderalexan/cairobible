@@ -31,6 +31,7 @@ export default function PrivacyPage() {
         <h2>Information sent to our service</h2>
         <p>Reading SVD does not require a network request. When you request an NIV chapter that is not available in your local cache, the app sends the selected book and chapter to our Bible service at <span dir="ltr">api.bible.cairolove.site</span>. Like other internet services, the service and its hosting providers receive connection information, such as your IP address, needed to handle the request.</p>
         <p>If NIV access is enabled, our service may retrieve licensed scripture from API.Bible. API.Bible credentials are kept on our server; the app does not send them. We do not create a user profile or account from your reading requests.</p>
+        <p>The API server runs with Uvicorn access logging enabled by default. Its access entries include the request path (which identifies the requested translation, book, and chapter), the address seen by the API process (which may be a proxy address), and the response status. Docker and host logging settings determine where those entries are stored and how long they are kept; we have not yet verified the live server’s retention settings.</p>
 
         <h2>Tracking and sharing</h2>
         <p>The iOS app contains no advertising or analytics SDKs and does not use cross-app tracking. We do not sell personal information. Service providers may process connection information to operate and protect the service.</p>
@@ -54,6 +55,7 @@ export default function PrivacyPage() {
         <h2>المعلومات المرسلة إلى خدمتنا</h2>
         <p>لا يحتاج قراءة ترجمة فان دايك إلى اتصال بالشبكة. عند طلب إصحاح NIV غير موجود في النسخة المحفوظة على جهازك، يرسل التطبيق اسم السفر ورقم الإصحاح إلى خدمة الكتاب المقدس لدينا على <span dir="ltr">api.bible.cairolove.site</span>. وتتلقى الخدمة ومزوّدو الاستضافة معلومات الاتصال المعتادة، مثل عنوان IP، اللازمة لمعالجة الطلب.</p>
         <p>إذا فُعّل الوصول إلى NIV، فقد تسترجع خدمتنا النص المرخّص من API.Bible. تبقى بيانات اعتماد API.Bible على خادمنا ولا يرسلها التطبيق. لا ننشئ حسابًا أو ملفًا شخصيًا للمستخدم استنادًا إلى طلبات القراءة.</p>
+        <p>يعمل خادم واجهة API مع تفعيل سجلات الوصول الافتراضية في Uvicorn. تتضمن هذه السجلات مسار الطلب (الذي يحدد الترجمة والسفر والإصحاح المطلوب)، والعنوان الذي يراه خادم API (وقد يكون عنوان الوكيل الوسيط)، وحالة الاستجابة. تحدد إعدادات سجلات Docker والخادم مكان حفظ هذه السجلات ومدة الاحتفاظ بها؛ ولم نتحقق بعد من إعدادات الاحتفاظ الفعلية على الخادم.</p>
 
         <h2>التتبّع والمشاركة</h2>
         <p>لا يتضمن تطبيق iOS أدوات إعلانات أو تحليلات، ولا يستخدم التتبّع بين التطبيقات. لا نبيع المعلومات الشخصية. وقد يعالج مزوّدو الخدمة معلومات الاتصال لتشغيل الخدمة وحمايتها.</p>
