@@ -406,7 +406,7 @@ final class ReaderModel: ObservableObject {
                     bookName: nivChapter.bookName,
                     chapter: nivChapter.chapter,
                     text: nivChapter.plainText,
-                    verses: [],
+                    verses: nivChapter.verses,
                     attribution: nivChapter.copyright
                 )
             case .svd:

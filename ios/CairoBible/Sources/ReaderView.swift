@@ -73,23 +73,7 @@ struct ReaderView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Text("Cairo Bible")
-                        .font(.headline)
-                        .foregroundStyle(paletteColors.ink)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isShowingPreferences = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel("Reading preferences")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingPreferences) {
                 ReadingPreferencesView(
                     preferences: preferences,
@@ -135,7 +119,7 @@ struct ReaderView: View {
     }
 
     private var readingFont: Font {
-        .system(size: CGFloat(readingFontSize))
+        .system(size: CGFloat(readingFontSize), design: .serif)
     }
 
     private var lineSpacing: CGFloat {
@@ -147,16 +131,7 @@ struct ReaderView: View {
     }
 
     private var chapterNavigation: some View {
-        HStack {
-            Button(action: model.selectPreviousChapter) {
-                Label("Previous", systemImage: "chevron.left")
-                    .font(.subheadline)
-            }
-            .disabled(!model.canSelectPreviousChapter)
-            .accessibilityLabel("Previous chapter")
-
-            Spacer(minLength: 8)
-
+        HStack(spacing: 10) {
             Menu {
                 Picker("Book", selection: Binding(
                     get: { model.selectedBook },
@@ -166,6 +141,34 @@ struct ReaderView: View {
                         Text(book.name).tag(book)
                     }
                 }
+            } label: {
+                HStack(spacing: 9) {
+                    Image(systemName: "book")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundStyle(paletteColors.accent)
+                    Text(currentBookName)
+                        .font(.system(size: 20, design: .serif))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .foregroundStyle(paletteColors.ink)
+                }
+                .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Choose book")
+            .accessibilityValue(currentBookName)
+
+            Spacer(minLength: 2)
+
+            Button(action: model.selectPreviousChapter) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(width: 28, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .disabled(!model.canSelectPreviousChapter)
+            .accessibilityLabel("Previous chapter")
+
+            Menu {
                 Picker("Chapter", selection: Binding(
                     get: { model.selectedChapter },
                     set: { model.selectChapter($0) }
@@ -175,38 +178,46 @@ struct ReaderView: View {
                     }
                 }
             } label: {
-                VStack(spacing: 2) {
-                    Text("\(currentBookName) \(model.selectedChapter)")
-                        .font(.headline)
+                HStack(spacing: 8) {
+                    Text("Chapter \(model.selectedChapter)")
+                        .font(.system(size: 16, design: .serif))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                     Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
+                        .font(.caption.weight(.semibold))
                 }
                 .foregroundStyle(paletteColors.ink)
-                .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
+                .padding(.horizontal, 13)
+                .frame(height: 42)
+                .background(paletteColors.surfaceRaised, in: Capsule())
+                .overlay(Capsule().stroke(paletteColors.accent.opacity(0.18), lineWidth: 1))
             }
-            .accessibilityLabel("Choose passage")
-            .accessibilityValue("\(currentBookName) \(model.selectedChapter)")
-
-            Spacer(minLength: 8)
+            .accessibilityLabel("Choose chapter")
+            .accessibilityValue("Chapter \(model.selectedChapter)")
 
             Button(action: model.selectNextChapter) {
-                Label("Next", systemImage: "chevron.right")
-                    .labelStyle(.titleAndIcon)
-                    .font(.subheadline)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(width: 28, height: 40)
+                    .contentShape(Rectangle())
             }
             .disabled(!model.canSelectNextChapter)
             .accessibilityLabel("Next chapter")
+
+            Button {
+                isShowingPreferences = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 18, weight: .regular))
+                    .frame(width: 42, height: 42)
+                    .background(paletteColors.surfaceRaised, in: Circle())
+            }
+            .accessibilityLabel("Reading preferences")
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(paletteColors.ink)
         .environment(\.layoutDirection, .leftToRight)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(paletteColors.surfaceRaised)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(paletteColors.accent.opacity(0.18)).frame(height: 1)
-        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
     }
 
     private var currentBookName: String {
@@ -216,11 +227,6 @@ struct ReaderView: View {
 
     @ViewBuilder
     private var readingContent: some View {
-        Text(model.selectedTranslation.sectionTitle)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(paletteColors.accent)
-            .accessibilityAddTraits(.isHeader)
-
         switch model.state {
         case .idle, .loading:
             ProgressView("Loading \(model.selectedTranslation.title), \(model.selectedBook.name) \(model.selectedChapter)…")
@@ -228,19 +234,9 @@ struct ReaderView: View {
                 .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
 
         case let .loaded(chapter):
-            if model.selectedTranslation == .svd {
+            if !chapter.verses.isEmpty {
                 ForEach(chapter.verses) { verse in
-                    (Text(verbatim: "\u{2068}\(verse.number)\u{2069} ").font(.footnote.weight(.semibold))
-                        + Text(verbatim: verse.text).font(readingFont))
-                        .lineSpacing(lineSpacing)
-                        .foregroundStyle(paletteColors.ink)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .multilineTextAlignment(.leading)
-                        .environment(\.layoutDirection, .rightToLeft)
-                        .environment(\.locale, Locale(identifier: "ar"))
-                        .textSelection(.enabled)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("الآية \(verse.number). \(verse.text)")
+                    verseRow(verse, isRightToLeft: model.selectedTranslation.isRightToLeft)
                 }
             } else {
                 Text(verbatim: chapter.text)
@@ -274,6 +270,27 @@ struct ReaderView: View {
         }
     }
 
+    private func verseRow(_ verse: ScriptureVerse, isRightToLeft: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(verbatim: "\u{2068}\(verse.number)\u{2069}")
+                .font(.system(size: CGFloat(readingFontSize * 0.78), design: .serif))
+                .foregroundStyle(paletteColors.muted)
+                .frame(width: 24)
+            Text(verbatim: verse.text)
+                .font(readingFont)
+                .foregroundStyle(paletteColors.ink)
+                .lineSpacing(lineSpacing)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .multilineTextAlignment(.leading)
+        .environment(\.layoutDirection, isRightToLeft ? .rightToLeft : .leftToRight)
+        .environment(\.locale, isRightToLeft ? Locale(identifier: "ar") : .current)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isRightToLeft ? "الآية \(verse.number). \(verse.text)" : "Verse \(verse.number). \(verse.text)")
+    }
+
     private func showReaderControls() {
         withAnimation(.easeInOut(duration: 0.2)) {
             areReaderControlsVisible = true
@@ -298,8 +315,14 @@ private struct ReaderControlsBar: View {
         ReaderFontSizePreset.nearest(to: preferences.fontSize)
     }
 
+    private var controlDivider: some View {
+        Rectangle()
+            .fill(colors.muted.opacity(0.25))
+            .frame(width: 1, height: 20)
+    }
+
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             Menu {
                 ForEach(BibleTranslation.allCases) { translation in
                     Button {
@@ -313,31 +336,30 @@ private struct ReaderControlsBar: View {
                     }
                 }
             } label: {
-                HStack(spacing: 3) {
+                HStack(spacing: 5) {
                     Text(model.selectedTranslation.title)
+                        .font(.system(size: 14, weight: .medium))
                     Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
+                        .font(.system(size: 9, weight: .semibold))
                 }
-                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(colors.ink)
             }
             .accessibilityLabel("Translation")
             .accessibilityValue(model.selectedTranslation.title)
 
-            Spacer(minLength: 0)
+            controlDivider
 
-            HStack(spacing: 1) {
+            HStack(spacing: 2) {
                 ForEach(ReaderFontSizePreset.allCases) { preset in
                     let isSelected = selectedFontSize == preset
                     Button {
                         preferences.setFontSize(preset)
                     } label: {
                         Text(preset.title)
-                            .font(.caption2.weight(.semibold))
+                            .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 7)
-                            .background(isSelected ? colors.accent : .clear, in: Capsule())
+                            .frame(width: 29, height: 29)
+                            .background(isSelected ? colors.accent : .clear, in: Circle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("\(preset.title) reading text size")
@@ -345,6 +367,8 @@ private struct ReaderControlsBar: View {
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
+
+            controlDivider
 
             Menu {
                 ForEach(ReaderLineSpacing.allCases) { spacing in
@@ -359,17 +383,17 @@ private struct ReaderControlsBar: View {
                     }
                 }
             } label: {
-                Image(systemName: "line.3.horizontal")
-                    .font(.body.weight(.medium))
+                Image(systemName: "arrow.up.and.down")
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(colors.ink)
-                    .frame(width: 30, height: 34)
+                    .frame(width: 28, height: 34)
                     .contentShape(Rectangle())
             }
             .accessibilityLabel("Line spacing")
             .accessibilityValue(preferences.lineSpacing.title)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
         .background(colors.surfaceRaised, in: Capsule())
         .overlay(Capsule().stroke(colors.accent.opacity(0.2), lineWidth: 1))
         .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
@@ -403,7 +427,7 @@ private struct ReadingPreferencesView: View {
                     .accessibilityValue("\(Int(preferences.fontSize)) points")
 
                     Text(sampleText)
-                        .font(.system(size: CGFloat(preferences.fontSize * dynamicTypeScale)))
+                        .font(.system(size: CGFloat(preferences.fontSize * dynamicTypeScale), design: .serif))
                         .environment(\.layoutDirection, translation.isRightToLeft ? .rightToLeft : .leftToRight)
                         .multilineTextAlignment(.leading)
                         .environment(\.locale, translation.isRightToLeft ? Locale(identifier: "ar") : .current)

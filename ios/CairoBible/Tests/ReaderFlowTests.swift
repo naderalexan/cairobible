@@ -55,7 +55,7 @@ final class ReaderFlowTests: XCTestCase {
             guard request.url?.path == "/api/niv/books/John/chapters/3" else {
                 return (404, Data(#"{"detail":"Unexpected request"}"#.utf8))
             }
-            return (200, Data(#"{"translation":"niv","bookId":"JHN","bookName":"John","chapter":3,"content":"<p>For God so loved the world.</p>","copyright":"NIV copyright"}"#.utf8))
+            return (200, Data(#"{"translation":"niv","bookId":"JHN","bookName":"John","chapter":3,"content":"<p><span data-number=\"1\">1</span> For God so loved the world.</p>","copyright":"NIV copyright"}"#.utf8))
         }
         defer { StubURLProtocol.responder = nil }
 
@@ -70,6 +70,7 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(chapter.bookName, "John")
         XCTAssertEqual(chapter.chapter, 3)
         XCTAssertEqual(chapter.text, "For God so loved the world.")
+        XCTAssertEqual(chapter.verses, [ScriptureVerse(number: 1, text: "For God so loved the world.")])
         XCTAssertEqual(chapter.attribution, "NIV copyright")
     }
 

@@ -7,18 +7,67 @@ struct NIVChapter: Codable, Equatable {
     let copyright: String
 
     var plainText: String {
-        guard let data = content.data(using: .utf8),
-              let text = try? NSAttributedString(
-                data: data,
-                options: [
-                    .documentType: NSAttributedString.DocumentType.html,
-                    .characterEncoding: String.Encoding.utf8.rawValue,
-                ],
-                documentAttributes: nil
-              ) else {
-            return content
+        let parsedVerses = verses
+        return parsedVerses.isEmpty
+            ? Self.text(fromHTML: content)
+            : parsedVerses.map(\.text).joined(separator: " ")
+    }
+
+    var verses: [ScriptureVerse] {
+        let pattern = #"(?is)<span\b[^>]*\bdata-number\s*=\s*["'](\d+)["'][^>]*>.*?</span>(.*?)(?=<span\b[^>]*\bdata-number\s*=|$)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let source = content as NSString
+        return regex.matches(in: content, range: NSRange(location: 0, length: source.length)).compactMap { match in
+            guard let numberRange = Range(match.range(at: 1), in: content),
+                  let bodyRange = Range(match.range(at: 2), in: content),
+                  let number = Int(content[numberRange]) else { return nil }
+            let text = Self.text(fromHTML: String(content[bodyRange]))
+            guard !text.isEmpty else { return nil }
+            return ScriptureVerse(number: number, text: text)
         }
-        return text.string.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func text(fromHTML html: String) -> String {
+        let withBreaks = html.replacingOccurrences(
+            of: #"(?i)<br\s*/?>|</(?:p|div|li|h[1-6])\s*>"#,
+            with: " ",
+            options: .regularExpression
+        )
+        let withoutTags = withBreaks.replacingOccurrences(
+            of: #"<[^>]+>"#,
+            with: "",
+            options: .regularExpression
+        )
+        return decodeHTMLEntities(withoutTags)
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+    }
+
+    private static func decodeHTMLEntities(_ text: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: #"&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z][a-zA-Z0-9]+);"#) else {
+            return text
+        }
+        let source = text as NSString
+        let result = NSMutableString(string: text)
+        for match in regex.matches(in: text, range: NSRange(location: 0, length: source.length)).reversed() {
+            guard let valueRange = Range(match.range(at: 1), in: text) else { continue }
+            let value = String(text[valueRange])
+            let decoded: String?
+            if value.hasPrefix("#x") {
+                decoded = UInt32(value.dropFirst(2), radix: 16).flatMap(UnicodeScalar.init).map(String.init)
+            } else if value.hasPrefix("#") {
+                decoded = UInt32(value.dropFirst()).flatMap(UnicodeScalar.init).map(String.init)
+            } else {
+                decoded = [
+                    "amp": "&", "lt": "<", "gt": ">", "quot": "\"", "apos": "'", "nbsp": " ",
+                    "lsquo": "‘", "rsquo": "’", "ldquo": "“", "rdquo": "”", "ndash": "–", "mdash": "—", "hellip": "…"
+                ][value]
+            }
+            if let decoded {
+                result.replaceCharacters(in: match.range, with: decoded)
+            }
+        }
+        return result as String
     }
 }
 
