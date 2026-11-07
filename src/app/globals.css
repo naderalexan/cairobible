@@ -216,3 +216,27 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.legal-page { width: min(100% - 40px, 780px); margin: 0 auto; padding: 26px 0 64px; color: var(--ink); line-height: 1.75; }
+.legal-nav { display: flex; justify-content: space-between; align-items: center; padding-bottom: 22px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.legal-page a { color: var(--accent-ink); text-underline-offset: 3px; }
+.legal-header { padding: 48px 0 28px; }
+.legal-header h1 { margin: 0; font-size: clamp(34px, 7vw, 52px); line-height: 1.15; letter-spacing: -.04em; }
+.legal-header > p:last-child { margin: 13px 0 0; color: var(--muted); font-size: 13px; }
+.legal-eyebrow { margin: 0 0 12px; color: var(--accent-ink); font-size: 10px; font-weight: 700; letter-spacing: .16em; }
+.legal-draft-note { margin: 0 0 34px; padding: 14px 16px; border-inline-start: 3px solid var(--accent); border-radius: 0 9px 9px 0; background: var(--surface-raised); color: var(--muted); font-size: 13px; }
+.legal-copy { margin: 0 0 34px; }
+.legal-copy h2 { margin: 30px 0 9px; font-size: 21px; line-height: 1.4; }
+.legal-copy h3 { margin: 22px 0 5px; font-size: 16px; line-height: 1.5; }
+.legal-copy p { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+.legal-divider { margin: 42px 0; border: 0; border-top: 1px solid var(--line); }
+.legal-contact { margin-top: 24px !important; }
+.legal-button { min-height: 44px; padding: 0 18px; display: inline-flex; align-items: center; border-radius: 10px; background: var(--accent); color: var(--accent-on) !important; font-size: 13px; font-weight: 600; text-decoration: none; }
+.legal-button:hover { filter: brightness(.94); }
+.legal-footer { padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; }
+
+@media (max-width: 600px) {
+  .legal-page { width: min(100% - 32px, 780px); padding-top: 18px; }
+  .legal-header { padding: 38px 0 24px; }
+  .legal-copy p { font-size: 14px; }
+}
