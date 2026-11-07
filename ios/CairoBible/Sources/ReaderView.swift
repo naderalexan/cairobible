@@ -144,7 +144,7 @@ struct ReaderView: View {
     private var chapterNavigation: some View {
         HStack {
             Button(action: model.selectPreviousChapter) {
-                Label("Previous", systemImage: "chevron.left")
+                Label("Previous", systemImage: "chevron.backward")
                     .font(.subheadline)
             }
             .disabled(!model.canSelectPreviousChapter)
@@ -188,14 +188,14 @@ struct ReaderView: View {
             Spacer(minLength: 8)
 
             Button(action: model.selectNextChapter) {
-                Label("Next", systemImage: "chevron.right")
+                Label("Next", systemImage: "chevron.forward")
                     .labelStyle(.titleAndIcon)
                     .font(.subheadline)
             }
             .disabled(!model.canSelectNextChapter)
             .accessibilityLabel("Next chapter")
         }
-        .environment(\.layoutDirection, .leftToRight)
+        .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(paletteColors.surfaceRaised)
