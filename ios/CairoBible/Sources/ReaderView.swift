@@ -187,7 +187,7 @@ struct ReaderView: View {
                 isShowingChapterPicker = true
             } label: {
                 HStack(spacing: 8) {
-                    Text(preferences.appLanguage.format("Chapter %d", model.selectedChapter))
+                    Text(preferences.appLanguage.format("%d", model.selectedChapter))
                         .font(.system(size: 18, design: .serif))
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
