@@ -81,6 +81,8 @@ struct ReaderView: View {
                     preferences: preferences,
                     reminders: reminderManager
                 )
+                .environment(\.locale, preferences.appLanguage.locale)
+                .environment(\.layoutDirection, preferences.appLanguage == .ar ? .rightToLeft : .leftToRight)
                 .presentationDetents([.fraction(0.76), .large])
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(30)
@@ -166,6 +168,8 @@ struct ReaderView: View {
                 ) { book in
                     model.selectBook(book)
                 }
+                .environment(\.locale, preferences.appLanguage.locale)
+                .environment(\.layoutDirection, preferences.appLanguage == .ar ? .rightToLeft : .leftToRight)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(30)
@@ -175,7 +179,7 @@ struct ReaderView: View {
             Spacer(minLength: 0)
 
             Button(action: model.selectPreviousChapter) {
-                Image(systemName: "chevron.left")
+                Image(systemName: preferences.appLanguage == .ar ? "chevron.right" : "chevron.left")
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 28, height: 40)
                     .contentShape(Rectangle())
@@ -214,6 +218,8 @@ struct ReaderView: View {
                     model.selectChapter(chapter)
                     isShowingChapterPicker = false
                 }
+                .environment(\.locale, preferences.appLanguage.locale)
+                .environment(\.layoutDirection, preferences.appLanguage == .ar ? .rightToLeft : .leftToRight)
                 .presentationDetents([.fraction(0.72), .large])
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(28)
@@ -221,7 +227,7 @@ struct ReaderView: View {
             }
 
             Button(action: model.selectNextChapter) {
-                Image(systemName: "chevron.right")
+                Image(systemName: preferences.appLanguage == .ar ? "chevron.left" : "chevron.right")
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 28, height: 40)
                     .contentShape(Rectangle())
@@ -403,8 +409,6 @@ private struct ChapterPickerSheet: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 8)
-        .environment(\.locale, appLanguage.locale)
-        .environment(\.layoutDirection, appLanguage == .ar ? .rightToLeft : .leftToRight)
     }
 }
 
@@ -500,8 +504,6 @@ private struct BookPickerSheet: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .background(colors.surfaceRaised.ignoresSafeArea())
-        .environment(\.locale, appLanguage.locale)
-        .environment(\.layoutDirection, appLanguage == .ar ? .rightToLeft : .leftToRight)
     }
 
     private func testamentSection(_ title: String, books: [BibleBook]) -> some View {
@@ -691,11 +693,15 @@ private struct ReadingPreferencesView: View {
                     .foregroundStyle(colors.ink)
 
                 HStack {
-                    Spacer()
-                    Button(preferences.appLanguage.localized("Done")) { dismiss() }
-                        .font(.custom("Georgia", size: 17, relativeTo: .body))
-                        .foregroundStyle(colors.accent)
+                    if preferences.appLanguage == .ar {
+                        doneButton
+                        Spacer()
+                    } else {
+                        Spacer()
+                        doneButton
+                    }
                 }
+                .environment(\.layoutDirection, .leftToRight)
             }
             .frame(height: 56)
             .padding(.horizontal, 24)
@@ -714,8 +720,12 @@ private struct ReadingPreferencesView: View {
         }
         .background(colors.surfaceRaised.ignoresSafeArea())
         .preferredColorScheme(preferredColorScheme)
-        .environment(\.locale, preferences.appLanguage.locale)
-        .environment(\.layoutDirection, preferences.appLanguage == .ar ? .rightToLeft : .leftToRight)
+    }
+
+    private var doneButton: some View {
+        Button(preferences.appLanguage.localized("Done")) { dismiss() }
+            .font(.custom("Georgia", size: 17, relativeTo: .body))
+            .foregroundStyle(colors.accent)
     }
 
     private var appearanceSection: some View {
