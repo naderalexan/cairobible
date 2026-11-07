@@ -75,18 +75,7 @@ struct ReaderView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .navigationTitle("Cairo Bible")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isShowingPreferences = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityLabel("Reading preferences")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingPreferences) {
                 ReadingPreferencesView(
                     preferences: preferences,
@@ -239,6 +228,15 @@ struct ReaderView: View {
             .disabled(!model.canSelectNextChapter)
             .accessibilityLabel(model.nextChapterAccessibilityLabel)
 
+            Button {
+                isShowingPreferences = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 18, weight: .regular))
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Reading preferences")
         }
         .buttonStyle(.plain)
         .foregroundStyle(paletteColors.ink)
