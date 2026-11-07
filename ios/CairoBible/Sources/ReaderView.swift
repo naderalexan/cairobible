@@ -10,7 +10,6 @@ struct ReaderView: View {
     @State private var isShowingBookPicker = false
     @State private var isShowingChapterPicker = false
     @State private var areReaderControlsVisible = true
-    @State private var lastScrollOffset: CGFloat?
 
     init(
         nivClient: any NIVReadingClient,
@@ -32,41 +31,31 @@ struct ReaderView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                chapterNavigation
+                if areReaderControlsVisible {
+                    chapterNavigation
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        Color.clear
-                            .frame(height: 0)
-                            .background {
-                                GeometryReader { proxy in
-                                    Color.clear.preference(
-                                        key: ReaderScrollOffsetKey.self,
-                                        value: proxy.frame(in: .named("readerScroll")).minY
-                                    )
-                                }
-                            }
-
                         readingContent
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 20)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .coordinateSpace(name: "readerScroll")
                 .scrollIndicators(.hidden)
                 .background(paletteColors.surface)
-                .onPreferenceChange(ReaderScrollOffsetKey.self) { offset in
-                    if let lastScrollOffset, abs(lastScrollOffset - offset) > 0.5 {
-                        areReaderControlsVisible = false
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 10).onChanged { value in
+                        if abs(value.translation.height) > abs(value.translation.width) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                areReaderControlsVisible = false
+                            }
+                        }
                     }
-                    lastScrollOffset = offset
-                }
-                .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        areReaderControlsVisible = true
-                    }
-                }
+                )
+                .onTapGesture { showReaderControls() }
             }
             .background(paletteColors.surface)
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -564,14 +553,6 @@ private struct BookPickerSheet: View {
     }
 }
 
-private struct ReaderScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 private struct ReaderControlsBar: View {
     @ObservedObject var model: ReaderModel
     @ObservedObject var preferences: ReadingPreferences
@@ -672,7 +653,6 @@ private struct ReaderControlsBar: View {
 private struct ReadingPreferencesView: View {
     @ObservedObject var preferences: ReadingPreferences
     @ObservedObject var reminders: DailyReminderManager
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
     private var colors: ReaderPaletteColors {
@@ -687,24 +667,11 @@ private struct ReadingPreferencesView: View {
                 .padding(.top, 10)
                 .accessibilityHidden(true)
 
-            ZStack {
-                Text(preferences.appLanguage.localized("Settings"))
-                    .font(.custom("Georgia", size: 22, relativeTo: .title2))
-                    .foregroundStyle(colors.ink)
-
-                HStack {
-                    if preferences.appLanguage == .ar {
-                        doneButton
-                        Spacer()
-                    } else {
-                        Spacer()
-                        doneButton
-                    }
-                }
-                .environment(\.layoutDirection, .leftToRight)
-            }
-            .frame(height: 56)
-            .padding(.horizontal, 24)
+            Text(preferences.appLanguage.localized("Settings"))
+                .font(.custom("Georgia", size: 22, relativeTo: .title2))
+                .foregroundStyle(colors.ink)
+                .frame(height: 56)
+                .padding(.horizontal, 24)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -720,12 +687,6 @@ private struct ReadingPreferencesView: View {
         }
         .background(colors.surfaceRaised.ignoresSafeArea())
         .preferredColorScheme(preferredColorScheme)
-    }
-
-    private var doneButton: some View {
-        Button(preferences.appLanguage.localized("Done")) { dismiss() }
-            .font(.custom("Georgia", size: 17, relativeTo: .body))
-            .foregroundStyle(colors.accent)
     }
 
     private var appearanceSection: some View {
