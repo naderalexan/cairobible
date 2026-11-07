@@ -518,13 +518,13 @@ private struct ReadingPreferencesView: View {
 
             ZStack {
                 Text(preferences.appLanguage.localized("Settings"))
-                    .font(.custom("Georgia-Bold", size: 22, relativeTo: .title2))
+                    .font(.custom("Georgia", size: 22, relativeTo: .title2))
                     .foregroundStyle(colors.ink)
 
                 HStack {
                     Spacer()
                     Button(preferences.appLanguage.localized("Done")) { dismiss() }
-                        .font(.custom("Georgia-Bold", size: 17, relativeTo: .body))
+                        .font(.custom("Georgia", size: 17, relativeTo: .body))
                         .foregroundStyle(colors.accent)
                 }
             }
@@ -684,7 +684,7 @@ private struct ReadingPreferencesView: View {
 
     private func sectionHeading(_ key: String) -> some View {
         Text(preferences.appLanguage.localized(key))
-            .font(.custom("Georgia-Bold", size: 20, relativeTo: .title3))
+            .font(.custom("Georgia", size: 20, relativeTo: .title3))
             .foregroundStyle(colors.ink)
     }
 
