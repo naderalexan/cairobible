@@ -91,6 +91,10 @@ struct ReaderView: View {
                     preferences: preferences,
                     reminders: reminderManager
                 )
+                .presentationDetents([.fraction(0.76), .large])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(30)
+                .presentationBackground(paletteColors.surfaceRaised)
             }
             .onChange(of: preferences.appLanguage) { _, appLanguage in
                 Task { await reminderManager.setAppLanguage(appLanguage) }
@@ -500,110 +504,187 @@ private struct ReadingPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
+    private var colors: ReaderPaletteColors {
+        preferences.palette.colors(for: effectiveColorScheme)
+    }
+
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("App language") {
-                    Picker("App language", selection: Binding(
-                        get: { preferences.appLanguage },
-                        set: { preferences.setAppLanguage($0) }
-                    )) {
-                        ForEach(AppLanguage.allCases) { language in
-                            Text(language.title).tag(language)
-                        }
-                    }
-                }
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(colors.muted.opacity(0.45))
+                .frame(width: 56, height: 5)
+                .padding(.top, 10)
+                .accessibilityHidden(true)
 
-                Section("Color palette") {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(ReaderPalette.allCases) { palette in
-                            let colors = palette.colors(for: effectiveColorScheme)
-                            let isSelected = preferences.palette == palette
-                            Button {
-                                preferences.setPalette(palette)
-                            } label: {
-                                VStack(spacing: 8) {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(colors.surface)
-                                        .overlay(alignment: .leading) {
-                                            Rectangle().fill(colors.accent).frame(width: 18)
-                                        }
-                                        .overlay {
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(colors.ink.opacity(0.2), lineWidth: 1)
-                                        }
-                                        .frame(height: 38)
-                                        .overlay(alignment: .bottomTrailing) {
-                                            if isSelected {
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .foregroundStyle(colors.accent)
-                                                    .padding(3)
-                                            }
-                                        }
+            ZStack {
+                Text(preferences.appLanguage.localized("Settings"))
+                    .font(.system(.title2, design: .serif, weight: .semibold))
+                    .foregroundStyle(colors.ink)
 
-                                    Text(preferences.appLanguage.localized(palette.rawValue))
-                                        .font(.subheadline)
-                                        .foregroundStyle(colors.ink)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(8)
-                                .background(colors.surfaceRaised)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(isSelected ? colors.accent : colors.ink.opacity(0.15), lineWidth: isSelected ? 2 : 1)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(preferences.appLanguage.format("%@ palette", preferences.appLanguage.localized(palette.rawValue)))
-                            .accessibilityValue(isSelected ? preferences.appLanguage.localized("Selected") : "")
-                            .accessibilityAddTraits(isSelected ? .isSelected : [])
-                        }
-                    }
-                }
-
-                Section("Appearance") {
-                    Picker("Appearance", selection: Binding(
-                        get: { preferences.appearance },
-                        set: { preferences.setAppearance($0) }
-                    )) {
-                        ForEach(ReaderAppearance.allCases) { appearance in
-                            Text(preferences.appLanguage.localized(appearance.rawValue)).tag(appearance)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                Section("Daily reminder") {
-                    Toggle("Daily reading reminder", isOn: Binding(
-                        get: { reminders.isEnabled },
-                        set: { enabled in Task { await reminders.setEnabled(enabled) } }
-                    ))
-                    .disabled(reminders.isRequestingAuthorization)
-
-                    DatePicker("Reminder time", selection: Binding(
-                        get: { reminders.time },
-                        set: { time in Task { await reminders.setReminderTime(time) } }
-                    ), displayedComponents: .hourAndMinute)
-                    .disabled(!reminders.isEnabled || reminders.isRequestingAuthorization)
-                    .accessibilityHint(reminderTimeAccessibilityHint)
-
-                    if let message = reminders.message {
-                        Text(message)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                HStack {
+                    Spacer()
+                    Button(preferences.appLanguage.localized("Done")) { dismiss() }
+                        .font(.system(.body, design: .serif, weight: .semibold))
+                        .foregroundStyle(colors.accent)
                 }
             }
-            .navigationTitle("Reading preferences")
-            .navigationBarTitleDisplayMode(.inline)
-            .preferredColorScheme(preferredColorScheme)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+            .frame(height: 56)
+            .padding(.horizontal, 24)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    appearanceSection
+                    paletteSection
+                    reminderSection
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 32)
+            }
+        }
+        .background(colors.surfaceRaised.ignoresSafeArea())
+        .preferredColorScheme(preferredColorScheme)
+    }
+
+    private var appearanceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeading("Appearance")
+
+            HStack(spacing: 4) {
+                ForEach(ReaderAppearance.allCases) { appearance in
+                    let isSelected = preferences.appearance == appearance
+                    Button {
+                        preferences.setAppearance(appearance)
+                    } label: {
+                        Text(preferences.appLanguage.localized(appearance.rawValue))
+                            .font(.system(.body, design: .serif, weight: .medium))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                            .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background {
+                                if isSelected {
+                                    RoundedRectangle(cornerRadius: 12).fill(colors.accent)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(isSelected ? preferences.appLanguage.localized("Selected") : "")
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
+            }
+            .padding(4)
+            .background(colors.surface, in: Capsule())
+            .overlay(Capsule().stroke(colors.muted.opacity(0.22), lineWidth: 1))
+        }
+    }
+
+    private var paletteSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeading("App color palette")
+
+            HStack(alignment: .top, spacing: 8) {
+                ForEach(ReaderPalette.allCases) { palette in
+                    let paletteColors = palette.colors(for: effectiveColorScheme)
+                    let isSelected = preferences.palette == palette
+                    Button {
+                        preferences.setPalette(palette)
+                    } label: {
+                        VStack(spacing: 8) {
+                            Circle()
+                                .fill(paletteColors.accent)
+                                .frame(width: 32, height: 32)
+                                .overlay(alignment: .topTrailing) {
+                                    if isSelected {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundStyle(paletteColors.accent)
+                                            .background(paletteColors.surfaceRaised, in: Circle())
+                                            .offset(x: 5, y: -5)
+                                    }
+                                }
+
+                            Text(preferences.appLanguage.localized(palette.rawValue))
+                                .font(.caption)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.65)
+                                .foregroundStyle(paletteColors.ink)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 78)
+                        .padding(.horizontal, 2)
+                        .background(paletteColors.surfaceRaised, in: RoundedRectangle(cornerRadius: 10))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(
+                                    isSelected ? paletteColors.accent : paletteColors.ink.opacity(0.16),
+                                    lineWidth: isSelected ? 2 : 1
+                                )
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(preferences.appLanguage.format("%@ palette", preferences.appLanguage.localized(palette.rawValue)))
+                    .accessibilityValue(isSelected ? preferences.appLanguage.localized("Selected") : "")
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
         }
+    }
+
+    private var reminderSection: some View {
+        VStack(spacing: 0) {
+            HStack {
+                sectionHeading("Reading reminders")
+                Spacer()
+                Toggle("Daily reading reminder", isOn: Binding(
+                    get: { reminders.isEnabled },
+                    set: { enabled in Task { await reminders.setEnabled(enabled) } }
+                ))
+                .labelsHidden()
+                .tint(.green)
+                .disabled(reminders.isRequestingAuthorization)
+            }
+            .frame(minHeight: 54)
+
+            Divider().overlay(colors.muted.opacity(0.2))
+
+            HStack {
+                Text(preferences.appLanguage.localized("Time"))
+                    .font(.system(.body, design: .serif))
+                    .foregroundStyle(reminders.isEnabled ? colors.ink : colors.muted)
+                Spacer()
+                DatePicker("Reminder time", selection: Binding(
+                    get: { reminders.time },
+                    set: { time in Task { await reminders.setReminderTime(time) } }
+                ), displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .datePickerStyle(.compact)
+                .disabled(!reminders.isEnabled || reminders.isRequestingAuthorization)
+                .accessibilityLabel(preferences.appLanguage.localized("Reminder time"))
+                .accessibilityHint(reminderTimeAccessibilityHint)
+            }
+            .frame(minHeight: 54)
+
+            Divider().overlay(colors.muted.opacity(0.2))
+
+            if let message = reminders.message {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(colors.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 10)
+            }
+        }
+        .padding(.horizontal, 16)
+        .background(colors.surface, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func sectionHeading(_ key: String) -> some View {
+        Text(preferences.appLanguage.localized(key))
+            .font(.system(.title3, design: .serif, weight: .semibold))
+            .foregroundStyle(colors.ink)
     }
 
     private var reminderTimeAccessibilityHint: String {
