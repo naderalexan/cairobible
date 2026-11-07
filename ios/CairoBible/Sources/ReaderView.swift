@@ -7,6 +7,7 @@ struct ReaderView: View {
     @Environment(\.colorScheme) private var systemColorScheme
     @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @State private var isShowingPreferences = false
+    @State private var isShowingChapterPicker = false
     @State private var areReaderControlsVisible = true
     @State private var lastScrollOffset: CGFloat?
 
@@ -168,15 +169,8 @@ struct ReaderView: View {
             .disabled(!model.canSelectPreviousChapter)
             .accessibilityLabel(model.previousChapterAccessibilityLabel)
 
-            Menu {
-                Picker("Chapter", selection: Binding(
-                    get: { model.selectedChapter },
-                    set: { model.selectChapter($0) }
-                )) {
-                    ForEach(1...model.selectedBook.chapterCount, id: \.self) { number in
-                        Text("Chapter \(number)").tag(number)
-                    }
-                }
+            Button {
+                isShowingChapterPicker = true
             } label: {
                 HStack(spacing: 8) {
                     Text("Chapter \(model.selectedChapter)")
@@ -191,8 +185,24 @@ struct ReaderView: View {
                 .background(paletteColors.surfaceRaised, in: Capsule())
                 .overlay(Capsule().stroke(paletteColors.accent.opacity(0.18), lineWidth: 1))
             }
+            .buttonStyle(.plain)
             .accessibilityLabel("Choose chapter")
             .accessibilityValue("Chapter \(model.selectedChapter)")
+            .sheet(isPresented: $isShowingChapterPicker) {
+                ChapterPickerSheet(
+                    bookName: currentBookName,
+                    chapterCount: model.selectedBook.chapterCount,
+                    selectedChapter: model.selectedChapter,
+                    colors: paletteColors
+                ) { chapter in
+                    model.selectChapter(chapter)
+                    isShowingChapterPicker = false
+                }
+                .presentationDetents([.fraction(0.72), .large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
+                .presentationBackground(paletteColors.surfaceRaised)
+            }
 
             Button(action: model.selectNextChapter) {
                 Image(systemName: "chevron.right")
@@ -295,6 +305,77 @@ struct ReaderView: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             areReaderControlsVisible = true
         }
+    }
+}
+
+private struct ChapterPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let bookName: String
+    let chapterCount: Int
+    let selectedChapter: Int
+    let colors: ReaderPaletteColors
+    let onSelect: (Int) -> Void
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 5)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(bookName)
+                        .font(.system(size: 30, weight: .semibold, design: .serif))
+                        .foregroundStyle(colors.ink)
+                    Text("Choose a chapter")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(colors.muted)
+                }
+
+                Spacer()
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(colors.ink)
+                        .frame(width: 44, height: 44)
+                        .background(colors.surface, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close chapter selector")
+            }
+
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 10) {
+                    ForEach(1...chapterCount, id: \.self) { chapter in
+                        let isSelected = chapter == selectedChapter
+                        Button {
+                            onSelect(chapter)
+                        } label: {
+                            Text("\(chapter)")
+                                .font(.system(size: 18, design: .serif))
+                                .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(isSelected ? colors.accent : colors.surface, in: RoundedRectangle(cornerRadius: 14))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(colors.accent.opacity(isSelected ? 0 : 0.12), lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Chapter \(chapter)")
+                        .accessibilityValue(isSelected ? "Selected" : "")
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
+                    }
+                }
+                .padding(.bottom, 24)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 32)
     }
 }
 
