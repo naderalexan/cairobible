@@ -75,4 +75,7 @@ struct BibleBook: Hashable, Identifiable {
         .init(name: "Jude", svdID: "JUD", chapterCount: 1),
         .init(name: "Revelation", svdID: "REV", chapterCount: 22),
     ]
+
+    static let oldTestament = Array(all.prefix(39))
+    static let newTestament = Array(all.dropFirst(39))
 }

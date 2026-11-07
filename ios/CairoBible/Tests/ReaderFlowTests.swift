@@ -47,6 +47,16 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(relaunched.appLanguage, .en)
     }
 
+    func testBibleBooksAreGroupedIntoOldAndNewTestaments() {
+        XCTAssertEqual(BibleBook.oldTestament.count, 39)
+        XCTAssertEqual(BibleBook.newTestament.count, 27)
+        XCTAssertEqual(BibleBook.oldTestament.first?.name, "Genesis")
+        XCTAssertEqual(BibleBook.oldTestament.last?.name, "Malachi")
+        XCTAssertEqual(BibleBook.newTestament.first?.name, "Matthew")
+        XCTAssertEqual(BibleBook.newTestament.last?.name, "Revelation")
+        XCTAssertEqual(BibleBook.oldTestament + BibleBook.newTestament, BibleBook.all)
+    }
+
     func testReaderPreviousAndNextChapterNavigationCrossesBookBoundaries() {
         let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: makePreferences())
         XCTAssertFalse(model.canSelectPreviousChapter)

@@ -7,6 +7,7 @@ struct ReaderView: View {
     @Environment(\.colorScheme) private var systemColorScheme
     @ScaledMetric(relativeTo: .body) private var dynamicTypeScale = 1.0
     @State private var isShowingPreferences = false
+    @State private var isShowingBookPicker = false
     @State private var isShowingChapterPicker = false
     @State private var areReaderControlsVisible = true
     @State private var lastScrollOffset: CGFloat?
@@ -148,15 +149,8 @@ struct ReaderView: View {
 
     private var chapterNavigation: some View {
         HStack(spacing: 10) {
-            Menu {
-                Picker("Book", selection: Binding(
-                    get: { model.selectedBook },
-                    set: { model.selectBook($0) }
-                )) {
-                    ForEach(BibleBook.all) { book in
-                        Text(book.name).tag(book)
-                    }
-                }
+            Button {
+                isShowingBookPicker = true
             } label: {
                 HStack(spacing: 16) {
                     Image(systemName: "book")
@@ -171,8 +165,22 @@ struct ReaderView: View {
                 }
                 .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .accessibilityLabel("Choose book")
             .accessibilityValue(currentBookName)
+            .sheet(isPresented: $isShowingBookPicker) {
+                BookPickerSheet(
+                    selectedBook: model.selectedBook,
+                    appLanguage: preferences.appLanguage,
+                    colors: paletteColors
+                ) { book in
+                    model.selectBook(book)
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(30)
+                .presentationBackground(paletteColors.surfaceRaised)
+            }
 
             Spacer(minLength: 0)
 
@@ -390,6 +398,148 @@ private struct ChapterPickerSheet: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 8)
+    }
+}
+
+private struct BookPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    let selectedBook: BibleBook
+    let appLanguage: AppLanguage
+    let colors: ReaderPaletteColors
+    let onSelect: (BibleBook) -> Void
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 2)
+
+    private var filteredOldTestament: [BibleBook] {
+        filteredBooks(BibleBook.oldTestament)
+    }
+
+    private var filteredNewTestament: [BibleBook] {
+        filteredBooks(BibleBook.newTestament)
+    }
+
+    private var hasResults: Bool {
+        !filteredOldTestament.isEmpty || !filteredNewTestament.isEmpty
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(colors.muted.opacity(0.4))
+                .frame(width: 58, height: 5)
+                .padding(.top, 10)
+                .accessibilityHidden(true)
+
+            HStack {
+                Text(appLanguage.localized("Choose a book"))
+                    .font(.custom("Georgia-Bold", size: 26, relativeTo: .title))
+                    .foregroundStyle(colors.ink)
+                Spacer()
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(colors.ink)
+                        .frame(width: 36, height: 36)
+                        .background(colors.surface, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(appLanguage.localized("Close book selector"))
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 18)
+            .padding(.bottom, 16)
+
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(colors.muted)
+                TextField(appLanguage.localized("Search books"), text: $searchText)
+                    .font(.custom("Georgia", size: 17, relativeTo: .body))
+                    .foregroundStyle(colors.ink)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 50)
+            .background(colors.surface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.accent.opacity(0.15), lineWidth: 1))
+            .padding(.horizontal, 24)
+            .padding(.bottom, 22)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    if !filteredOldTestament.isEmpty {
+                        testamentSection("Old Testament", books: filteredOldTestament)
+                    }
+                    if !filteredNewTestament.isEmpty {
+                        testamentSection("New Testament", books: filteredNewTestament)
+                    }
+                    if !hasResults {
+                        Text(appLanguage.localized("No books found"))
+                            .font(.custom("Georgia", size: 17, relativeTo: .body))
+                            .foregroundStyle(colors.muted)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 36)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 30)
+            }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .background(colors.surfaceRaised.ignoresSafeArea())
+    }
+
+    private func testamentSection(_ title: String, books: [BibleBook]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(appLanguage.localized(title))
+                .font(.custom("Georgia-Bold", size: 19, relativeTo: .title3))
+                .foregroundStyle(colors.ink)
+
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(books) { book in
+                    let isSelected = book == selectedBook
+                    Button {
+                        onSelect(book)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(book.name)
+                                .font(.custom("Georgia", size: 16, relativeTo: .body))
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.8)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if isSelected {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                        }
+                        .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                        .padding(.horizontal, 13)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                        .background(isSelected ? colors.accent : colors.surface, in: RoundedRectangle(cornerRadius: 14))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(colors.accent.opacity(isSelected ? 0 : 0.14), lineWidth: 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(isSelected ? appLanguage.localized("Selected") : "")
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
+            }
+        }
+    }
+
+    private func filteredBooks(_ books: [BibleBook]) -> [BibleBook] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return books }
+        return books.filter { $0.name.localizedStandardContains(query) }
     }
 }
 

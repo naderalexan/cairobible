@@ -5,6 +5,12 @@
 "Time" = "Time";
 "Book" = "Book";
 "Choose book" = "Choose book";
+"Choose a book" = "Choose a book";
+"Search books" = "Search books";
+"Old Testament" = "Old Testament";
+"New Testament" = "New Testament";
+"No books found" = "No books found";
+"Close book selector" = "Close book selector";
 "Previous chapter" = "Previous chapter";
 "Previous chapter, %@ %d" = "Previous chapter, %@ %d";
 "Next chapter" = "Next chapter";

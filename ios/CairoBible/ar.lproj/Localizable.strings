@@ -5,6 +5,12 @@
 "Time" = "الوقت";
 "Book" = "السفر";
 "Choose book" = "اختر السفر";
+"Choose a book" = "اختر سفرًا";
+"Search books" = "ابحث في الأسفار";
+"Old Testament" = "العهد القديم";
+"New Testament" = "العهد الجديد";
+"No books found" = "لم يتم العثور على أسفار";
+"Close book selector" = "إغلاق محدد الأسفار";
 "Previous chapter" = "الإصحاح السابق";
 "Previous chapter, %@ %d" = "الإصحاح السابق، %@ %d";
 "Next chapter" = "الإصحاح التالي";
