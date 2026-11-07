@@ -134,6 +134,12 @@ struct ReaderView: View {
     private var chapterNavigation: some View {
         HStack(spacing: 10) {
             Menu {
+                Button {
+                    isShowingPreferences = true
+                } label: {
+                    Label("Reading preferences", systemImage: "gearshape")
+                }
+                Divider()
                 Picker("Book", selection: Binding(
                     get: { model.selectedBook },
                     set: { model.selectBook($0) }
@@ -143,12 +149,12 @@ struct ReaderView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 9) {
+                HStack(spacing: 16) {
                     Image(systemName: "book")
-                        .font(.system(size: 24, weight: .regular))
+                        .font(.system(size: 28, weight: .regular))
                         .foregroundStyle(paletteColors.accent)
                     Text(currentBookName)
-                        .font(.system(size: 20, design: .serif))
+                        .font(.system(size: 22, design: .serif))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                         .foregroundStyle(paletteColors.ink)
@@ -174,14 +180,14 @@ struct ReaderView: View {
             } label: {
                 HStack(spacing: 8) {
                     Text("Chapter \(model.selectedChapter)")
-                        .font(.system(size: 16, design: .serif))
+                        .font(.system(size: 18, design: .serif))
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
                         .font(.caption.weight(.semibold))
                 }
                 .foregroundStyle(paletteColors.ink)
                 .padding(.horizontal, 13)
-                .frame(height: 42)
+                .frame(height: 40)
                 .background(paletteColors.surfaceRaised, in: Capsule())
                 .overlay(Capsule().stroke(paletteColors.accent.opacity(0.18), lineWidth: 1))
             }
@@ -199,7 +205,7 @@ struct ReaderView: View {
                     isShowingChapterPicker = false
                 }
                 .presentationDetents([.fraction(0.72), .large])
-                .presentationDragIndicator(.visible)
+                .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(28)
                 .presentationBackground(paletteColors.surfaceRaised)
             }
@@ -213,15 +219,6 @@ struct ReaderView: View {
             .disabled(!model.canSelectNextChapter)
             .accessibilityLabel(model.nextChapterAccessibilityLabel)
 
-            Button {
-                isShowingPreferences = true
-            } label: {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 18, weight: .regular))
-                    .frame(width: 42, height: 42)
-                    .background(paletteColors.surfaceRaised, in: Circle())
-            }
-            .accessibilityLabel("Reading preferences")
         }
         .buttonStyle(.plain)
         .foregroundStyle(paletteColors.ink)
@@ -317,10 +314,16 @@ private struct ChapterPickerSheet: View {
     let colors: ReaderPaletteColors
     let onSelect: (Int) -> Void
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 5)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 5)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            Capsule()
+                .fill(colors.muted.opacity(0.35))
+                .frame(width: 64, height: 6)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
+
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(bookName)
@@ -339,7 +342,7 @@ private struct ChapterPickerSheet: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(colors.ink)
-                        .frame(width: 44, height: 44)
+                        .frame(width: 36, height: 36)
                         .background(colors.surface, in: Circle())
                 }
                 .buttonStyle(.plain)
@@ -347,7 +350,7 @@ private struct ChapterPickerSheet: View {
             }
 
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 10) {
+                LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(1...chapterCount, id: \.self) { chapter in
                         let isSelected = chapter == selectedChapter
                         Button {
@@ -357,10 +360,10 @@ private struct ChapterPickerSheet: View {
                                 .font(.system(size: 18, design: .serif))
                                 .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
                                 .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(isSelected ? colors.accent : colors.surface, in: RoundedRectangle(cornerRadius: 14))
+                                .frame(height: 36)
+                                .background(isSelected ? colors.accent : colors.surface, in: RoundedRectangle(cornerRadius: 16))
                                 .overlay {
-                                    RoundedRectangle(cornerRadius: 14)
+                                    RoundedRectangle(cornerRadius: 16)
                                         .stroke(colors.accent.opacity(isSelected ? 0 : 0.12), lineWidth: 1)
                                 }
                         }
@@ -374,8 +377,8 @@ private struct ChapterPickerSheet: View {
             }
             .scrollIndicators(.hidden)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 32)
+        .padding(.horizontal, 24)
+        .padding(.top, 8)
     }
 }
 
