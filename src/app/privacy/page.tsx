@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         <p>Draft for review · November 7, 2026</p>
       </header>
       <aside className="legal-draft-note">
-        Draft only: confirm API and hosting log retention and NIV licensing before publishing this as the official policy.
+        Draft only: confirm API and hosting log retention before publishing this as the official policy.
       </aside>
 
       <article className="legal-copy" lang="en" dir="ltr">
