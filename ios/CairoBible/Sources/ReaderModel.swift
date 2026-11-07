@@ -424,7 +424,7 @@ final class ReaderModel: ObservableObject {
             case .niv:
                 let nivChapter = try await nivClient.fetchChapter(book: selectedBook, number: selectedChapter)
                 chapter = ReaderChapter(
-                    bookName: nivChapter.bookName,
+                    bookName: selectedBook.name,
                     chapter: nivChapter.chapter,
                     text: nivChapter.plainText,
                     verses: nivChapter.verses,

@@ -87,7 +87,7 @@ final class ReaderFlowTests: XCTestCase {
             guard request.url?.path == "/api/niv/books/John/chapters/3" else {
                 return (404, Data(#"{"detail":"Unexpected request"}"#.utf8))
             }
-            return (200, Data(#"{"translation":"niv","bookId":"JHN","bookName":"John","chapter":3,"content":"<p><span data-number=\"1\">1</span> For God so loved the world.</p>","copyright":"NIV copyright"}"#.utf8))
+            return (200, Data(#"{"translation":"niv","bookId":"JHN","bookName":"Jn.","chapter":3,"content":"<p><span data-number=\"1\">1</span> For God so loved the world.</p>","copyright":"NIV copyright"}"#.utf8))
         }
         defer { StubURLProtocol.responder = nil }
 

@@ -156,7 +156,8 @@ struct ReaderView: View {
                     Text(currentBookName)
                         .font(.system(size: 22, design: .serif))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.55)
+                        .layoutPriority(1)
                         .foregroundStyle(paletteColors.ink)
                 }
                 .contentShape(Rectangle())
@@ -164,7 +165,7 @@ struct ReaderView: View {
             .accessibilityLabel("Choose book")
             .accessibilityValue(currentBookName)
 
-            Spacer(minLength: 2)
+            Spacer(minLength: 0)
 
             Button(action: model.selectPreviousChapter) {
                 Image(systemName: "chevron.left")
