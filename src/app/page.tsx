@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { books } from "@/lib/books";
+import { books, POETIC_BOOK_IDS } from "@/lib/books";
 import { loadChapter, trackFums, type BibleChapter } from "@/lib/scripture";
 import { loadSvdChapter } from "@/lib/svd";
 import { getBookName, translate } from "@/lib/translations";
@@ -450,7 +450,9 @@ export default function Home() {
 
   const selectedLineHeight = LINE_HEIGHT_OPTIONS.find((option) => option.value === lineHeight) ?? LINE_HEIGHT_OPTIONS[0];
   const selectedPalette = PALETTES.find((option) => option.id === palette) ?? PALETTES[0];
-  const paragraphs = chapterData ? scriptureParagraphs(chapterData.content) : [];
+  const isPoeticBook = translation === "niv" && POETIC_BOOK_IDS.has(currentBook.id);
+  const preserveLineBreaks = translation !== "niv" || isPoeticBook;
+  const paragraphs = chapterData ? scriptureParagraphs(chapterData.content, preserveLineBreaks) : [];
 
   const isFirstChapter = currentBook.id === "GEN" && chapter === 1;
   const isLastChapter = currentBook.id === "REV" && chapter === currentBook.chapters;
@@ -548,7 +550,7 @@ export default function Home() {
               <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{t("Chapter {chapter}", { chapter })}</span><ChevronDown /></button>
             </div>
             {chapterData ? (
-              <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
+              <article className={`scripture${translation === "svd" ? " arabic-scripture" : isPoeticBook ? " poetic-scripture" : " prose-scripture"}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
                 {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined} onMouseLeave={paragraph.isVerse ? handleVerseLeave : undefined}>{paragraph.content}</p>)}
                 {paragraphs.length === 0 && <p>{t("This chapter has no readable text.")}</p>}
                 {translation === "niv" && chapterData.copyright && <p className="copyright">{chapterData.copyright}</p>}
@@ -663,7 +665,7 @@ export default function Home() {
 type ScriptureParagraph = { content: ReactNode[]; isVerse: boolean; verseNumber?: string };
 type ScriptureToken = { content: ReactNode; startsVerse: boolean; verseNumber?: string };
 
-function scriptureParagraphs(content: string): ScriptureParagraph[] {
+function scriptureParagraphs(content: string, preserveLineBreaks: boolean): ScriptureParagraph[] {
   if (typeof DOMParser === "undefined") return [];
   const document = new DOMParser().parseFromString(content, "text/html");
   document.querySelectorAll("script, style, iframe, object, svg, math, template").forEach((node) => node.remove());
@@ -672,7 +674,7 @@ function scriptureParagraphs(content: string): ScriptureParagraph[] {
   const blocks = source.flatMap((paragraph) => {
     if (!paragraph.textContent?.trim()) return [];
 
-    const tokens = Array.from(paragraph.childNodes).flatMap((node, index) => renderScriptureTokens(node, String(index)));
+    const tokens = Array.from(paragraph.childNodes).flatMap((node, index) => renderScriptureTokens(node, String(index), preserveLineBreaks));
     const result: ScriptureParagraph[] = [];
     let current: ReactNode[] = [];
     let isVerse = false;
@@ -697,7 +699,7 @@ function scriptureParagraphs(content: string): ScriptureParagraph[] {
   return blocks.reduce<ScriptureParagraph[]>((result, paragraph, index) => {
     const previous = result[result.length - 1];
     if (!paragraph.isVerse && previous?.isVerse) {
-      previous.content.push(<br key={`continuation-${index}`} />, ...paragraph.content);
+      previous.content.push(preserveLineBreaks ? <br key={`continuation-${index}`} /> : " ", ...paragraph.content);
     } else {
       result.push(paragraph);
     }
@@ -705,7 +707,7 @@ function scriptureParagraphs(content: string): ScriptureParagraph[] {
   }, []);
 }
 
-function renderScriptureTokens(node: Node, key: string): ScriptureToken[] {
+function renderScriptureTokens(node: Node, key: string, preserveLineBreaks: boolean): ScriptureToken[] {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent ? [{ content: node.textContent, startsVerse: false }] : [];
   }
@@ -715,9 +717,9 @@ function renderScriptureTokens(node: Node, key: string): ScriptureToken[] {
     return [{ content: <span key={key} className="verse-number">{node.textContent}</span>, startsVerse: true, verseNumber }];
   }
 
-  if (node.tagName.toLowerCase() === "br") return [{ content: <br key={key} />, startsVerse: false }];
+  if (node.tagName.toLowerCase() === "br") return [{ content: preserveLineBreaks ? <br key={key} /> : " ", startsVerse: false }];
 
-  return Array.from(node.childNodes).flatMap((child, index) => renderScriptureTokens(child, `${key}-${index}`)).map((token, index) => ({
+  return Array.from(node.childNodes).flatMap((child, index) => renderScriptureTokens(child, `${key}-${index}`, preserveLineBreaks)).map((token, index) => ({
     ...token,
     content: wrapScriptureInline(node.tagName.toLowerCase(), token.content, `${key}-${index}`),
   }));
