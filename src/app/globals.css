@@ -225,6 +225,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   .chapter-grid { grid-template-columns: repeat(5, minmax(38px, 1fr)); gap: 6px; }
   .welcome { padding-inline: 16px; }
 }
+.app-shell.focus-mode .settings-dropdown { position: fixed; z-index: 7; inset: auto auto calc(68px + env(safe-area-inset-bottom)) 50%; width: min(500px, calc(100vw - 24px)); min-height: 0; max-height: calc(100dvh - 88px - env(safe-area-inset-bottom)); margin: 0; transform: translateX(-50%); animation: focus-settings-in .18s ease-out; }
+@keyframes focus-settings-in { from { opacity: 0; transform: translate(-50%, 7px) scale(.99); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
