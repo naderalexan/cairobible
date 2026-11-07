@@ -47,6 +47,14 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(relaunched.appLanguage, .en)
     }
 
+    func testArabicBookAndTranslationNamesAreLocalized() {
+        XCTAssertTrue(BibleBook.all.allSatisfy { $0.localizedName(for: .ar) != $0.name })
+        XCTAssertEqual(BibleBook.all.first?.localizedName(for: .ar), "التكوين")
+        XCTAssertEqual(BibleBook.all[39].localizedName(for: .ar), "متى")
+        XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .ar), "فان دايك العربية")
+        XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .en), "Arabic SVD")
+    }
+
     func testBibleBooksAreGroupedIntoOldAndNewTestaments() {
         XCTAssertEqual(BibleBook.oldTestament.count, 39)
         XCTAssertEqual(BibleBook.newTestament.count, 27)

@@ -331,6 +331,10 @@ enum BibleTranslation: String, CaseIterable, Identifiable {
         }
     }
 
+    func localizedTitle(for appLanguage: AppLanguage) -> String {
+        appLanguage.localized(title)
+    }
+
     var isRightToLeft: Bool { self == .svd }
 
 }
@@ -400,23 +404,23 @@ final class ReaderModel: ObservableObject {
 
     var previousChapterAccessibilityLabel: String {
         if selectedChapter > 1 {
-            return preferences.appLanguage.format("Previous chapter, %@ %d", selectedBook.name, selectedChapter - 1)
+            return preferences.appLanguage.format("Previous chapter, %@ %d", selectedBook.localizedName(for: preferences.appLanguage), selectedChapter - 1)
         }
         guard let index = BibleBook.all.firstIndex(of: selectedBook), index > 0 else {
             return preferences.appLanguage.localized("Previous chapter")
         }
         let book = BibleBook.all[index - 1]
-        return preferences.appLanguage.format("Previous chapter, %@ %d", book.name, book.chapterCount)
+        return preferences.appLanguage.format("Previous chapter, %@ %d", book.localizedName(for: preferences.appLanguage), book.chapterCount)
     }
 
     var nextChapterAccessibilityLabel: String {
         if selectedChapter < selectedBook.chapterCount {
-            return preferences.appLanguage.format("Next chapter, %@ %d", selectedBook.name, selectedChapter + 1)
+            return preferences.appLanguage.format("Next chapter, %@ %d", selectedBook.localizedName(for: preferences.appLanguage), selectedChapter + 1)
         }
         guard let index = BibleBook.all.firstIndex(of: selectedBook), index < BibleBook.all.count - 1 else {
             return preferences.appLanguage.localized("Next chapter")
         }
-        return preferences.appLanguage.format("Next chapter, %@ 1", BibleBook.all[index + 1].name)
+        return preferences.appLanguage.format("Next chapter, %@ 1", BibleBook.all[index + 1].localizedName(for: preferences.appLanguage))
     }
 
     func selectPreviousChapter() {

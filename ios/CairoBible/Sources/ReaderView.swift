@@ -245,15 +245,19 @@ struct ReaderView: View {
     }
 
     private var currentBookName: String {
-        if case let .loaded(chapter) = model.state { chapter.bookName }
-        else { model.selectedBook.name }
+        model.selectedBook.localizedName(for: preferences.appLanguage)
     }
 
     @ViewBuilder
     private var readingContent: some View {
         switch model.state {
         case .idle, .loading:
-            ProgressView(preferences.appLanguage.format("Loading %@, %@ %d…", model.selectedTranslation.title, model.selectedBook.name, model.selectedChapter))
+            ProgressView(preferences.appLanguage.format(
+                "Loading %@, %@ %d…",
+                model.selectedTranslation.localizedTitle(for: preferences.appLanguage),
+                model.selectedBook.localizedName(for: preferences.appLanguage),
+                model.selectedChapter
+            ))
                 .foregroundStyle(paletteColors.muted)
                 .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
 
@@ -492,6 +496,8 @@ private struct BookPickerSheet: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .background(colors.surfaceRaised.ignoresSafeArea())
+        .environment(\.locale, appLanguage.locale)
+        .environment(\.layoutDirection, appLanguage == .ar ? .rightToLeft : .leftToRight)
     }
 
     private func testamentSection(_ title: String, books: [BibleBook]) -> some View {
@@ -515,7 +521,7 @@ private struct BookPickerSheet: View {
                         dismiss()
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(book.name)
+                            Text(book.localizedName(for: appLanguage))
                                 .font(.custom("Georgia", size: 15, relativeTo: .body))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
@@ -534,6 +540,7 @@ private struct BookPickerSheet: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(book.localizedName(for: appLanguage))
                     .accessibilityValue(isSelected ? appLanguage.localized("Selected") : "")
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
@@ -544,7 +551,10 @@ private struct BookPickerSheet: View {
     private func filteredBooks(_ books: [BibleBook]) -> [BibleBook] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return books }
-        return books.filter { $0.name.localizedStandardContains(query) }
+        return books.filter {
+            $0.name.localizedStandardContains(query)
+                || $0.localizedName(for: appLanguage).localizedStandardContains(query)
+        }
     }
 }
 
@@ -579,23 +589,23 @@ private struct ReaderControlsBar: View {
                         model.selectTranslation(translation)
                     } label: {
                         if model.selectedTranslation == translation {
-                            Label(translation.title, systemImage: "checkmark")
+                            Label(translation.localizedTitle(for: preferences.appLanguage), systemImage: "checkmark")
                         } else {
-                            Text(translation.title)
+                            Text(translation.localizedTitle(for: preferences.appLanguage))
                         }
                     }
                 }
             } label: {
                 HStack(spacing: 5) {
-                    Text(model.selectedTranslation.title)
+                    Text(model.selectedTranslation.localizedTitle(for: preferences.appLanguage))
                         .font(.system(size: 14, weight: .medium))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
                 }
                 .foregroundStyle(colors.ink)
             }
-            .accessibilityLabel("Translation")
-            .accessibilityValue(model.selectedTranslation.title)
+            .accessibilityLabel(preferences.appLanguage.localized("Translation"))
+            .accessibilityValue(model.selectedTranslation.localizedTitle(for: preferences.appLanguage))
 
             controlDivider
 
@@ -682,6 +692,7 @@ private struct ReadingPreferencesView: View {
                         .font(.custom("Georgia", size: 17, relativeTo: .body))
                         .foregroundStyle(colors.accent)
                 }
+                .environment(\.layoutDirection, .leftToRight)
             }
             .frame(height: 56)
             .padding(.horizontal, 24)
@@ -700,6 +711,8 @@ private struct ReadingPreferencesView: View {
         }
         .background(colors.surfaceRaised.ignoresSafeArea())
         .preferredColorScheme(preferredColorScheme)
+        .environment(\.locale, preferences.appLanguage.locale)
+        .environment(\.layoutDirection, preferences.appLanguage == .ar ? .rightToLeft : .leftToRight)
     }
 
     private var appearanceSection: some View {
