@@ -27,6 +27,26 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(ReaderLineSpacing.medium.extraSpacing(for: 20), 17)
     }
 
+    func testAppLanguageDefaultsFromDeviceAndPersistsManualSelection() {
+        XCTAssertEqual(AppLanguage.initial(preferredLanguages: ["ar-EG", "en-US"]), .ar)
+        XCTAssertEqual(AppLanguage.initial(preferredLanguages: ["en-US", "ar-EG"]), .en)
+        XCTAssertEqual(AppLanguage.initial(preferredLanguages: ["fr-FR"]), .en)
+        XCTAssertEqual(AppLanguage.initial(preferredLanguages: []), .en)
+        XCTAssertEqual(AppLanguage.en.localized("App language"), "App language")
+        XCTAssertEqual(AppLanguage.ar.localized("App language"), "لغة التطبيق")
+
+        let suiteName = "AppLanguagePreferencesTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let preferences = ReadingPreferences(defaults: defaults, preferredLanguages: ["ar-EG"])
+        XCTAssertEqual(preferences.appLanguage, .ar)
+        preferences.setAppLanguage(.en)
+
+        let relaunched = ReadingPreferences(defaults: defaults, preferredLanguages: ["ar-EG"])
+        XCTAssertEqual(relaunched.appLanguage, .en)
+    }
+
     func testReaderPreviousAndNextChapterNavigationCrossesBookBoundaries() {
         let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: makePreferences())
         XCTAssertFalse(model.canSelectPreviousChapter)
@@ -143,6 +163,7 @@ final class ReaderFlowTests: XCTestCase {
         let preferences = ReadingPreferences(defaults: defaults)
         preferences.setFontSize(26)
         preferences.setAppearance(.dark)
+        preferences.setAppLanguage(.ar)
 
         let model = ReaderModel(
             nivClient: StubNIVReadingClient(),
@@ -157,6 +178,7 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(model.preferences.fontSize, 26)
         XCTAssertEqual(model.preferences.appearance, .dark)
         XCTAssertEqual(model.preferences.palette, .nile)
+        XCTAssertEqual(model.preferences.appLanguage, .ar)
 
         model.selectTranslation(.svd)
         await model.load()
@@ -172,6 +194,7 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(relaunchedPreferences.fontSize, 26)
         XCTAssertEqual(relaunchedPreferences.appearance, .dark)
         XCTAssertEqual(relaunchedPreferences.palette, .nile)
+        XCTAssertEqual(relaunchedPreferences.appLanguage, .ar)
         XCTAssertEqual(relaunchedPreferences.translation, .svd)
         let relaunchedModel = ReaderModel(
             nivClient: StubNIVReadingClient(),
@@ -331,13 +354,13 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(scheduler.scheduledTimes.count, 1)
         XCTAssertEqual(scheduler.scheduledTimes[0].hour, 9)
         XCTAssertEqual(scheduler.scheduledTimes[0].minute, 0)
-        XCTAssertEqual(scheduler.scheduledTranslations, [.niv])
+        XCTAssertEqual(scheduler.scheduledLanguages, [.en])
         XCTAssertNil(scheduler.scheduledTimes[0].timeZone)
         XCTAssertNil(scheduler.scheduledTimes[0].calendar)
         XCTAssertTrue(defaults.bool(forKey: "dailyReadingReminderEnabled"))
     }
 
-    func testDailyReminderReschedulesUsingLastSelectedTranslation() async {
+    func testDailyReminderReschedulesWhenAppLanguageChangesWithoutChangingTranslation() async {
         let suiteName = "DailyReminderTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -345,11 +368,10 @@ final class ReaderFlowTests: XCTestCase {
         let reminders = DailyReminderManager(defaults: defaults, scheduler: scheduler)
         await reminders.setEnabled(true)
 
-        await reminders.setTranslation(.svd)
+        await reminders.setAppLanguage(.ar)
 
-        XCTAssertEqual(scheduler.scheduledTranslations, [.niv, .svd])
-        XCTAssertEqual(BibleTranslation.svd.reminderTitle, "\u{200F}حان وقت قراءة الكتاب المقدس")
-        XCTAssertEqual(BibleTranslation.svd.reminderBody, "\u{200F}خصص لحظة لقراءتك اليومية.")
+        XCTAssertEqual(scheduler.scheduledLanguages, [.en, .ar])
+        XCTAssertTrue(reminders.isEnabled)
     }
 
     func testNotificationContentUsesRightAlignmentForArabicAndLeftForEnglish() {
@@ -448,7 +470,7 @@ private final class StubDailyReminderScheduler: DailyReminderScheduling {
     var authorizationGranted = true
     var authorizationRequestCount = 0
     var scheduledTimes: [DateComponents] = []
-    var scheduledTranslations: [BibleTranslation] = []
+    var scheduledLanguages: [AppLanguage] = []
     var cancellationCount = 0
 
     func requestAuthorization() async throws -> Bool {
@@ -456,9 +478,9 @@ private final class StubDailyReminderScheduler: DailyReminderScheduling {
         return authorizationGranted
     }
 
-    func scheduleDailyReminder(at time: DateComponents, translation: BibleTranslation) async throws {
+    func scheduleDailyReminder(at time: DateComponents, appLanguage: AppLanguage) async throws {
         scheduledTimes.append(time)
-        scheduledTranslations.append(translation)
+        scheduledLanguages.append(appLanguage)
     }
 
     func cancelDailyReminder() {

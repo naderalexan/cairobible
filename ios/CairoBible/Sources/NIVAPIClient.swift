@@ -183,7 +183,7 @@ private struct BackendError: Decodable {
     let detail: String
 }
 
-private enum NIVAPIError: LocalizedError {
+enum NIVAPIError: LocalizedError {
     case offlineUnavailable
     case invalidURL
     case invalidResponse

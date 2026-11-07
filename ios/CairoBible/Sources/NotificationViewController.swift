@@ -35,7 +35,7 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
         configure(
             title: content.title,
             body: content.body,
-            isRightToLeft: content.userInfo["translation"] as? String == "svd"
+            isRightToLeft: content.userInfo["appLanguage"] as? String == "ar"
         )
     }
 

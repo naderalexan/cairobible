@@ -103,7 +103,7 @@ private struct SVDVerseMap: Decodable {
     let books: [String: [String: [Int]]]
 }
 
-private enum SVDReadingError: LocalizedError {
+enum SVDReadingError: LocalizedError {
     case resourcesUnavailable
     case chapterUnavailable
 

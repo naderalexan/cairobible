@@ -22,6 +22,7 @@
 		A1000000000000000000000D /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* NotificationViewController.swift */; };
 		A1000000000000000000000E /* CairoBibleNotificationContent.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* CairoBibleNotificationContent.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A1000000000000000000000F /* NotificationViewController.swift in Tests */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* NotificationViewController.swift */; };
+		A10000000000000000000011 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = G10000000000000000000007 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,8 @@
 		B10000000000000000000014 /* NotificationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationViewController.swift; sourceTree = "<group>"; };
 		B10000000000000000000015 /* NotificationContentExtension-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = NotificationContentExtension-Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000016 /* CairoBibleNotificationContent.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = CairoBibleNotificationContent.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000017 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B10000000000000000000018 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Localizable.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +106,7 @@
 				G10000000000000000000003 /* Tests */,
 				G10000000000000000000004 /* Configuration */,
 				B10000000000000000000013 /* Assets.xcassets */,
+				G10000000000000000000007 /* Localizable.strings */,
 				G10000000000000000000005 /* Products */,
 				G10000000000000000000006 /* Data */,
 			);
@@ -156,6 +160,15 @@
 				B10000000000000000000012 /* ../../public/data/arb-vd-verses.json */,
 			);
 			name = Data;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000007 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B10000000000000000000017 /* en */,
+				B10000000000000000000018 /* ar */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -243,6 +256,7 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
 			);
 			mainGroup = G10000000000000000000001;
 			productRefGroup = G10000000000000000000005 /* Products */;
@@ -264,6 +278,7 @@
 				A10000000000000000000008 /* ../../public/data/arb-vd.json in Resources */,
 				A10000000000000000000009 /* ../../public/data/arb-vd-verses.json in Resources */,
 				A1000000000000000000000C /* Assets.xcassets in Resources */,
+				A10000000000000000000011 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

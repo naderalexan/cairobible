@@ -18,7 +18,7 @@ struct ReaderView: View {
         reminderManager: DailyReminderManager? = nil
     ) {
         let preferences = preferences ?? ReadingPreferences()
-        let reminderManager = reminderManager ?? DailyReminderManager(translation: preferences.translation)
+        let reminderManager = reminderManager ?? DailyReminderManager(appLanguage: preferences.appLanguage)
         _model = StateObject(wrappedValue: ReaderModel(
             nivClient: nivClient,
             svdClient: svdClient,
@@ -92,11 +92,10 @@ struct ReaderView: View {
                     reminders: reminderManager
                 )
             }
-            .task {
-                await reminderManager.setTranslation(model.selectedTranslation)
+            .onChange(of: preferences.appLanguage) { _, appLanguage in
+                Task { await reminderManager.setAppLanguage(appLanguage) }
             }
-            .onChange(of: model.selectedTranslation) { _, translation in
-                Task { await reminderManager.setTranslation(translation) }
+            .onChange(of: model.selectedTranslation) { _, _ in
                 showReaderControls()
             }
             .onChange(of: model.selectedBook) { _, _ in showReaderControls() }
@@ -106,6 +105,8 @@ struct ReaderView: View {
             }
         }
         .environment(\.colorScheme, effectiveColorScheme)
+        .environment(\.locale, preferences.appLanguage.locale)
+        .environment(\.layoutDirection, preferences.appLanguage == .ar ? .rightToLeft : .leftToRight)
         .preferredColorScheme(preferredColorScheme)
     }
 
@@ -184,7 +185,7 @@ struct ReaderView: View {
                 isShowingChapterPicker = true
             } label: {
                 HStack(spacing: 8) {
-                    Text("Chapter \(model.selectedChapter)")
+                    Text(preferences.appLanguage.format("Chapter %d", model.selectedChapter))
                         .font(.system(size: 18, design: .serif))
                         .lineLimit(1)
                     Image(systemName: "chevron.down")
@@ -198,12 +199,13 @@ struct ReaderView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Choose chapter")
-            .accessibilityValue("Chapter \(model.selectedChapter)")
+            .accessibilityValue(preferences.appLanguage.format("Chapter %d", model.selectedChapter))
             .sheet(isPresented: $isShowingChapterPicker) {
                 ChapterPickerSheet(
                     bookName: currentBookName,
                     chapterCount: model.selectedBook.chapterCount,
                     selectedChapter: model.selectedChapter,
+                    appLanguage: preferences.appLanguage,
                     colors: paletteColors
                 ) { chapter in
                     model.selectChapter(chapter)
@@ -227,7 +229,6 @@ struct ReaderView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(paletteColors.ink)
-        .environment(\.layoutDirection, .leftToRight)
         .padding(.horizontal, 18)
         .padding(.vertical, 10)
     }
@@ -241,7 +242,7 @@ struct ReaderView: View {
     private var readingContent: some View {
         switch model.state {
         case .idle, .loading:
-            ProgressView("Loading \(model.selectedTranslation.title), \(model.selectedBook.name) \(model.selectedChapter)…")
+            ProgressView(preferences.appLanguage.format("Loading %@, %@ %d…", model.selectedTranslation.title, model.selectedBook.name, model.selectedChapter))
                 .foregroundStyle(paletteColors.muted)
                 .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
 
@@ -264,7 +265,7 @@ struct ReaderView: View {
                 .font(.footnote)
                 .foregroundStyle(paletteColors.muted)
                 .textSelection(.enabled)
-                .accessibilityLabel("Translation attribution. \(chapter.attribution)")
+                .accessibilityLabel(preferences.appLanguage.format("Translation attribution. %@", chapter.attribution))
 
         case let .failed(message):
             ContentUnavailableView {
@@ -300,7 +301,7 @@ struct ReaderView: View {
         .environment(\.layoutDirection, isRightToLeft ? .rightToLeft : .leftToRight)
         .environment(\.locale, isRightToLeft ? Locale(identifier: "ar") : .current)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(isRightToLeft ? "الآية \(verse.number). \(verse.text)" : "Verse \(verse.number). \(verse.text)")
+        .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, verse.text))
     }
 
     private func showReaderControls() {
@@ -316,6 +317,7 @@ private struct ChapterPickerSheet: View {
     let bookName: String
     let chapterCount: Int
     let selectedChapter: Int
+    let appLanguage: AppLanguage
     let colors: ReaderPaletteColors
     let onSelect: (Int) -> Void
 
@@ -373,8 +375,8 @@ private struct ChapterPickerSheet: View {
                                 }
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Chapter \(chapter)")
-                        .accessibilityValue(isSelected ? "Selected" : "")
+                        .accessibilityLabel(appLanguage.format("Chapter %d", chapter))
+                        .accessibilityValue(isSelected ? appLanguage.localized("Selected") : "")
                         .accessibilityAddTraits(isSelected ? .isSelected : [])
                     }
                 }
@@ -451,8 +453,8 @@ private struct ReaderControlsBar: View {
                             .background(isSelected ? colors.accent : .clear, in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(preset.title) reading text size")
-                    .accessibilityValue(isSelected ? "Selected" : "")
+                    .accessibilityLabel(preferences.appLanguage.format("%@ reading text size", preset.title))
+                    .accessibilityValue(isSelected ? preferences.appLanguage.localized("Selected") : "")
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
@@ -465,9 +467,9 @@ private struct ReaderControlsBar: View {
                         preferences.setLineSpacing(spacing)
                     } label: {
                         if preferences.lineSpacing == spacing {
-                            Label("\(spacing.title) (\(spacing.ratioText))", systemImage: "checkmark")
+                            Label(preferences.appLanguage.format("%@ (%@)", preferences.appLanguage.localized(spacing.rawValue), spacing.ratioText), systemImage: "checkmark")
                         } else {
-                            Text("\(spacing.title) (\(spacing.ratioText))")
+                            Text(preferences.appLanguage.format("%@ (%@)", preferences.appLanguage.localized(spacing.rawValue), spacing.ratioText))
                         }
                     }
                 }
@@ -479,7 +481,7 @@ private struct ReaderControlsBar: View {
                     .contentShape(Rectangle())
             }
             .accessibilityLabel("Line spacing")
-            .accessibilityValue(preferences.lineSpacing.title)
+            .accessibilityValue(preferences.appLanguage.localized(preferences.lineSpacing.rawValue))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -501,6 +503,17 @@ private struct ReadingPreferencesView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("App language") {
+                    Picker("App language", selection: Binding(
+                        get: { preferences.appLanguage },
+                        set: { preferences.setAppLanguage($0) }
+                    )) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.title).tag(language)
+                        }
+                    }
+                }
+
                 Section("Color palette") {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(ReaderPalette.allCases) { palette in
@@ -528,7 +541,7 @@ private struct ReadingPreferencesView: View {
                                             }
                                         }
 
-                                    Text(palette.title)
+                                    Text(preferences.appLanguage.localized(palette.rawValue))
                                         .font(.subheadline)
                                         .foregroundStyle(colors.ink)
                                 }
@@ -541,8 +554,8 @@ private struct ReadingPreferencesView: View {
                                 }
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("\(palette.title) palette")
-                            .accessibilityValue(isSelected ? "Selected" : "")
+                            .accessibilityLabel(preferences.appLanguage.format("%@ palette", preferences.appLanguage.localized(palette.rawValue)))
+                            .accessibilityValue(isSelected ? preferences.appLanguage.localized("Selected") : "")
                             .accessibilityAddTraits(isSelected ? .isSelected : [])
                         }
                     }
@@ -554,7 +567,7 @@ private struct ReadingPreferencesView: View {
                         set: { preferences.setAppearance($0) }
                     )) {
                         ForEach(ReaderAppearance.allCases) { appearance in
-                            Text(appearance.title).tag(appearance)
+                            Text(preferences.appLanguage.localized(appearance.rawValue)).tag(appearance)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -595,11 +608,11 @@ private struct ReadingPreferencesView: View {
 
     private var reminderTimeAccessibilityHint: String {
         if reminders.isRequestingAuthorization {
-            "Wait while notification permission is requested."
+            preferences.appLanguage.localized("Wait while notification permission is requested.")
         } else if reminders.isEnabled {
-            "Choose when your daily reading reminder is sent."
+            preferences.appLanguage.localized("Choose when your daily reading reminder is sent.")
         } else {
-            "Turn on the daily reading reminder to choose a time."
+            preferences.appLanguage.localized("Turn on the daily reading reminder to choose a time.")
         }
     }
 
