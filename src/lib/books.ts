@@ -5,8 +5,6 @@ export type BibleBook = {
   testament: "Old Testament" | "New Testament";
 };
 
-export const POETIC_BOOK_IDS: ReadonlySet<string> = new Set(["JOB", "PSA", "PRO", "ECC", "SNG", "LAM"]);
-
 export const books: BibleBook[] = [
   { name: "Genesis", id: "GEN", chapters: 50, testament: "Old Testament" },
   { name: "Exodus", id: "EXO", chapters: 40, testament: "Old Testament" },

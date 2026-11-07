@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { books, POETIC_BOOK_IDS } from "@/lib/books";
+import { books } from "@/lib/books";
 import { loadChapter, trackFums, type BibleChapter } from "@/lib/scripture";
 import { loadSvdChapter } from "@/lib/svd";
 import { getBookName, translate } from "@/lib/translations";
@@ -450,8 +450,7 @@ export default function Home() {
 
   const selectedLineHeight = LINE_HEIGHT_OPTIONS.find((option) => option.value === lineHeight) ?? LINE_HEIGHT_OPTIONS[0];
   const selectedPalette = PALETTES.find((option) => option.id === palette) ?? PALETTES[0];
-  const isPoeticBook = translation === "niv" && POETIC_BOOK_IDS.has(currentBook.id);
-  const preserveLineBreaks = translation !== "niv" || isPoeticBook;
+  const preserveLineBreaks = translation !== "niv";
   const paragraphs = chapterData ? scriptureParagraphs(chapterData.content, preserveLineBreaks) : [];
 
   const isFirstChapter = currentBook.id === "GEN" && chapter === 1;
@@ -550,7 +549,7 @@ export default function Home() {
               <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{t("Chapter {chapter}", { chapter })}</span><ChevronDown /></button>
             </div>
             {chapterData ? (
-              <article className={`scripture${translation === "svd" ? " arabic-scripture" : isPoeticBook ? " poetic-scripture" : " prose-scripture"}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
+              <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
                 {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined} onMouseLeave={paragraph.isVerse ? handleVerseLeave : undefined}>{paragraph.content}</p>)}
                 {paragraphs.length === 0 && <p>{t("This chapter has no readable text.")}</p>}
                 {translation === "niv" && chapterData.copyright && <p className="copyright">{chapterData.copyright}</p>}

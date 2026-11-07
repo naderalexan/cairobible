@@ -176,8 +176,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .secondary-button { margin-top: 15px; }
 .scripture { width: 100%; max-width: var(--scripture-width, 680px); margin: 0 auto; color: var(--ink); font: 400 var(--reading-size) / var(--reading-line-height, 1.65) Georgia, 'Times New Roman', serif; letter-spacing: .002em; }
 .scripture p.verse { margin: 0 0 0.75em; margin-block-end: 0.5lh; }
-.scripture.prose-scripture p.verse { display: inline; margin: 0; margin-inline-end: .28em; }
-.scripture.poetic-scripture p.verse { padding-inline-start: 1.4em; text-indent: -1.4em; }
 .verse-number { padding-inline-end: 5px; color: var(--muted); font-weight: 525 }
 .verse-copy-popup { position: fixed; z-index: 8; width: 38px; height: 38px; min-width: 38px; min-height: 38px; aspect-ratio: 1 / 1; flex: 0 0 38px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-raised); color: var(--ink); box-shadow: var(--shadow); }
 .verse-copy-popup:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
