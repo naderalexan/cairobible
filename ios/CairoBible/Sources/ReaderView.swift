@@ -518,13 +518,13 @@ private struct ReadingPreferencesView: View {
 
             ZStack {
                 Text(preferences.appLanguage.localized("Settings"))
-                    .font(.system(.title2, design: .serif, weight: .semibold))
+                    .font(.custom("Georgia-Bold", size: 22, relativeTo: .title2))
                     .foregroundStyle(colors.ink)
 
                 HStack {
                     Spacer()
                     Button(preferences.appLanguage.localized("Done")) { dismiss() }
-                        .font(.system(.body, design: .serif, weight: .semibold))
+                        .font(.custom("Georgia-Bold", size: 17, relativeTo: .body))
                         .foregroundStyle(colors.accent)
                 }
             }
@@ -557,7 +557,7 @@ private struct ReadingPreferencesView: View {
                         preferences.setAppearance(appearance)
                     } label: {
                         Text(preferences.appLanguage.localized(appearance.rawValue))
-                            .font(.system(.body, design: .serif, weight: .medium))
+                            .font(.custom("Georgia", size: 17, relativeTo: .body))
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                             .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
@@ -605,7 +605,7 @@ private struct ReadingPreferencesView: View {
                                 }
 
                             Text(preferences.appLanguage.localized(palette.rawValue))
-                                .font(.caption)
+                                .font(.custom("Georgia", size: 12, relativeTo: .caption))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.65)
                                 .foregroundStyle(paletteColors.ink)
@@ -651,7 +651,7 @@ private struct ReadingPreferencesView: View {
 
             HStack {
                 Text(preferences.appLanguage.localized("Time"))
-                    .font(.system(.body, design: .serif))
+                    .font(.custom("Georgia", size: 17, relativeTo: .body))
                     .foregroundStyle(reminders.isEnabled ? colors.ink : colors.muted)
                 Spacer()
                 DatePicker("Reminder time", selection: Binding(
@@ -660,6 +660,7 @@ private struct ReadingPreferencesView: View {
                 ), displayedComponents: .hourAndMinute)
                 .labelsHidden()
                 .datePickerStyle(.compact)
+                .font(.custom("Georgia", size: 17, relativeTo: .body))
                 .disabled(!reminders.isEnabled || reminders.isRequestingAuthorization)
                 .accessibilityLabel(preferences.appLanguage.localized("Reminder time"))
                 .accessibilityHint(reminderTimeAccessibilityHint)
@@ -670,7 +671,7 @@ private struct ReadingPreferencesView: View {
 
             if let message = reminders.message {
                 Text(message)
-                    .font(.footnote)
+                    .font(.custom("Georgia", size: 13, relativeTo: .footnote))
                     .foregroundStyle(colors.muted)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -683,7 +684,7 @@ private struct ReadingPreferencesView: View {
 
     private func sectionHeading(_ key: String) -> some View {
         Text(preferences.appLanguage.localized(key))
-            .font(.system(.title3, design: .serif, weight: .semibold))
+            .font(.custom("Georgia-Bold", size: 20, relativeTo: .title3))
             .foregroundStyle(colors.ink)
     }
 
