@@ -16,11 +16,8 @@ export default function PrivacyPage() {
       <header className="legal-header">
         <p className="legal-eyebrow">CAIRO BIBLE · IOS APP</p>
         <h1>Privacy Policy</h1>
-        <p>Draft for review · November 7, 2026</p>
+        <p>Last updated: November 7, 2026</p>
       </header>
-      <aside className="legal-draft-note">
-        Draft only: review this policy before publishing it as the official policy.
-      </aside>
 
       <article className="legal-copy" lang="en" dir="ltr">
         <p>This policy describes the Cairo Bible iOS app. The app does not require an account.</p>
