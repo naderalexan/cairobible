@@ -56,6 +56,8 @@ const arabic: Record<string, string> = {
   Dark: "داكن",
   "Color palette": "لوحة الألوان",
   "Choose the colors for your reading space.": "اختر ألوان مساحة القراءة.",
+  "Scripture width": "عرض نص الكتاب المقدس",
+  "Choose how wide the scripture text appears.": "اختر عرض نص الكتاب المقدس.",
   Cairo: "القاهرة",
   Olive: "زيتوني",
   Nile: "النيل",

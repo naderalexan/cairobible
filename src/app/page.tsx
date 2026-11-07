@@ -13,11 +13,14 @@ import {
   FONT_SHORT_LABELS,
   FONT_SIZES,
   isLineHeightValue,
+  isScriptureWidthLevel,
+  SCRIPTURE_WIDTH_OPTIONS,
   getLineSpacingPopupPosition,
   LINE_HEIGHT_OPTIONS,
   readerControlsVisibilityAfter,
   toggleFocusMode,
   type LineHeightValue,
+  type ScriptureWidthLevel,
 } from "@/lib/reader-controls";
 
 const PALETTES = [
@@ -49,6 +52,7 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [palette, setPalette] = useState<PaletteId>("cairo");
+  const [scriptureWidthLevel, setScriptureWidthLevel] = useState<ScriptureWidthLevel>(2);
   const [fontLevel, setFontLevel] = useState(2);
   const [lineHeight, setLineHeight] = useState<LineHeightValue>(LINE_HEIGHT_OPTIONS[0].value);
   const [ready, setReady] = useState(false);
@@ -78,6 +82,11 @@ export default function Home() {
     setTheme(savedTheme === "dark" ? "dark" : "light");
     const savedPalette = localStorage.getItem("still-palette");
     if (isPaletteId(savedPalette)) setPalette(savedPalette);
+    const savedScriptureWidth = localStorage.getItem("still-scripture-width-level");
+    if (savedScriptureWidth !== null) {
+      const savedScriptureWidthLevel = Number(savedScriptureWidth);
+      if (isScriptureWidthLevel(savedScriptureWidthLevel)) setScriptureWidthLevel(savedScriptureWidthLevel);
+    }
     const savedFont = Number(localStorage.getItem("still-font-level"));
     if (Number.isInteger(savedFont) && savedFont >= 0 && savedFont <= 4) setFontLevel(savedFont);
     const savedLineHeight = Number(localStorage.getItem("still-line-height"));
@@ -232,6 +241,10 @@ export default function Home() {
   useEffect(() => {
     if (ready) localStorage.setItem("still-palette", palette);
   }, [ready, palette]);
+
+  useEffect(() => {
+    if (ready) localStorage.setItem("still-scripture-width-level", String(scriptureWidthLevel));
+  }, [ready, scriptureWidthLevel]);
 
   useEffect(() => {
     if (ready) localStorage.setItem("still-font-level", String(fontLevel));
@@ -441,9 +454,10 @@ export default function Home() {
   const isFirstChapter = currentBook.id === "GEN" && chapter === 1;
   const isLastChapter = currentBook.id === "REV" && chapter === currentBook.chapters;
   const toggleLineSpacingPopup = () => setLineSpacingOpen((open) => !open);
+  const selectedScriptureWidth = SCRIPTURE_WIDTH_OPTIONS[scriptureWidthLevel];
 
   return (
-    <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio } as CSSProperties}>
+    <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio, "--scripture-width": `${selectedScriptureWidth.width}px` } as CSSProperties}>
       {translation === "niv" && <Script src="https://pkg.api.bible/fumsV3.min.js" strategy="afterInteractive" />}
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
         <div className="sidebar-top">
@@ -500,6 +514,15 @@ export default function Home() {
                   <input type="radio" name="color-palette" value={option.id} checked={palette === option.id} onChange={() => setPalette(option.id)} />
                   <span className="palette-swatch" data-palette-swatch={option.id} aria-hidden="true" />
                   <span className="palette-name">{t(option.name)}</span>
+                </label>)}
+              </div>
+            </section>
+            <section className="setting-block scripture-width-setting">
+              <div className="setting-heading"><div><h3 id="scriptureWidthTitle">{t("Scripture width")}</h3><p>{t("Choose how wide the scripture text appears.")}</p></div><output>{selectedScriptureWidth.label}</output></div>
+              <div className="scripture-width-options" role="radiogroup" aria-labelledby="scriptureWidthTitle">
+                {SCRIPTURE_WIDTH_OPTIONS.map((option, index) => <label className="scripture-width-option" key={option.label}>
+                  <input type="radio" name="scripture-width" value={index} checked={scriptureWidthLevel === index} onChange={() => setScriptureWidthLevel(index as ScriptureWidthLevel)} />
+                  <span>{option.label}</span>
                 </label>)}
               </div>
             </section>

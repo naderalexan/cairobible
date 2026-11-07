@@ -1,6 +1,13 @@
 export const FONT_SIZES = [18, 20, 22, 25, 29];
 export const FONT_LABELS = ["Extra small", "Small", "Medium", "Large", "Extra large"];
 export const FONT_SHORT_LABELS = ["XS", "S", "M", "L", "XL"];
+export const SCRIPTURE_WIDTH_OPTIONS = [
+  { label: "XS", width: 480 },
+  { label: "S", width: 560 },
+  { label: "M", width: 680 },
+  { label: "L", width: 800 },
+  { label: "XL", width: 920 },
+] as const;
 export const LINE_HEIGHT_OPTIONS = [
   { label: "Small", value: 0.55, ratio: 1.5 },
   { label: "Medium", value: 0.85, ratio: 1.85 },
@@ -8,6 +15,12 @@ export const LINE_HEIGHT_OPTIONS = [
 ] as const;
 
 export type LineHeightValue = (typeof LINE_HEIGHT_OPTIONS)[number]["value"];
+export type ScriptureWidthLevel = 0 | 1 | 2 | 3 | 4;
+
+export function isScriptureWidthLevel(value: number): value is ScriptureWidthLevel {
+  return Number.isInteger(value) && value >= 0 && value < SCRIPTURE_WIDTH_OPTIONS.length;
+}
+
 export function isLineHeightValue(value: number): value is LineHeightValue {
   return LINE_HEIGHT_OPTIONS.some((option) => option.value === value);
 }

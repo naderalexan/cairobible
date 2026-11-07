@@ -5,6 +5,8 @@ import {
   FONT_LABELS,
   FONT_SHORT_LABELS,
   isLineHeightValue,
+  isScriptureWidthLevel,
+  SCRIPTURE_WIDTH_OPTIONS,
   getLineSpacingPopupPosition,
   readerControlsVisibilityAfter,
   toggleFocusMode,
@@ -20,6 +22,16 @@ test("text size control changes one level and stays within the available range",
   assert.equal(adjustFontLevel(2, 1), 3);
   assert.equal(adjustFontLevel(0, -1), 0);
   assert.equal(adjustFontLevel(4, 1), 4);
+});
+
+test("scripture width offers five validated sizes and keeps medium at the current width", () => {
+  assert.deepEqual(SCRIPTURE_WIDTH_OPTIONS.map((option) => option.label), ["XS", "S", "M", "L", "XL"]);
+  assert.equal(SCRIPTURE_WIDTH_OPTIONS[2].width, 680);
+  assert.equal(isScriptureWidthLevel(0), true);
+  assert.equal(isScriptureWidthLevel(4), true);
+  assert.equal(isScriptureWidthLevel(-1), false);
+  assert.equal(isScriptureWidthLevel(5), false);
+  assert.equal(isScriptureWidthLevel(1.5), false);
 });
 
 test("line spacing control accepts only the existing preference values", () => {
