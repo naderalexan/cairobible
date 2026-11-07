@@ -37,7 +37,7 @@ export default function PrivacyPage() {
         <p>You can turn off reminders in the app or in iOS notification settings. Removing the app deletes its locally stored preferences and chapter cache. For privacy questions, contact <a href="mailto:hi@cairolove.site">hi@cairolove.site</a>.</p>
 
         <h2>Changes</h2>
-        <p>We will update this page if our privacy practices change. The date above indicates when this draft was prepared.</p>
+        <p>We will update this page if our privacy practices change. The date above indicates when this policy was last updated.</p>
       </article>
 
       <hr className="legal-divider" />
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         <p>يمكنك إيقاف التذكيرات من التطبيق أو من إعدادات الإشعارات في iOS. يؤدي حذف التطبيق إلى إزالة تفضيلاتك ونسخ الإصحاحات المحفوظة محليًا. للاستفسارات المتعلقة بالخصوصية، راسلنا على <a href="mailto:hi@cairolove.site" dir="ltr">hi@cairolove.site</a>.</p>
 
         <h2>التغييرات</h2>
-        <p>سنحدّث هذه الصفحة عند تغيير ممارسات الخصوصية. يوضح التاريخ أعلاه موعد إعداد هذه المسودة.</p>
+        <p>سنحدّث هذه الصفحة عند تغيير ممارسات الخصوصية. يوضح التاريخ أعلاه تاريخ آخر تحديث لهذه السياسة.</p>
       </article>
       <footer className="legal-footer">
         <Link href="/support">Contact support · تواصل مع الدعم</Link>
