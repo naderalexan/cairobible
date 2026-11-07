@@ -169,17 +169,18 @@ struct ReaderView: View {
             .accessibilityLabel("Choose book")
             .accessibilityValue(currentBookName)
             .sheet(isPresented: $isShowingBookPicker) {
+                let pickerColors = ReaderPalette.cairo.colors(for: effectiveColorScheme)
                 BookPickerSheet(
                     selectedBook: model.selectedBook,
                     appLanguage: preferences.appLanguage,
-                    colors: paletteColors
+                    colors: pickerColors
                 ) { book in
                     model.selectBook(book)
                 }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(30)
-                .presentationBackground(paletteColors.surfaceRaised)
+                .presentationBackground(pickerColors.surfaceRaised)
             }
 
             Spacer(minLength: 0)
@@ -428,49 +429,50 @@ private struct BookPickerSheet: View {
         VStack(spacing: 0) {
             Capsule()
                 .fill(colors.muted.opacity(0.4))
-                .frame(width: 58, height: 5)
-                .padding(.top, 10)
+                .frame(width: 52, height: 4)
+                .padding(.top, 8)
                 .accessibilityHidden(true)
 
             HStack {
                 Text(appLanguage.localized("Choose a book"))
-                    .font(.custom("Georgia-Bold", size: 26, relativeTo: .title))
+                    .font(.custom("Georgia", size: 24, relativeTo: .title))
                     .foregroundStyle(colors.ink)
                 Spacer()
                 Button {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(colors.ink)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 40, height: 40)
                         .background(colors.surface, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(appLanguage.localized("Close book selector"))
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 18)
+            .padding(.horizontal, 22)
+            .padding(.top, 16)
             .padding(.bottom, 16)
 
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(colors.muted)
-                TextField(appLanguage.localized("Search books"), text: $searchText)
-                    .font(.custom("Georgia", size: 17, relativeTo: .body))
+                TextField(appLanguage.localized("Search books..."), text: $searchText)
+                    .font(.system(size: 15, design: .rounded))
                     .foregroundStyle(colors.ink)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
             }
-            .padding(.horizontal, 16)
-            .frame(height: 50)
-            .background(colors.surface, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(colors.accent.opacity(0.15), lineWidth: 1))
-            .padding(.horizontal, 24)
-            .padding(.bottom, 22)
+            .padding(.horizontal, 14)
+            .frame(height: 42)
+            .background(colors.surface, in: Capsule())
+            .overlay(Capsule().stroke(colors.accent.opacity(0.1), lineWidth: 1))
+            .padding(.horizontal, 22)
+            .padding(.bottom, 24)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 26) {
                     if !filteredOldTestament.isEmpty {
                         testamentSection("Old Testament", books: filteredOldTestament)
                     }
@@ -485,7 +487,7 @@ private struct BookPickerSheet: View {
                             .padding(.top, 36)
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 22)
                 .padding(.bottom, 30)
             }
             .scrollIndicators(.hidden)
@@ -496,36 +498,41 @@ private struct BookPickerSheet: View {
 
     private func testamentSection(_ title: String, books: [BibleBook]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(appLanguage.localized(title))
-                .font(.custom("Georgia-Bold", size: 19, relativeTo: .title3))
-                .foregroundStyle(colors.ink)
+            HStack(spacing: 10) {
+                Text(appLanguage.localized(title).uppercased())
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .tracking(2.2)
+                    .foregroundStyle(colors.ink)
+                Rectangle()
+                    .fill(colors.muted.opacity(0.28))
+                    .frame(height: 1)
+                    .accessibilityHidden(true)
+            }
 
-            LazyVGrid(columns: columns, spacing: 10) {
+            LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(books) { book in
                     let isSelected = book == selectedBook
                     Button {
                         onSelect(book)
                         dismiss()
                     } label: {
-                        HStack(spacing: 6) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(book.name)
-                                .font(.custom("Georgia", size: 16, relativeTo: .body))
-                                .lineLimit(2)
+                                .font(.custom("Georgia", size: 15, relativeTo: .body))
+                                .lineLimit(1)
                                 .minimumScaleFactor(0.8)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            if isSelected {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 13, weight: .semibold))
-                            }
+                                .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                            Text("\(book.svdID) · \(book.chapterCount)")
+                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .tracking(0.5)
+                                .foregroundStyle(isSelected ? colors.surfaceRaised.opacity(0.82) : colors.muted)
                         }
-                        .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
-                        .padding(.horizontal, 13)
-                        .frame(maxWidth: .infinity, minHeight: 56)
-                        .background(isSelected ? colors.accent : colors.surface, in: RoundedRectangle(cornerRadius: 14))
+                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .background(isSelected ? colors.accent : colors.surface, in: RoundedRectangle(cornerRadius: 10))
                         .overlay {
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(colors.accent.opacity(isSelected ? 0 : 0.14), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(colors.accent.opacity(isSelected ? 0 : 0.12), lineWidth: 1)
                         }
                     }
                     .buttonStyle(.plain)

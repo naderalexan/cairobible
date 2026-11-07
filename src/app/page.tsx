@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Script from "next/script";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { books } from "@/lib/books";
@@ -463,10 +462,6 @@ export default function Home() {
       {translation === "niv" && <Script src="https://pkg.api.bible/fumsV3.min.js" strategy="afterInteractive" />}
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
         <div className="sidebar-top">
-          <Link className="brand" href="/" aria-label={t("Cairo Bible home")}>
-            <span className="brand-mark" aria-hidden="true" />
-            <span><strong>Cairo Bible</strong><small>{t("READING, MADE QUIET")}</small></span>
-          </Link>
           <button className="icon-button sidebar-close" onClick={() => setSidebarOpen(false)} aria-label={t("Close book list")}>×</button>
         </div>
         <label className="search-wrap" htmlFor="bookSearch">
@@ -483,19 +478,6 @@ export default function Home() {
       {sidebarOpen && <button className="sidebar-scrim" aria-label={t("Close book list")} onClick={() => setSidebarOpen(false)} />}
 
       <main className="main-area">
-        <header className="toolbar">
-          <div className="toolbar-leading">
-            <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t(sidebarOpen ? "Hide book list" : "Show book list")} aria-expanded={sidebarOpen}><MenuIcon /></button>
-            <span className="toolbar-divider" aria-hidden="true" />
-            <span className="toolbar-label">{t("A place to read")}</span>
-          </div>
-          <div className="toolbar-actions">
-            <span className={`offline-indicator${isOnline ? "" : " offline"}`}><span className="status-dot" />{t(isOnline ? "Online" : "Offline")}</span>
-            <button className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={t("Switch to {language} appearance", { language: t(theme === "light" ? "dark" : "light") })} title={t("Switch to {language} appearance", { language: t(theme === "light" ? "dark" : "light") })}>{theme === "light" ? <MoonIcon /> : <SunIcon />}</button>
-            <button className="settings-trigger" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /><span>{t("Settings")}</span></button>
-          </div>
-        </header>
-
         {settingsOpen && <section className="settings-dropdown" id="settingsDropdown" aria-labelledby="settingsTitle" ref={settingsDropdownRef}>
           <button className="dialog-close icon-button" onClick={() => setSettingsOpen(false)} aria-label={t("Close settings")}>×</button>
           <div className="dialog-content">
@@ -545,8 +527,14 @@ export default function Home() {
         >
           <section className="reader">
             <div className="reader-heading">
-              <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
-              <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{t("Chapter {chapter}", { chapter })}</span><ChevronDown /></button>
+              <div className="reader-heading-leading">
+                <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t(sidebarOpen ? "Hide book list" : "Show book list")} aria-expanded={sidebarOpen}><MenuIcon /></button>
+                <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
+              </div>
+              <div className="reader-heading-actions">
+                <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{t("Chapter {chapter}", { chapter })}</span><ChevronDown /></button>
+                <button className="icon-button" onClick={() => setSettingsOpen(!settingsOpen)} aria-label={t(settingsOpen ? "Close settings" : "Open settings")} title={t("Settings")} aria-expanded={settingsOpen} aria-controls="settingsDropdown"><GearIcon /></button>
+              </div>
             </div>
             {chapterData ? (
               <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
@@ -739,8 +727,6 @@ function wrapScriptureInline(tag: string, content: ReactNode, key: string): Reac
 
 function SearchIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="m13 13 4 4" /></svg>; }
 function MenuIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" /></svg>; }
-function MoonIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16.7 12.2A7 7 0 0 1 7.8 3.3 7 7 0 1 0 16.7 12.2Z" /></svg>; }
-function SunIcon() { return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.5" /><path d="M10 1.5v2M10 16.5v2M18.5 10h-2M3.5 10h-2m14.51-6.01-1.42 1.42M5.41 14.59l-1.42 1.42m12.02 0-1.42-1.42M5.41 5.41 3.99 3.99" /></svg>; }
 function GearIcon() { return <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9.5" cy="10" r="3" /><path d="M16.4 11.8a6.7 6.7 0 0 0 0-3.6l1.3-1-1.6-2.8-1.6.6a6.7 6.7 0 0 0-3.1-1.8L11.2 1H8l-.3 2.2a6.7 6.7 0 0 0-3.1 1.8L3 4.4 1.4 7.2l1.3 1a6.7 6.7 0 0 0 0 3.6l-1.3 1L3 15.6l1.6-.6a6.7 6.7 0 0 0 3.1 1.8L8 19h3.2l.3-2.2a6.7 6.7 0 0 0 3.1-1.8l1.6.6 1.6-2.8z" /></svg>; }
 function ChevronDown() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5" /></svg>; }
 function ChevronLeft() { return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>; }
