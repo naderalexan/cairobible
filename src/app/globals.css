@@ -120,7 +120,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .chapter-step:hover:not(:disabled) { color: var(--ink); }
 .chapter-step:disabled { opacity: .35; cursor: not-allowed; }
 .chapter-step svg { width: 17px; height: 17px; }
-.app-shell[dir="rtl"] .chapter-step svg, .app-shell[dir="rtl"] .chapter-stepper svg { transform: rotate(180deg); }
 .sidebar-scrim { display: none; }
 .dialog-backdrop { position: fixed; inset: 0; z-index: 10; padding: 20px; display: grid; place-items: center; background: rgba(19, 24, 20, .38); backdrop-filter: blur(5px); }
 .app-dialog { position: relative; width: min(100%, 480px); max-height: min(85dvh, 760px); overflow: auto; border: 1px solid var(--line); border-radius: 20px; background: var(--surface-raised); box-shadow: var(--shadow); animation: dialog-in .18s ease-out; }
