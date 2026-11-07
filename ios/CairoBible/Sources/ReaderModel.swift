@@ -375,6 +375,27 @@ final class ReaderModel: ObservableObject {
         selectedChapter < selectedBook.chapterCount || selectedBook != BibleBook.all.last
     }
 
+    var previousChapterAccessibilityLabel: String {
+        if selectedChapter > 1 {
+            return "Previous chapter, \(selectedBook.name) \(selectedChapter - 1)"
+        }
+        guard let index = BibleBook.all.firstIndex(of: selectedBook), index > 0 else {
+            return "Previous chapter"
+        }
+        let book = BibleBook.all[index - 1]
+        return "Previous chapter, \(book.name) \(book.chapterCount)"
+    }
+
+    var nextChapterAccessibilityLabel: String {
+        if selectedChapter < selectedBook.chapterCount {
+            return "Next chapter, \(selectedBook.name) \(selectedChapter + 1)"
+        }
+        guard let index = BibleBook.all.firstIndex(of: selectedBook), index < BibleBook.all.count - 1 else {
+            return "Next chapter"
+        }
+        return "Next chapter, \(BibleBook.all[index + 1].name) 1"
+    }
+
     func selectPreviousChapter() {
         if selectedChapter > 1 {
             selectChapter(selectedChapter - 1)

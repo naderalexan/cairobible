@@ -31,21 +31,53 @@ final class ReaderFlowTests: XCTestCase {
         let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: makePreferences())
         XCTAssertFalse(model.canSelectPreviousChapter)
         XCTAssertTrue(model.canSelectNextChapter)
+        XCTAssertEqual(model.previousChapterAccessibilityLabel, "Previous chapter")
+        XCTAssertEqual(model.nextChapterAccessibilityLabel, "Next chapter, Genesis 2")
 
+        model.selectTranslation(.svd)
         model.selectNextChapter()
         XCTAssertEqual(model.selectedChapter, 2)
+        XCTAssertEqual(model.previousChapterAccessibilityLabel, "Previous chapter, Genesis 1")
         model.selectPreviousChapter()
         XCTAssertEqual(model.selectedChapter, 1)
         model.selectPreviousChapter()
         XCTAssertEqual(model.selectedBook, BibleBook.all[0])
 
         model.selectChapter(model.selectedBook.chapterCount)
+        XCTAssertEqual(model.nextChapterAccessibilityLabel, "Next chapter, Exodus 1")
         model.selectNextChapter()
         XCTAssertEqual(model.selectedBook, BibleBook.all[1])
         XCTAssertEqual(model.selectedChapter, 1)
+        XCTAssertEqual(model.previousChapterAccessibilityLabel, "Previous chapter, Genesis 50")
         model.selectPreviousChapter()
         XCTAssertEqual(model.selectedBook, BibleBook.all[0])
         XCTAssertEqual(model.selectedChapter, BibleBook.all[0].chapterCount)
+        XCTAssertEqual(model.selectedTranslation, .svd)
+        XCTAssertEqual(model.preferences.translation, .svd)
+    }
+
+    func testReaderNavigationStopsAtRevelationAndGenesis() {
+        let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: makePreferences())
+        let revelation = BibleBook.all.last!
+        model.selectBook(revelation)
+        model.selectChapter(revelation.chapterCount)
+
+        XCTAssertFalse(model.canSelectNextChapter)
+        XCTAssertEqual(model.nextChapterAccessibilityLabel, "Next chapter")
+        XCTAssertEqual(model.previousChapterAccessibilityLabel, "Previous chapter, Revelation 21")
+        model.selectNextChapter()
+        XCTAssertEqual(model.selectedBook, revelation)
+        XCTAssertEqual(model.selectedChapter, revelation.chapterCount)
+
+        model.selectPreviousChapter()
+        XCTAssertEqual(model.selectedChapter, revelation.chapterCount - 1)
+        let genesis = BibleBook.all[0]
+        model.selectBook(genesis)
+        XCTAssertFalse(model.canSelectPreviousChapter)
+        XCTAssertEqual(model.previousChapterAccessibilityLabel, "Previous chapter")
+        model.selectPreviousChapter()
+        XCTAssertEqual(model.selectedBook, genesis)
+        XCTAssertEqual(model.selectedChapter, 1)
     }
 
     func testReaderLoadsSelectedNIVChapterFromBackend() async {

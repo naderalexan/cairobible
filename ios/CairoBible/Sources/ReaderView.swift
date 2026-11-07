@@ -166,7 +166,7 @@ struct ReaderView: View {
                     .contentShape(Rectangle())
             }
             .disabled(!model.canSelectPreviousChapter)
-            .accessibilityLabel("Previous chapter")
+            .accessibilityLabel(model.previousChapterAccessibilityLabel)
 
             Menu {
                 Picker("Chapter", selection: Binding(
@@ -201,7 +201,7 @@ struct ReaderView: View {
                     .contentShape(Rectangle())
             }
             .disabled(!model.canSelectNextChapter)
-            .accessibilityLabel("Next chapter")
+            .accessibilityLabel(model.nextChapterAccessibilityLabel)
 
             Button {
                 isShowingPreferences = true
