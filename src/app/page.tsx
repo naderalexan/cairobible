@@ -371,6 +371,7 @@ export default function Home() {
     if (!verseNumber) return;
     const verseText = verse.cloneNode(true) as HTMLElement;
     verseText.querySelectorAll(".verse-number").forEach((number) => number.remove());
+    verseText.querySelectorAll("br").forEach((lineBreak) => lineBreak.replaceWith(" "));
     const text = verseText.textContent?.replace(/\s+/g, " ").trim();
     if (!text) return;
     const rect = verse.getBoundingClientRect();
