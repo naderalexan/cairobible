@@ -179,6 +179,7 @@ struct ReaderView: View {
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 28, height: 40)
                     .contentShape(Rectangle())
+                    .environment(\.layoutDirection, .leftToRight)
             }
             .disabled(!model.canSelectPreviousChapter)
             .accessibilityLabel(model.previousChapterAccessibilityLabel)
@@ -224,6 +225,7 @@ struct ReaderView: View {
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 28, height: 40)
                     .contentShape(Rectangle())
+                    .environment(\.layoutDirection, .leftToRight)
             }
             .disabled(!model.canSelectNextChapter)
             .accessibilityLabel(model.nextChapterAccessibilityLabel)
@@ -401,6 +403,8 @@ private struct ChapterPickerSheet: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 8)
+        .environment(\.locale, appLanguage.locale)
+        .environment(\.layoutDirection, appLanguage == .ar ? .rightToLeft : .leftToRight)
     }
 }
 
@@ -526,7 +530,7 @@ private struct BookPickerSheet: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                                 .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
-                            Text("\(book.svdID) · \(book.chapterCount)")
+                            Text("\(book.localizedAbbreviation(for: appLanguage)) · \(book.chapterCount)")
                                 .font(.system(size: 10, weight: .medium, design: .rounded))
                                 .tracking(0.5)
                                 .foregroundStyle(isSelected ? colors.surfaceRaised.opacity(0.82) : colors.muted)
@@ -692,7 +696,6 @@ private struct ReadingPreferencesView: View {
                         .font(.custom("Georgia", size: 17, relativeTo: .body))
                         .foregroundStyle(colors.accent)
                 }
-                .environment(\.layoutDirection, .leftToRight)
             }
             .frame(height: 56)
             .padding(.horizontal, 24)

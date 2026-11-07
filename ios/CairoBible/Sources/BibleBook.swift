@@ -11,6 +11,10 @@ struct BibleBook: Hashable, Identifiable {
         appLanguage.localized(name)
     }
 
+    func localizedAbbreviation(for appLanguage: AppLanguage) -> String {
+        appLanguage.localized(svdID)
+    }
+
     static let all: [BibleBook] = [
         .init(name: "Genesis", svdID: "GEN", chapterCount: 50),
         .init(name: "Exodus", svdID: "EXO", chapterCount: 40),

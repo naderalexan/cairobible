@@ -51,6 +51,9 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertTrue(BibleBook.all.allSatisfy { $0.localizedName(for: .ar) != $0.name })
         XCTAssertEqual(BibleBook.all.first?.localizedName(for: .ar), "التكوين")
         XCTAssertEqual(BibleBook.all[39].localizedName(for: .ar), "متى")
+        XCTAssertTrue(BibleBook.all.allSatisfy { $0.localizedAbbreviation(for: .ar) != $0.svdID })
+        XCTAssertEqual(BibleBook.all.first?.localizedAbbreviation(for: .ar), "تك")
+        XCTAssertEqual(BibleBook.all.first?.localizedAbbreviation(for: .en), "GEN")
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .ar), "فان دايك العربية")
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .en), "Arabic SVD")
     }
