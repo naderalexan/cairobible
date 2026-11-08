@@ -7,6 +7,7 @@ struct ReaderView: View {
         var isHorizontal = false
     }
 
+    private let chapterNavigationHeight: CGFloat = 60
     @StateObject private var model: ReaderModel
     @StateObject private var reminderManager: DailyReminderManager
     @ObservedObject private var preferences: ReadingPreferences
@@ -48,26 +49,23 @@ struct ReaderView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                chapterNavigation
-                    .opacity(areReaderControlsVisible ? 1 : 0)
-                    .allowsHitTesting(areReaderControlsVisible)
-                    .accessibilityHidden(!areReaderControlsVisible)
-
-                GeometryReader { geometry in
+            GeometryReader { geometry in
+                ZStack(alignment: .top) {
                     ZStack(alignment: .leading) {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 16) {
                                 visibleReaderContent
                             }
                             .padding(.horizontal, 20)
-                            .padding(.vertical, 20)
+                            .padding(.top, 20 + (areReaderControlsVisible ? chapterNavigationHeight : 0))
+                            .padding(.bottom, 20)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .scrollIndicators(.hidden)
                         .scrollPosition(id: $visibleVerseID, anchor: .top)
                         .scrollDisabled(chapterSwipeGestureState.isHorizontal)
                         .background(paletteColors.surface)
+                        .onTapGesture { areReaderControlsVisible ? hideReaderControls() : showReaderControls() }
                         .offset(x: chapterSwipeTranslation)
 
                         if let target = swipePreviewTarget {
@@ -79,7 +77,6 @@ struct ReaderView: View {
                     .clipped()
                     .environment(\.layoutDirection, .leftToRight)
                     .simultaneousGesture(chapterSwipeGesture(width: geometry.size.width))
-                    .onTapGesture { areReaderControlsVisible ? hideReaderControls() : showReaderControls() }
                     .task(id: swipePreviewTarget) {
                         guard let target = swipePreviewTarget else {
                             if transitionLocation == nil {
@@ -90,6 +87,22 @@ struct ReaderView: View {
                         let chapter = await model.previewChapter(at: target)
                         guard !Task.isCancelled, swipePreviewTarget == target else { return }
                         swipePreviewChapter = chapter
+                    }
+
+                    chapterNavigation
+                        .frame(maxWidth: .infinity)
+                        .frame(height: chapterNavigationHeight)
+                        .opacity(areReaderControlsVisible ? 1 : 0)
+                        .background(paletteColors.surface)
+                        .allowsHitTesting(areReaderControlsVisible)
+                        .accessibilityHidden(!areReaderControlsVisible)
+
+                    VStack {
+                        Spacer()
+                        if areReaderControlsVisible {
+                            ReaderControlsBar(model: model, preferences: preferences, colors: paletteColors)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
                     }
                 }
             }
