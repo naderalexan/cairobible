@@ -11,6 +11,7 @@ struct ReaderView: View {
     @State private var isShowingBookPicker = false
     @State private var isShowingChapterPicker = false
     @State private var areReaderControlsVisible = true
+    @State private var visibleVerseID: Int?
     @State private var isShowingCopiedFeedback = false
     @State private var copyFeedbackDismissal: DispatchWorkItem?
 
@@ -22,11 +23,13 @@ struct ReaderView: View {
     ) {
         let preferences = preferences ?? ReadingPreferences()
         let reminderManager = reminderManager ?? DailyReminderManager(appLanguage: preferences.appLanguage)
-        _model = StateObject(wrappedValue: ReaderModel(
+        let model = ReaderModel(
             nivClient: nivClient,
             svdClient: svdClient,
             preferences: preferences
-        ))
+        )
+        _model = StateObject(wrappedValue: model)
+        _visibleVerseID = State(initialValue: model.selectedVerse)
         _preferences = ObservedObject(wrappedValue: preferences)
         _reminderManager = StateObject(wrappedValue: reminderManager)
     }
@@ -48,6 +51,7 @@ struct ReaderView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .scrollIndicators(.hidden)
+                .scrollPosition(id: $visibleVerseID, anchor: .top)
                 .background(paletteColors.surface)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 10)
@@ -93,11 +97,23 @@ struct ReaderView: View {
             .onChange(of: preferences.appLanguage) { _, appLanguage in
                 Task { await reminderManager.setAppLanguage(appLanguage) }
             }
+            .onChange(of: visibleVerseID) { _, verseID in
+                if let verseID { model.selectVerse(verseID) }
+            }
+            .onChange(of: model.state) { _, state in
+                if case .loaded = state { visibleVerseID = model.selectedVerse }
+            }
             .onChange(of: model.selectedTranslation) { _, _ in
                 showReaderControls()
             }
-            .onChange(of: model.selectedBook) { _, _ in showReaderControls() }
-            .onChange(of: model.selectedChapter) { _, _ in showReaderControls() }
+            .onChange(of: model.selectedBook) { _, _ in
+                visibleVerseID = 1
+                showReaderControls()
+            }
+            .onChange(of: model.selectedChapter) { _, _ in
+                visibleVerseID = 1
+                showReaderControls()
+            }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
             }
@@ -287,11 +303,12 @@ struct ReaderView: View {
 
         case let .loaded(chapter):
             if !chapter.verses.isEmpty {
-                VStack(alignment: .leading, spacing: lineSpacing + 4) {
+                LazyVStack(alignment: .leading, spacing: lineSpacing + 4) {
                     ForEach(chapter.verses) { verse in
                         verseRow(verse, isRightToLeft: model.selectedTranslation.isRightToLeft)
                     }
                 }
+                .scrollTargetLayout()
             } else {
                 Text(verbatim: chapter.text)
                     .font(readingFont)

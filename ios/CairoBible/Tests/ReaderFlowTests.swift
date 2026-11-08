@@ -88,6 +88,45 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(BibleBook.oldTestament + BibleBook.newTestament, BibleBook.all)
     }
 
+    func testReaderRestoresLastReadBookChapterAndVerse() {
+        let suiteName = "LastReadLocationTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let preferences = ReadingPreferences(defaults: defaults)
+        let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: preferences)
+        let john = BibleBook.all.first { $0.name == "John" }!
+        model.selectBook(john)
+        model.selectChapter(3)
+        model.selectVerse(16)
+
+        let relaunchedModel = ReaderModel(
+            nivClient: StubNIVReadingClient(),
+            preferences: ReadingPreferences(defaults: defaults)
+        )
+        XCTAssertEqual(relaunchedModel.selectedBook, john)
+        XCTAssertEqual(relaunchedModel.selectedChapter, 3)
+        XCTAssertEqual(relaunchedModel.selectedVerse, 16)
+
+        relaunchedModel.selectNextChapter()
+        XCTAssertEqual(relaunchedModel.selectedChapter, 4)
+        XCTAssertEqual(relaunchedModel.selectedVerse, 1)
+    }
+
+    func testReaderIgnoresInvalidSavedChapterLocation() {
+        let suiteName = "InvalidLastReadLocationTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set("John", forKey: "lastReadBook")
+        defaults.set(22, forKey: "lastReadChapter")
+        defaults.set(16, forKey: "lastReadVerse")
+
+        let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: ReadingPreferences(defaults: defaults))
+        XCTAssertEqual(model.selectedBook, BibleBook.all[0])
+        XCTAssertEqual(model.selectedChapter, 1)
+        XCTAssertEqual(model.selectedVerse, 1)
+    }
+
     func testReaderPreviousAndNextChapterNavigationCrossesBookBoundaries() {
         let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: makePreferences())
         XCTAssertFalse(model.canSelectPreviousChapter)

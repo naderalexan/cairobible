@@ -122,6 +122,9 @@ final class ReadingPreferences: ObservableObject {
     private let paletteKey = "readerPalette"
     private let translationKey = "bibleTranslation"
     private let appLanguageKey = "appLanguage"
+    private let lastReadBookKey = "lastReadBook"
+    private let lastReadChapterKey = "lastReadChapter"
+    private let lastReadVerseKey = "lastReadVerse"
 
     init(defaults: UserDefaults = .standard, preferredLanguages: [String] = Locale.preferredLanguages) {
         self.defaults = defaults
@@ -167,6 +170,25 @@ final class ReadingPreferences: ObservableObject {
     func setTranslation(_ translation: BibleTranslation) {
         self.translation = translation
         defaults.set(translation.rawValue, forKey: translationKey)
+    }
+
+    var lastReadLocation: (book: BibleBook, chapter: Int, verse: Int)? {
+        guard
+            let bookName = defaults.string(forKey: lastReadBookKey),
+            let book = BibleBook.all.first(where: { $0.name == bookName })
+        else {
+            return nil
+        }
+        let chapter = defaults.integer(forKey: lastReadChapterKey)
+        let verse = defaults.integer(forKey: lastReadVerseKey)
+        guard (1...book.chapterCount).contains(chapter), verse > 0 else { return nil }
+        return (book, chapter, verse)
+    }
+
+    func saveLastReadLocation(book: BibleBook, chapter: Int, verse: Int) {
+        defaults.set(book.name, forKey: lastReadBookKey)
+        defaults.set(chapter, forKey: lastReadChapterKey)
+        defaults.set(verse, forKey: lastReadVerseKey)
     }
 
     func setAppLanguage(_ appLanguage: AppLanguage) {
@@ -372,6 +394,7 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var selectedTranslation: BibleTranslation
     @Published private(set) var selectedBook = BibleBook.all[0]
     @Published private(set) var selectedChapter = 1
+    @Published private(set) var selectedVerse = 1
     @Published private(set) var state: ReaderState = .idle
 
     let preferences: ReadingPreferences
@@ -388,6 +411,11 @@ final class ReaderModel: ObservableObject {
         let preferences = preferences ?? ReadingPreferences()
         self.preferences = preferences
         selectedTranslation = preferences.translation
+        if let location = preferences.lastReadLocation {
+            selectedBook = location.book
+            selectedChapter = location.chapter
+            selectedVerse = location.verse
+        }
     }
 
     func selectTranslation(_ translation: BibleTranslation) {
@@ -399,12 +427,26 @@ final class ReaderModel: ObservableObject {
     func selectBook(_ book: BibleBook) {
         selectedBook = book
         selectedChapter = 1
+        selectedVerse = 1
+        saveLastReadLocation()
         state = .idle
     }
 
     func selectChapter(_ chapter: Int) {
         selectedChapter = min(max(chapter, 1), selectedBook.chapterCount)
+        selectedVerse = 1
+        saveLastReadLocation()
         state = .idle
+    }
+
+    func selectVerse(_ verse: Int) {
+        guard verse > 0, verse != selectedVerse else { return }
+        selectedVerse = verse
+        saveLastReadLocation()
+    }
+
+    private func saveLastReadLocation() {
+        preferences.saveLastReadLocation(book: selectedBook, chapter: selectedChapter, verse: selectedVerse)
     }
 
     var canSelectPreviousChapter: Bool {
@@ -442,6 +484,8 @@ final class ReaderModel: ObservableObject {
         } else if let index = BibleBook.all.firstIndex(of: selectedBook), index > 0 {
             selectedBook = BibleBook.all[index - 1]
             selectedChapter = selectedBook.chapterCount
+            selectedVerse = 1
+            saveLastReadLocation()
             state = .idle
         }
     }
@@ -452,6 +496,8 @@ final class ReaderModel: ObservableObject {
         } else if let index = BibleBook.all.firstIndex(of: selectedBook), index < BibleBook.all.count - 1 {
             selectedBook = BibleBook.all[index + 1]
             selectedChapter = 1
+            selectedVerse = 1
+            saveLastReadLocation()
             state = .idle
         }
     }
@@ -481,6 +527,10 @@ final class ReaderModel: ObservableObject {
                 )
             }
             guard !Task.isCancelled else { return }
+            if let firstVerse = chapter.verses.first?.number, !chapter.verses.contains(where: { $0.number == selectedVerse }) {
+                selectedVerse = chapter.verses.last(where: { $0.number <= selectedVerse })?.number ?? firstVerse
+                saveLastReadLocation()
+            }
             state = .loaded(chapter)
         } catch {
             guard !Task.isCancelled else { return }
