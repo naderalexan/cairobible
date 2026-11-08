@@ -341,7 +341,7 @@ struct ReaderView: View {
     ) -> some View {
         Group {
             if !chapter.verses.isEmpty {
-                LazyVStack(alignment: .leading, spacing: lineSpacing + 4) {
+                LazyVStack(alignment: .leading, spacing: lineSpacing + 4.4) {
                     ForEach(chapter.verses) { verse in
                         verseRow(
                             verse,
