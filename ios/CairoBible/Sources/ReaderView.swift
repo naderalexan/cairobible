@@ -652,7 +652,7 @@ private struct ReaderControlsBar: View {
                 }
             } label: {
                 HStack(spacing: 5) {
-                    Text(model.selectedTranslation.localizedTitle(for: preferences.appLanguage))
+                    Text(model.selectedTranslation.isRightToLeft ? preferences.appLanguage.localized("Translation") : model.selectedTranslation.localizedTitle(for: preferences.appLanguage))
                         .font(.system(size: 14, weight: .medium))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
