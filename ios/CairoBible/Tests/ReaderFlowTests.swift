@@ -72,6 +72,15 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(BibleTranslation.svd.readerControlTitle, "(SVD) العربية")
     }
 
+    func testChapterSwipeAcceptsDiagonalsUpToThirtyDegreesFromHorizontal() {
+        let verticalAtThirtyDegrees = CGFloat(100 * tan(Double.pi / 6))
+
+        XCTAssertTrue(ReaderView.isHorizontalChapterSwipe(horizontal: 100, vertical: verticalAtThirtyDegrees))
+        XCTAssertTrue(ReaderView.isHorizontalChapterSwipe(horizontal: -100, vertical: -verticalAtThirtyDegrees))
+        XCTAssertFalse(ReaderView.isHorizontalChapterSwipe(horizontal: 100, vertical: verticalAtThirtyDegrees + 0.1))
+        XCTAssertFalse(ReaderView.isHorizontalChapterSwipe(horizontal: 0, vertical: 1))
+    }
+
     func testChapterSwipeDirectionFollowsTranslationWhenAppLanguageIsArabic() {
         let suiteName = "ChapterSwipeDirectionTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

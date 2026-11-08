@@ -2,6 +2,11 @@ import SwiftUI
 import UIKit
 
 struct ReaderView: View {
+    private struct ChapterSwipeGestureState {
+        var horizontalTranslation: CGFloat = 0
+        var isHorizontal = false
+    }
+
     @StateObject private var model: ReaderModel
     @StateObject private var reminderManager: DailyReminderManager
     @ObservedObject private var preferences: ReadingPreferences
@@ -12,7 +17,7 @@ struct ReaderView: View {
     @State private var isShowingChapterPicker = false
     @State private var areReaderControlsVisible = true
     @State private var visibleVerseID: Int?
-    @GestureState private var horizontalDragTranslation: CGFloat = 0
+    @GestureState private var chapterSwipeGestureState = ChapterSwipeGestureState()
     @State private var swipePreviewTarget: ReaderChapterLocation?
     @State private var swipePreviewVerseID: Int? = 1
     @State private var swipePreviewChapter: ReaderChapter?
@@ -61,6 +66,7 @@ struct ReaderView: View {
                         }
                         .scrollIndicators(.hidden)
                         .scrollPosition(id: $visibleVerseID, anchor: .top)
+                        .scrollDisabled(chapterSwipeGestureState.isHorizontal)
                         .background(paletteColors.surface)
                         .offset(x: chapterSwipeTranslation)
 
@@ -188,18 +194,29 @@ struct ReaderView: View {
     }
 
     private var chapterSwipeTranslation: CGFloat {
-        settlingOffset ?? (swipePreviewTarget == nil ? 0 : horizontalDragTranslation)
+        settlingOffset ?? (swipePreviewTarget == nil ? 0 : chapterSwipeGestureState.horizontalTranslation)
+    }
+
+    static func isHorizontalChapterSwipe(horizontal: CGFloat, vertical: CGFloat) -> Bool {
+        horizontal != 0 && abs(vertical) <= abs(horizontal) * CGFloat(tan(Double.pi / 6))
     }
 
     private func chapterSwipeGesture(width: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
-            .updating($horizontalDragTranslation) { value, translation, _ in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                translation = value.translation.width
+            .updating($chapterSwipeGestureState) { value, state, _ in
+                guard state.isHorizontal || Self.isHorizontalChapterSwipe(
+                    horizontal: value.translation.width,
+                    vertical: value.translation.height
+                ) else { return }
+                state.isHorizontal = true
+                state.horizontalTranslation = value.translation.width
             }
             .onChanged { value in
                 let horizontal = value.translation.width
-                guard abs(horizontal) > abs(value.translation.height) else {
+                guard chapterSwipeGestureState.isHorizontal || Self.isHorizontalChapterSwipe(
+                    horizontal: horizontal,
+                    vertical: value.translation.height
+                ) else {
                     hideReaderControls()
                     return
                 }
@@ -216,7 +233,6 @@ struct ReaderView: View {
             .onEnded { value in
                 let horizontal = value.translation.width
                 guard
-                    abs(horizontal) > abs(value.translation.height),
                     abs(horizontal) > width / 2,
                     let target = swipePreviewTarget
                 else {
