@@ -301,7 +301,7 @@ struct ReaderView: View {
                         target.chapter
                     ))
                     .foregroundStyle(paletteColors.muted)
-                    .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, minHeight: 160, alignment: .center)
                 }
             }
             .padding(.horizontal, 20)
@@ -454,7 +454,7 @@ struct ReaderView: View {
                 model.selectedChapter
             ))
                 .foregroundStyle(paletteColors.muted)
-                .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: 160, alignment: .center)
 
         case let .loaded(chapter):
             chapterContent(chapter)
