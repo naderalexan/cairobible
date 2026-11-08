@@ -15,16 +15,28 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(ReaderFontSizePreset.nearest(to: preferences.fontSize), .s)
         XCTAssertEqual(preferences.fontSize, 20)
         XCTAssertEqual(defaults.double(forKey: "readingFontSize"), 20)
-        XCTAssertEqual(preferences.lineSpacing, .medium)
-        XCTAssertEqual(ReaderLineSpacing.allCases.map(\.ratio), [1.5, 1.85, 2.0])
+        XCTAssertEqual(preferences.lineSpacing, .l)
+        XCTAssertEqual(ReaderLineSpacing.allCases.map(\.ratio), [1.2, 1.35, 1.5, 1.85, 2.0])
+        XCTAssertEqual(ReaderLineSpacing.allCases.map(\.title), ["XS", "S", "M", "L", "XL"])
 
         preferences.setFontSize(.xl)
-        preferences.setLineSpacing(.small)
+        preferences.setLineSpacing(.xs)
 
         let relaunched = ReadingPreferences(defaults: defaults)
         XCTAssertEqual(relaunched.fontSize, 32)
-        XCTAssertEqual(relaunched.lineSpacing, .small)
-        XCTAssertEqual(ReaderLineSpacing.medium.extraSpacing(for: 20), 17)
+        XCTAssertEqual(relaunched.lineSpacing, .xs)
+        XCTAssertEqual(ReaderLineSpacing.l.extraSpacing(for: 20), 17)
+    }
+
+    func testReaderLineSpacingMigratesSavedPresets() {
+        let suiteName = "ReaderLineSpacingMigrationTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        for (savedValue, expectedSpacing) in [("small", ReaderLineSpacing.m), ("medium", .l), ("large", .xl)] {
+            defaults.set(savedValue, forKey: "readingLineSpacing")
+            XCTAssertEqual(ReadingPreferences(defaults: defaults).lineSpacing, expectedSpacing)
+        }
     }
 
     func testAppLanguageDefaultsFromDeviceAndPersistsManualSelection() {

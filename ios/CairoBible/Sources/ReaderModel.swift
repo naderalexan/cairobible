@@ -73,24 +73,28 @@ enum ReaderFontSizePreset: String, CaseIterable, Identifiable {
 }
 
 enum ReaderLineSpacing: String, CaseIterable, Identifiable {
-    case small, medium, large
+    case xs, s, m, l, xl
 
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+    var title: String { rawValue.uppercased() }
 
     var ratio: Double {
         switch self {
-        case .small: 1.5
-        case .medium: 1.85
-        case .large: 2.0
+        case .xs: 1.2
+        case .s: 1.35
+        case .m: 1.5
+        case .l: 1.85
+        case .xl: 2.0
         }
     }
 
     var ratioText: String {
         switch self {
-        case .small: "1.5"
-        case .medium: "1.85"
-        case .large: "2.0"
+        case .xs: "1.2"
+        case .s: "1.35"
+        case .m: "1.5"
+        case .l: "1.85"
+        case .xl: "2.0"
         }
     }
 
@@ -123,7 +127,12 @@ final class ReadingPreferences: ObservableObject {
         self.defaults = defaults
         let savedFontSize = defaults.object(forKey: fontSizeKey) as? Double ?? Self.defaultFontSize
         fontSize = min(max(savedFontSize, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
-        lineSpacing = ReaderLineSpacing(rawValue: defaults.string(forKey: lineSpacingKey) ?? "") ?? .medium
+        switch defaults.string(forKey: lineSpacingKey) {
+        case "small": lineSpacing = .m
+        case "medium": lineSpacing = .l
+        case "large": lineSpacing = .xl
+        case let savedValue: lineSpacing = ReaderLineSpacing(rawValue: savedValue ?? "") ?? .l
+        }
         appearance = ReaderAppearance(rawValue: defaults.string(forKey: appearanceKey) ?? "") ?? .system
         palette = ReaderPalette(rawValue: defaults.string(forKey: paletteKey) ?? "") ?? .cairo
         translation = BibleTranslation(rawValue: defaults.string(forKey: translationKey) ?? "") ?? .niv

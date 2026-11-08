@@ -272,8 +272,10 @@ struct ReaderView: View {
 
         case let .loaded(chapter):
             if !chapter.verses.isEmpty {
-                ForEach(chapter.verses) { verse in
-                    verseRow(verse, isRightToLeft: model.selectedTranslation.isRightToLeft)
+                VStack(alignment: .leading, spacing: lineSpacing + 4) {
+                    ForEach(chapter.verses) { verse in
+                        verseRow(verse, isRightToLeft: model.selectedTranslation.isRightToLeft)
+                    }
                 }
             } else {
                 Text(verbatim: chapter.text)
@@ -635,9 +637,9 @@ private struct ReaderControlsBar: View {
                         preferences.setLineSpacing(spacing)
                     } label: {
                         if preferences.lineSpacing == spacing {
-                            Label(preferences.appLanguage.format("%@ (%@)", preferences.appLanguage.localized(spacing.rawValue), spacing.ratioText), systemImage: "checkmark")
+                            Label(preferences.appLanguage.format("%@ (%@)", spacing.title, spacing.ratioText), systemImage: "checkmark")
                         } else {
-                            Text(preferences.appLanguage.format("%@ (%@)", preferences.appLanguage.localized(spacing.rawValue), spacing.ratioText))
+                            Text(preferences.appLanguage.format("%@ (%@)", spacing.title, spacing.ratioText))
                         }
                     }
                 }
@@ -649,7 +651,7 @@ private struct ReaderControlsBar: View {
                     .contentShape(Rectangle())
             }
             .accessibilityLabel("Line spacing")
-            .accessibilityValue(preferences.appLanguage.localized(preferences.lineSpacing.rawValue))
+            .accessibilityValue(preferences.lineSpacing.title)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
