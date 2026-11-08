@@ -33,5 +33,13 @@ For every implementation, use `/ponytail` in full mode by default and follow [`p
 
 ## Implementation closeout
 
-- After each completed implementation, commit its changes with a concise message. Stage only changes from that implementation; preserve unrelated pre-existing worktree changes.
-- When the implementation completes a related GitHub issue, ask whether the user wants the issue closed and whether the commit should be pushed. Wait for the user's answer before closing or pushing.
+- After each completed implementation:
+    1. Stage only changes from that implementation; preserve unrelated pre-existing worktree changes.
+    2. Commit its changes with a concise message. 
+    3. Build and run:
+        3.1 For webapp changes: rebuild and run the app in a browser to verify that the changes work as expected.
+        3.2 For iOS changes: rebuild and run the app in a simulator to verify that the changes work as expected.
+    4. Ask the user whether the changes accomplish the intended goal:
+        4.1 if yes, ask whether to push the commit. Wait for the user's answer before pushing.
+        4.2 if no, ask whether to revert the commit or make further changes
+    5. Once a user confirms that the changes accomplish the intended goal, ask whether to push the commit. Wait for the user's answer before pushing.         
