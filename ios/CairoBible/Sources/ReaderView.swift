@@ -14,6 +14,7 @@ struct ReaderView: View {
     @State private var visibleVerseID: Int?
     @GestureState private var horizontalDragTranslation: CGFloat = 0
     @State private var swipePreviewTarget: ReaderChapterLocation?
+    @State private var swipePreviewVerseID: Int? = 1
     @State private var swipePreviewChapter: ReaderChapter?
     @State private var transitionChapter: ReaderChapter?
     @State private var transitionLocation: ReaderChapterLocation?
@@ -183,6 +184,117 @@ struct ReaderView: View {
 
     private var paletteColors: ReaderPaletteColors {
         preferences.palette.colors(for: effectiveColorScheme)
+    }
+
+    private var chapterSwipeTranslation: CGFloat {
+        settlingOffset ?? (swipePreviewTarget == nil ? 0 : horizontalDragTranslation)
+    }
+
+    private func chapterSwipeGesture(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 10)
+            .updating($horizontalDragTranslation) { value, translation, _ in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                translation = value.translation.width
+            }
+            .onChanged { value in
+                let horizontal = value.translation.width
+                guard abs(horizontal) > abs(value.translation.height) else {
+                    hideReaderControls()
+                    return
+                }
+                guard abs(horizontal) > 10 else { return }
+
+                let isForwardSwipe = model.selectedTranslation.isRightToLeft ? horizontal > 0 : horizontal < 0
+                let target = isForwardSwipe ? model.nextChapterLocation : model.previousChapterLocation
+                if target != swipePreviewTarget {
+                    swipePreviewTarget = target
+                    swipePreviewVerseID = 1
+                    swipePreviewChapter = nil
+                }
+            }
+            .onEnded { value in
+                let horizontal = value.translation.width
+                guard
+                    abs(horizontal) > abs(value.translation.height),
+                    abs(horizontal) > width / 2,
+                    let target = swipePreviewTarget
+                else {
+                    returnSwipeToStart(horizontal)
+                    return
+                }
+                completeSwipe(to: target, horizontal: horizontal, width: width)
+            }
+    }
+
+    private func previewOffset(for target: ReaderChapterLocation, width: CGFloat) -> CGFloat {
+        let isPrevious = target == model.previousChapterLocation
+        let entersFromRight = model.selectedTranslation.isRightToLeft == isPrevious
+        return (entersFromRight ? width : -width) + chapterSwipeTranslation
+    }
+
+    private func returnSwipeToStart(_ horizontal: CGFloat) {
+        guard swipePreviewTarget != nil else { return }
+        settlingOffset = horizontal
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.82), completionCriteria: .logicallyComplete) {
+            settlingOffset = 0
+        } completion: {
+            settlingOffset = nil
+            swipePreviewTarget = nil
+            swipePreviewChapter = nil
+        }
+    }
+
+    private func completeSwipe(to target: ReaderChapterLocation, horizontal: CGFloat, width: CGFloat) {
+        settlingOffset = horizontal
+        withAnimation(.easeOut(duration: 0.24), completionCriteria: .logicallyComplete) {
+            settlingOffset = horizontal < 0 ? -width : width
+        } completion: {
+            transitionChapter = swipePreviewChapter
+            transitionLocation = target
+            if target == model.nextChapterLocation {
+                model.selectNextChapter()
+            } else {
+                model.selectPreviousChapter()
+            }
+            settlingOffset = nil
+            swipePreviewTarget = nil
+            swipePreviewChapter = nil
+        }
+    }
+
+    private func previewScrollView(for target: ReaderChapterLocation, width: CGFloat) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let chapter = swipePreviewChapter {
+                    chapterContent(chapter, location: target)
+                } else {
+                    ProgressView(preferences.appLanguage.format(
+                        "Loading %@, %@ %d…",
+                        model.selectedTranslation.localizedTitle(for: preferences.appLanguage),
+                        target.book.localizedName(for: preferences.appLanguage),
+                        target.chapter
+                    ))
+                    .foregroundStyle(paletteColors.muted)
+                    .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .scrollIndicators(.hidden)
+        .scrollPosition(id: $swipePreviewVerseID, anchor: .top)
+        .frame(width: width)
+        .background(paletteColors.surface)
+    }
+
+    @ViewBuilder
+    private var visibleReaderContent: some View {
+        if let transitionChapter {
+            chapterContent(transitionChapter, location: transitionLocation)
+        } else {
+            readingContent
+        }
     }
 
     private var chapterNavigation: some View {
