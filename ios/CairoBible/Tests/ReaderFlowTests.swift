@@ -68,7 +68,7 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(BibleBook.all.first?.localizedAbbreviation(for: .en), "GEN")
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .ar), "(SVD) العربية")
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .en), "(SVD) العربية")
-        XCTAssertEqual(BibleTranslation.niv.readerControlTitle, "EN - NIV")
+        XCTAssertEqual(BibleTranslation.niv.readerControlTitle, "EN (NIV)")
         XCTAssertEqual(BibleTranslation.svd.readerControlTitle, "العربية")
     }
 
