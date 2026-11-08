@@ -105,13 +105,8 @@ struct ReaderView: View {
                         }
                     }
                 }
-            }
-            .background(paletteColors.surface)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                ReaderControlsBar(model: model, preferences: preferences, colors: paletteColors)
-                    .opacity(areReaderControlsVisible ? 1 : 0)
-                    .allowsHitTesting(areReaderControlsVisible)
-                    .accessibilityHidden(!areReaderControlsVisible)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(paletteColors.surface)
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingPreferences) {
@@ -900,7 +895,7 @@ private struct ReaderControlsBar: View {
                         preferences.setFontSize(preset)
                     } label: {
                         Text(preset.title)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
                             .frame(width: 29, height: 29)
                             .background(isSelected ? colors.accent : .clear, in: Circle())
@@ -937,7 +932,7 @@ private struct ReaderControlsBar: View {
             .accessibilityValue(preferences.lineSpacing.title)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10.5)
+        .padding(.vertical, 15)
         .background(colors.surfaceRaised, in: Capsule())
         .overlay(Capsule().stroke(colors.accent.opacity(0.2), lineWidth: 1))
         .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
