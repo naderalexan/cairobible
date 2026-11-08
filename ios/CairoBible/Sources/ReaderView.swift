@@ -47,13 +47,25 @@ struct ReaderView: View {
                 .scrollIndicators(.hidden)
                 .background(paletteColors.surface)
                 .simultaneousGesture(
-                    DragGesture(minimumDistance: 10).onChanged { value in
-                        if abs(value.translation.height) > abs(value.translation.width) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                areReaderControlsVisible = false
+                    DragGesture(minimumDistance: 10)
+                        .onChanged { value in
+                            if abs(value.translation.height) > abs(value.translation.width) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    areReaderControlsVisible = false
+                                }
                             }
                         }
-                    }
+                        .onEnded { value in
+                            let horizontal = value.translation.width
+                            guard abs(horizontal) > 50, abs(horizontal) > abs(value.translation.height) else { return }
+
+                            let isForwardSwipe = model.selectedTranslation.isRightToLeft ? horizontal > 0 : horizontal < 0
+                            if isForwardSwipe {
+                                model.selectNextChapter()
+                            } else {
+                                model.selectPreviousChapter()
+                            }
+                        }
                 )
                 .onTapGesture { showReaderControls() }
             }
