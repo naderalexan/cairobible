@@ -53,11 +53,11 @@ struct ReaderView: View {
                 ZStack(alignment: .top) {
                     ZStack(alignment: .leading) {
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Color.clear.frame(height: 20 + chapterNavigationHeight)
                                 visibleReaderContent
                             }
                             .padding(.horizontal, 20)
-                            .padding(.top, 20 + chapterNavigationHeight)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .scrollIndicators(.hidden)
