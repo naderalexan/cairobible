@@ -70,6 +70,14 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .en), "Arabic SVD")
     }
 
+    func testVerseCopyTextIncludesLocalizedBookAndVerseReference() {
+        let verse = ScriptureVerse(number: 16, text: "For God so loved the world.")
+        XCTAssertEqual(verse.copyText(book: BibleBook.all[42], chapter: 3, appLanguage: .en), "\"For God so loved the world.\" -John 3:16")
+
+        let arabicVerse = ScriptureVerse(number: 1, text: "فِي ٱلْبَدْءِ خَلَقَ ٱللهُ")
+        XCTAssertEqual(arabicVerse.copyText(book: BibleBook.all[0], chapter: 1, appLanguage: .ar), "\"فِي ٱلْبَدْءِ خَلَقَ ٱللهُ\" -التكوين 1:1")
+    }
+
     func testBibleBooksAreGroupedIntoOldAndNewTestaments() {
         XCTAssertEqual(BibleBook.oldTestament.count, 39)
         XCTAssertEqual(BibleBook.newTestament.count, 27)

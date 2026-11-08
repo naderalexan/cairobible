@@ -353,6 +353,10 @@ struct ScriptureVerse: Equatable, Identifiable {
     let text: String
 
     var id: Int { number }
+
+    func copyText(book: BibleBook, chapter: Int, appLanguage: AppLanguage) -> String {
+        "\"\(text)\" -\(book.localizedName(for: appLanguage)) \(chapter):\(number)"
+    }
 }
 
 struct ReaderChapter: Equatable {

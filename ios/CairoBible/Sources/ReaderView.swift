@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ReaderView: View {
     @StateObject private var model: ReaderModel
@@ -10,6 +11,8 @@ struct ReaderView: View {
     @State private var isShowingBookPicker = false
     @State private var isShowingChapterPicker = false
     @State private var areReaderControlsVisible = true
+    @State private var isShowingCopiedFeedback = false
+    @State private var copyFeedbackDismissal: DispatchWorkItem?
 
     init(
         nivClient: any NIVReadingClient,
@@ -103,6 +106,20 @@ struct ReaderView: View {
         .environment(\.locale, preferences.appLanguage.locale)
         .environment(\.layoutDirection, preferences.appLanguage == .ar ? .rightToLeft : .leftToRight)
         .preferredColorScheme(preferredColorScheme)
+        .overlay(alignment: .bottom) {
+            if isShowingCopiedFeedback {
+                Text("Copied")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.black.opacity(0.78), in: Capsule())
+                    .padding(.bottom, areReaderControlsVisible ? 76 : 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isShowingCopiedFeedback)
     }
 
     private var preferredColorScheme: ColorScheme? {
@@ -326,6 +343,22 @@ struct ReaderView: View {
         .environment(\.locale, isRightToLeft ? Locale(identifier: "ar") : .current)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, verse.text))
+        .onTapGesture(count: 2) {
+            UIPasteboard.general.string = verse.copyText(
+                book: model.selectedBook,
+                chapter: model.selectedChapter,
+                appLanguage: preferences.appLanguage
+            )
+            isShowingCopiedFeedback = true
+            copyFeedbackDismissal?.cancel()
+            let dismissal = DispatchWorkItem {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isShowingCopiedFeedback = false
+                }
+            }
+            copyFeedbackDismissal = dismissal
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: dismissal)
+        }
     }
 
     private func showReaderControls() {
