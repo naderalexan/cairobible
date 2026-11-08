@@ -55,7 +55,7 @@ The API key needs App Store Connect upload access; signing assets are installed 
 
 ## Production deployment
 
-The frontend deploys to Cloudflare Workers on pushes to `main` and uses `https://api.bible.cairolove.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml`; that workflow maintains the Cloudflare DNS A record and the route in the Droplet's existing Caddy service.
+The frontend deploys to Cloudflare Workers on pushes to `main` that change frontend code or assets, and uses `https://api.bible.cairolove.site` for Bible API requests. The backend deploys to a DigitalOcean Droplet from `.github/workflows/deploy-backend.yml` only when backend code or runtime configuration changes; that workflow maintains the Cloudflare DNS A record and the route in the Droplet's existing Caddy service. iOS-only changes build and upload through the iOS workflow without deploying the frontend or backend.
 
 Before the first backend deployment, the Droplet needs Docker Engine with the Compose plugin, `rsync`, an active Caddy service, a Linux user allowed to run Docker and reload Caddy, and inbound TCP ports 22, 80, and 443. Add these GitHub repository secrets:
 

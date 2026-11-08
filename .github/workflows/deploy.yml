@@ -4,8 +4,17 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "ios/**"
+    paths:
+      - "src/app/**"
+      - "src/lib/**"
+      - "public/**"
+      - "cloudflare.config.ts"
+      - "next.config.ts"
+      - "next-env.d.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
 
 permissions:
   contents: read

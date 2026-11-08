@@ -4,8 +4,16 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "ios/**"
+    paths:
+      - "src/bible/**"
+      - "public/data/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "Dockerfile"
+      - "compose.backend.yaml"
+      - "Caddyfile"
+      - ".dockerignore"
   workflow_dispatch:
 
 permissions:
