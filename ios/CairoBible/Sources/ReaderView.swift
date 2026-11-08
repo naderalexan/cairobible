@@ -12,6 +12,12 @@ struct ReaderView: View {
     @State private var isShowingChapterPicker = false
     @State private var areReaderControlsVisible = true
     @State private var visibleVerseID: Int?
+    @GestureState private var horizontalDragTranslation: CGFloat = 0
+    @State private var swipePreviewTarget: ReaderChapterLocation?
+    @State private var swipePreviewChapter: ReaderChapter?
+    @State private var transitionChapter: ReaderChapter?
+    @State private var transitionLocation: ReaderChapterLocation?
+    @State private var settlingOffset: CGFloat?
     @State private var isShowingCopiedFeedback = false
     @State private var copyFeedbackDismissal: DispatchWorkItem?
 
@@ -42,37 +48,42 @@ struct ReaderView: View {
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        readingContent
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 20)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .scrollIndicators(.hidden)
-                .scrollPosition(id: $visibleVerseID, anchor: .top)
-                .background(paletteColors.surface)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 10)
-                        .onChanged { value in
-                            if abs(value.translation.height) > abs(value.translation.width) {
-                                hideReaderControls()
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                visibleReaderContent
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 20)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .onEnded { value in
-                            let horizontal = value.translation.width
-                            guard abs(horizontal) > 50, abs(horizontal) > abs(value.translation.height) else { return }
+                        .scrollIndicators(.hidden)
+                        .scrollPosition(id: $visibleVerseID, anchor: .top)
+                        .background(paletteColors.surface)
+                        .offset(x: chapterSwipeTranslation)
 
-                            let isForwardSwipe = model.selectedTranslation.isRightToLeft ? horizontal > 0 : horizontal < 0
-                            if isForwardSwipe {
-                                model.selectNextChapter()
-                            } else {
-                                model.selectPreviousChapter()
-                            }
+                        if let target = swipePreviewTarget {
+                            previewScrollView(for: target, width: geometry.size.width)
+                                .offset(x: previewOffset(for: target, width: geometry.size.width))
                         }
-                )
-                .onTapGesture { areReaderControlsVisible ? hideReaderControls() : showReaderControls() }
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .simultaneousGesture(chapterSwipeGesture(width: geometry.size.width))
+                    .onTapGesture { areReaderControlsVisible ? hideReaderControls() : showReaderControls() }
+                    .task(id: swipePreviewTarget) {
+                        guard let target = swipePreviewTarget else {
+                            if transitionLocation == nil {
+                                swipePreviewChapter = nil
+                            }
+                            return
+                        }
+                        let chapter = await model.previewChapter(at: target)
+                        guard !Task.isCancelled, swipePreviewTarget == target else { return }
+                        swipePreviewChapter = chapter
+                    }
+                }
             }
             .background(paletteColors.surface)
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -116,6 +127,10 @@ struct ReaderView: View {
             }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
+                if case .loaded = model.state {
+                    transitionChapter = nil
+                    transitionLocation = nil
+                }
             }
         }
         .environment(\.colorScheme, effectiveColorScheme)
@@ -302,10 +317,38 @@ struct ReaderView: View {
                 .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
 
         case let .loaded(chapter):
+            chapterContent(chapter)
+
+        case let .failed(message):
+            ContentUnavailableView {
+                Label("Chapter unavailable", systemImage: "wifi.exclamationmark")
+                    .foregroundStyle(paletteColors.ink)
+            } description: {
+                Text(message)
+                    .foregroundStyle(paletteColors.muted)
+            } actions: {
+                Button("Try again") {
+                    Task { await model.load() }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 200)
+        }
+    }
+
+    private func chapterContent(
+        _ chapter: ReaderChapter,
+        location: ReaderChapterLocation? = nil
+    ) -> some View {
+        Group {
             if !chapter.verses.isEmpty {
                 LazyVStack(alignment: .leading, spacing: lineSpacing + 4) {
                     ForEach(chapter.verses) { verse in
-                        verseRow(verse, isRightToLeft: model.selectedTranslation.isRightToLeft)
+                        verseRow(
+                            verse,
+                            isRightToLeft: model.selectedTranslation.isRightToLeft,
+                            book: location?.book ?? model.selectedBook,
+                            chapter: location?.chapter ?? model.selectedChapter
+                        )
                     }
                 }
                 .scrollTargetLayout()
@@ -324,24 +367,15 @@ struct ReaderView: View {
                 .foregroundStyle(paletteColors.muted)
                 .textSelection(.enabled)
                 .accessibilityLabel(preferences.appLanguage.format("Translation attribution. %@", chapter.attribution))
-
-        case let .failed(message):
-            ContentUnavailableView {
-                Label("Chapter unavailable", systemImage: "wifi.exclamationmark")
-                    .foregroundStyle(paletteColors.ink)
-            } description: {
-                Text(message)
-                    .foregroundStyle(paletteColors.muted)
-            } actions: {
-                Button("Try again") {
-                    Task { await model.load() }
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 200)
         }
     }
 
-    private func verseRow(_ verse: ScriptureVerse, isRightToLeft: Bool) -> some View {
+    private func verseRow(
+        _ verse: ScriptureVerse,
+        isRightToLeft: Bool,
+        book: BibleBook,
+        chapter: Int
+    ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(verbatim: "\u{2068}\(verse.number)\u{2069}")
                 .font(.system(size: CGFloat(readingFontSize * 0.78), design: .serif))
@@ -362,8 +396,8 @@ struct ReaderView: View {
         .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, verse.text))
         .onTapGesture(count: 2) {
             UIPasteboard.general.string = verse.copyText(
-                book: model.selectedBook,
-                chapter: model.selectedChapter,
+                book: book,
+                chapter: chapter,
                 appLanguage: preferences.appLanguage
             )
             isShowingCopiedFeedback = true

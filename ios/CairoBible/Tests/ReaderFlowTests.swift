@@ -127,6 +127,21 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(model.selectedVerse, 1)
     }
 
+    func testPreviewChapterDoesNotChangeCurrentSelection() async {
+        let model = ReaderModel(nivClient: StubNIVReadingClient())
+        let originalBook = model.selectedBook
+        let originalChapter = model.selectedChapter
+        let originalState = model.state
+        let target = model.nextChapterLocation!
+
+        let preview = await model.previewChapter(at: target)
+
+        XCTAssertEqual(preview?.chapter, target.chapter)
+        XCTAssertEqual(model.selectedBook, originalBook)
+        XCTAssertEqual(model.selectedChapter, originalChapter)
+        XCTAssertEqual(model.state, originalState)
+    }
+
     func testReaderPreviousAndNextChapterNavigationCrossesBookBoundaries() {
         let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: makePreferences())
         XCTAssertFalse(model.canSelectPreviousChapter)

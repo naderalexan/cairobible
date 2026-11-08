@@ -389,6 +389,11 @@ struct ReaderChapter: Equatable {
     let attribution: String
 }
 
+struct ReaderChapterLocation: Equatable {
+    let book: BibleBook
+    let chapter: Int
+}
+
 @MainActor
 final class ReaderModel: ObservableObject {
     @Published private(set) var selectedTranslation: BibleTranslation
@@ -449,13 +454,25 @@ final class ReaderModel: ObservableObject {
         preferences.saveLastReadLocation(book: selectedBook, chapter: selectedChapter, verse: selectedVerse)
     }
 
-    var canSelectPreviousChapter: Bool {
-        selectedChapter > 1 || selectedBook != BibleBook.all.first
+    var previousChapterLocation: ReaderChapterLocation? {
+        if selectedChapter > 1 {
+            return ReaderChapterLocation(book: selectedBook, chapter: selectedChapter - 1)
+        }
+        guard let index = BibleBook.all.firstIndex(of: selectedBook), index > 0 else { return nil }
+        let book = BibleBook.all[index - 1]
+        return ReaderChapterLocation(book: book, chapter: book.chapterCount)
     }
 
-    var canSelectNextChapter: Bool {
-        selectedChapter < selectedBook.chapterCount || selectedBook != BibleBook.all.last
+    var nextChapterLocation: ReaderChapterLocation? {
+        if selectedChapter < selectedBook.chapterCount {
+            return ReaderChapterLocation(book: selectedBook, chapter: selectedChapter + 1)
+        }
+        guard let index = BibleBook.all.firstIndex(of: selectedBook), index < BibleBook.all.count - 1 else { return nil }
+        return ReaderChapterLocation(book: BibleBook.all[index + 1], chapter: 1)
     }
+
+    var canSelectPreviousChapter: Bool { previousChapterLocation != nil }
+    var canSelectNextChapter: Bool { nextChapterLocation != nil }
 
     var previousChapterAccessibilityLabel: String {
         if selectedChapter > 1 {
@@ -502,30 +519,19 @@ final class ReaderModel: ObservableObject {
         }
     }
 
+    func previewChapter(at location: ReaderChapterLocation) async -> ReaderChapter? {
+        do {
+            let chapter = try await fetchChapter(book: location.book, number: location.chapter)
+            return Task.isCancelled ? nil : chapter
+        } catch {
+            return nil
+        }
+    }
+
     func load() async {
         state = .loading
         do {
-            let chapter: ReaderChapter
-            switch selectedTranslation {
-            case .niv:
-                let nivChapter = try await nivClient.fetchChapter(book: selectedBook, number: selectedChapter)
-                chapter = ReaderChapter(
-                    bookName: selectedBook.name,
-                    chapter: nivChapter.chapter,
-                    text: nivChapter.plainText,
-                    verses: nivChapter.verses,
-                    attribution: nivChapter.copyright
-                )
-            case .svd:
-                let svdChapter = try await svdClient.fetchChapter(book: selectedBook, number: selectedChapter)
-                chapter = ReaderChapter(
-                    bookName: svdChapter.bookName,
-                    chapter: svdChapter.chapter,
-                    text: svdChapter.verses.map(\.text).joined(),
-                    verses: svdChapter.verses,
-                    attribution: svdChapter.attribution
-                )
-            }
+            let chapter = try await fetchChapter(book: selectedBook, number: selectedChapter)
             guard !Task.isCancelled else { return }
             if let firstVerse = chapter.verses.first?.number, !chapter.verses.contains(where: { $0.number == selectedVerse }) {
                 selectedVerse = chapter.verses.last(where: { $0.number <= selectedVerse })?.number ?? firstVerse
@@ -553,6 +559,29 @@ final class ReaderModel: ObservableObject {
                 key = "Couldn't load this chapter. Please try again."
             }
             state = .failed(preferences.appLanguage.localized(key))
+        }
+    }
+
+    private func fetchChapter(book: BibleBook, number: Int) async throws -> ReaderChapter {
+        switch selectedTranslation {
+        case .niv:
+            let chapter = try await nivClient.fetchChapter(book: book, number: number)
+            return ReaderChapter(
+                bookName: book.name,
+                chapter: chapter.chapter,
+                text: chapter.plainText,
+                verses: chapter.verses,
+                attribution: chapter.copyright
+            )
+        case .svd:
+            let chapter = try await svdClient.fetchChapter(book: book, number: number)
+            return ReaderChapter(
+                bookName: chapter.bookName,
+                chapter: chapter.chapter,
+                text: chapter.verses.map(\.text).joined(),
+                verses: chapter.verses,
+                attribution: chapter.attribution
+            )
         }
     }
 }
