@@ -579,6 +579,40 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertTrue(reminders.message?.contains("Allow them in Settings") == true)
     }
 
+    func testRecentBookVisitsAreSortedAndExpireAfterThirtyDays() {
+        let suiteName = "RecentBookVisitsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let preferences = ReadingPreferences(defaults: defaults)
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let genesis = BibleBook.all.first { $0.name == "Genesis" }!
+        let psalms = BibleBook.all.first { $0.name == "Psalms" }!
+        let john = BibleBook.all.first { $0.name == "John" }!
+        let day: TimeInterval = 24 * 60 * 60
+
+        preferences.recordBookVisit(genesis, at: now.addingTimeInterval(-30 * day))
+        preferences.recordBookVisit(psalms, at: now.addingTimeInterval(-31 * day))
+        preferences.recordBookVisit(john, at: now.addingTimeInterval(-2 * day))
+
+        XCTAssertEqual(preferences.recentlyVisitedBooks(asOf: now), [john, genesis])
+    }
+
+    func testReaderRecordsOpenedBooksAsRecent() {
+        let suiteName = "ReaderRecentBookVisitsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let preferences = ReadingPreferences(defaults: defaults)
+        let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: preferences)
+        let genesis = BibleBook.all.first { $0.name == "Genesis" }!
+        let john = BibleBook.all.first { $0.name == "John" }!
+
+        XCTAssertEqual(preferences.recentlyVisitedBooks, [genesis])
+        model.selectBook(john)
+        XCTAssertEqual(Set(preferences.recentlyVisitedBooks), Set([genesis, john]))
+    }
+
     private func makePreferences() -> ReadingPreferences {
         ReadingPreferences(defaults: UserDefaults(suiteName: "ReaderFlowTests.\(UUID().uuidString)")!)
     }

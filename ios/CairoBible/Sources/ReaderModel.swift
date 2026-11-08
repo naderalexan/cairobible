@@ -125,6 +125,8 @@ final class ReadingPreferences: ObservableObject {
     private let lastReadBookKey = "lastReadBook"
     private let lastReadChapterKey = "lastReadChapter"
     private let lastReadVerseKey = "lastReadVerse"
+    private let recentBookVisitsKey = "recentBookVisits"
+    private let recentBookVisitWindow: TimeInterval = 30 * 24 * 60 * 60
 
     init(defaults: UserDefaults = .standard, preferredLanguages: [String] = Locale.preferredLanguages) {
         self.defaults = defaults
@@ -205,6 +207,32 @@ final class ReadingPreferences: ObservableObject {
         defaults.set(verse, forKey: lastReadVerseKey)
         defaults.set(chapter, forKey: "\(lastReadChapterKey).\(book.id)")
         defaults.set(verse, forKey: "\(lastReadVerseKey).\(book.id)")
+    }
+
+    var recentlyVisitedBooks: [BibleBook] {
+        recentlyVisitedBooks(asOf: Date())
+    }
+
+    func recentlyVisitedBooks(asOf date: Date) -> [BibleBook] {
+        let cutoff = date.addingTimeInterval(-recentBookVisitWindow)
+        let visits = defaults.dictionary(forKey: recentBookVisitsKey)?.compactMapValues { $0 as? Date } ?? [:]
+        return BibleBook.all.enumerated().compactMap { entry -> (index: Int, book: BibleBook, date: Date)? in
+            guard let visitedAt = visits[entry.element.id], visitedAt >= cutoff else { return nil }
+            return (entry.offset, entry.element, visitedAt)
+        }
+        .sorted { lhs, rhs in
+            lhs.date == rhs.date ? lhs.index < rhs.index : lhs.date > rhs.date
+        }
+        .map(\.book)
+    }
+
+    func recordBookVisit(_ book: BibleBook, at date: Date = Date()) {
+        let cutoff = date.addingTimeInterval(-recentBookVisitWindow)
+        let validBookIDs = Set(BibleBook.all.map(\.id))
+        var visits = defaults.dictionary(forKey: recentBookVisitsKey)?.compactMapValues { $0 as? Date } ?? [:]
+        visits = visits.filter { validBookIDs.contains($0.key) && $0.value >= cutoff }
+        visits[book.id] = date
+        defaults.set(visits, forKey: recentBookVisitsKey)
     }
 
     func setAppLanguage(_ appLanguage: AppLanguage) {
@@ -447,6 +475,7 @@ final class ReaderModel: ObservableObject {
             selectedChapter = location.chapter
             selectedVerse = location.verse
         }
+        preferences.recordBookVisit(selectedBook)
     }
 
     func selectTranslation(_ translation: BibleTranslation) {
@@ -461,6 +490,7 @@ final class ReaderModel: ObservableObject {
         selectedChapter = location?.chapter ?? 1
         selectedVerse = location?.verse ?? 1
         saveLastReadLocation()
+        preferences.recordBookVisit(book)
         state = .idle
     }
 
@@ -530,6 +560,7 @@ final class ReaderModel: ObservableObject {
             selectedChapter = selectedBook.chapterCount
             selectedVerse = 1
             saveLastReadLocation()
+            preferences.recordBookVisit(selectedBook)
             state = .idle
         }
     }
@@ -542,6 +573,7 @@ final class ReaderModel: ObservableObject {
             selectedChapter = 1
             selectedVerse = 1
             saveLastReadLocation()
+            preferences.recordBookVisit(selectedBook)
             state = .idle
         }
     }

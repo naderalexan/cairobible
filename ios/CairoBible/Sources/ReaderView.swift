@@ -322,6 +322,7 @@ struct ReaderView: View {
                 let pickerColors = ReaderPalette.cairo.colors(for: effectiveColorScheme)
                 BookPickerSheet(
                     selectedBook: model.selectedBook,
+                    recentlyVisitedBooks: preferences.recentlyVisitedBooks,
                     appLanguage: preferences.appLanguage,
                     colors: pickerColors
                 ) { book in
@@ -620,6 +621,7 @@ private struct BookPickerSheet: View {
     @State private var searchText = ""
 
     let selectedBook: BibleBook
+    let recentlyVisitedBooks: [BibleBook]
     let appLanguage: AppLanguage
     let colors: ReaderPaletteColors
     let onSelect: (BibleBook) -> Void
@@ -686,6 +688,9 @@ private struct BookPickerSheet: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 26) {
+                    if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !recentlyVisitedBooks.isEmpty {
+                        recentSection(recentlyVisitedBooks)
+                    }
                     if !filteredOldTestament.isEmpty {
                         testamentSection("Old Testament", books: filteredOldTestament)
                     }
@@ -722,37 +727,69 @@ private struct BookPickerSheet: View {
                     .accessibilityHidden(true)
             }
 
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(books) { book in
-                    let isSelected = book == selectedBook
-                    Button {
-                        onSelect(book)
-                        dismiss()
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(book.localizedName(for: appLanguage))
-                                .font(.custom("Georgia", size: 15, relativeTo: .body))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                                .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
-                            Text("\(book.localizedAbbreviation(for: appLanguage)) · \(book.chapterCount)")
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
-                                .tracking(0.5)
-                                .foregroundStyle(isSelected ? colors.surfaceRaised.opacity(0.82) : colors.muted)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                        .padding(.horizontal, 14)
-                        .background(isSelected ? colors.accent : colors.surface, in: RoundedRectangle(cornerRadius: 10))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(colors.accent.opacity(isSelected ? 0 : 0.12), lineWidth: 1)
+            bookGrid(books, isRecent: false)
+        }
+    }
+
+    private func recentSection(_ books: [BibleBook]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Text(appLanguage.localized("Recent · Last 30 days").uppercased())
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .tracking(2.2)
+                    .foregroundStyle(colors.ink)
+                Rectangle()
+                    .fill(colors.muted.opacity(0.28))
+                    .frame(height: 1)
+                    .accessibilityHidden(true)
+            }
+            bookGrid(books, isRecent: true)
+        }
+    }
+
+    private func bookGrid(_ books: [BibleBook], isRecent: Bool) -> some View {
+        LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(books) { book in
+                let isSelected = book == selectedBook
+                Button {
+                    onSelect(book)
+                    dismiss()
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(book.localizedName(for: appLanguage))
+                            .font(.custom("Georgia", size: 15, relativeTo: .body))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                        Text("\(book.localizedAbbreviation(for: appLanguage)) · \(book.chapterCount)")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .tracking(0.5)
+                            .foregroundStyle(isSelected ? colors.surfaceRaised.opacity(0.82) : colors.muted)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .background(
+                        isSelected ? colors.accent : (isRecent ? colors.accent.opacity(0.1) : colors.surface),
+                        in: RoundedRectangle(cornerRadius: 10)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(colors.accent.opacity(isSelected ? 0 : (isRecent ? 0.22 : 0.12)), lineWidth: 1)
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if isRecent && !isSelected {
+                            Image(systemName: "clock")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(colors.accent.opacity(0.72))
+                                .padding(8)
+                                .accessibilityHidden(true)
                         }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(book.localizedName(for: appLanguage))
-                    .accessibilityValue(isSelected ? appLanguage.localized("Selected") : "")
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(book.localizedName(for: appLanguage))
+                .accessibilityValue(isSelected ? appLanguage.localized("Selected") : (isRecent ? appLanguage.localized("Recently visited in the last 30 days") : ""))
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
     }
