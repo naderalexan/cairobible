@@ -50,9 +50,7 @@ struct ReaderView: View {
                     DragGesture(minimumDistance: 10)
                         .onChanged { value in
                             if abs(value.translation.height) > abs(value.translation.width) {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    areReaderControlsVisible = false
-                                }
+                                hideReaderControls()
                             }
                         }
                         .onEnded { value in
@@ -67,7 +65,7 @@ struct ReaderView: View {
                             }
                         }
                 )
-                .onTapGesture { showReaderControls() }
+                .onTapGesture { hideReaderControls() }
             }
             .background(paletteColors.surface)
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -333,6 +331,12 @@ struct ReaderView: View {
     private func showReaderControls() {
         withAnimation(.easeInOut(duration: 0.2)) {
             areReaderControlsVisible = true
+        }
+    }
+
+    private func hideReaderControls() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            areReaderControlsVisible = false
         }
     }
 }
