@@ -73,9 +73,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .primary-button span { font-size: 17px; }
 .setup-note { margin: 13px 0 0; color: var(--muted); font-size: 10px; }
 .reader-footer { min-height: 74px; padding: 0 clamp(20px, 4vw, 54px); display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); }
-.reader-controls { position: fixed; z-index: 6; left: 50%; bottom: calc(82px + env(safe-area-inset-bottom)); width: max-content; max-width: calc((100vw - 16px) / 1.2); display: flex; align-items: center; justify-content: flex-start; gap: 4px; overflow-x: auto; padding: 5px; direction: ltr; transform: translateX(-50%) scale(1.2, 1.584); border: 1px solid var(--line); border-radius: 999px; background: var(--surface-raised); box-shadow: var(--shadow); scrollbar-width: none; transition: opacity .16s ease, transform .16s ease, visibility .16s ease; }
+.reader-controls { position: fixed; z-index: 6; left: 50%; bottom: calc(82px + env(safe-area-inset-bottom)); width: max-content; max-width: calc(100vw - 16px); display: flex; align-items: center; justify-content: flex-start; gap: 4px; overflow-x: auto; padding: 5px; direction: ltr; transform: translateX(-50%); border: 1px solid var(--line); border-radius: 999px; background: var(--surface-raised); box-shadow: var(--shadow); scrollbar-width: none; transition: opacity .16s ease, transform .16s ease, visibility .16s ease; }
 .reader-controls::-webkit-scrollbar { display: none; }
-.reader-controls.hidden { opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 10px) scale(1.2, 1.584); }
+.reader-controls.hidden { opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 10px); }
 .reader-controls button, .reader-controls select { min-height: 40px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); }
 .reader-controls button:hover:not(:disabled), .reader-controls select:hover { background: var(--accent-soft); }
 .reader-controls button:disabled { opacity: .35; cursor: not-allowed; }

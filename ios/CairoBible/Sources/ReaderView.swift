@@ -854,7 +854,7 @@ private struct ReaderControlsBar: View {
             .accessibilityValue(preferences.lineSpacing.title)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10.5)
         .background(colors.surfaceRaised, in: Capsule())
         .overlay(Capsule().stroke(colors.accent.opacity(0.2), lineWidth: 1))
         .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
