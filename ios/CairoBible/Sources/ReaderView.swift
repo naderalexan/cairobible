@@ -44,10 +44,10 @@ struct ReaderView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if areReaderControlsVisible {
-                    chapterNavigation
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
+                chapterNavigation
+                    .opacity(areReaderControlsVisible ? 1 : 0)
+                    .allowsHitTesting(areReaderControlsVisible)
+                    .accessibilityHidden(!areReaderControlsVisible)
 
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
@@ -89,10 +89,10 @@ struct ReaderView: View {
             }
             .background(paletteColors.surface)
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                if areReaderControlsVisible {
-                    ReaderControlsBar(model: model, preferences: preferences, colors: paletteColors)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+                ReaderControlsBar(model: model, preferences: preferences, colors: paletteColors)
+                    .opacity(areReaderControlsVisible ? 1 : 0)
+                    .allowsHitTesting(areReaderControlsVisible)
+                    .accessibilityHidden(!areReaderControlsVisible)
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingPreferences) {
