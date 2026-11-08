@@ -72,7 +72,7 @@ struct ReaderView: View {
                             }
                         }
                 )
-                .onTapGesture { hideReaderControls() }
+                .onTapGesture { areReaderControlsVisible ? hideReaderControls() : showReaderControls() }
             }
             .background(paletteColors.surface)
             .safeAreaInset(edge: .bottom, spacing: 0) {
