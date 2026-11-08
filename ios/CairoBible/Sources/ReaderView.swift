@@ -71,6 +71,7 @@ struct ReaderView: View {
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
+                    .environment(\.layoutDirection, .leftToRight)
                     .simultaneousGesture(chapterSwipeGesture(width: geometry.size.width))
                     .onTapGesture { areReaderControlsVisible ? hideReaderControls() : showReaderControls() }
                     .task(id: swipePreviewTarget) {
@@ -481,6 +482,7 @@ struct ReaderView: View {
                 .textSelection(.enabled)
                 .accessibilityLabel(preferences.appLanguage.format("Translation attribution. %@", chapter.attribution))
         }
+        .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
     }
 
     private func verseRow(
@@ -503,7 +505,6 @@ struct ReaderView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .multilineTextAlignment(.leading)
-        .environment(\.layoutDirection, isRightToLeft ? .rightToLeft : .leftToRight)
         .environment(\.locale, isRightToLeft ? Locale(identifier: "ar") : .current)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, verse.text))
