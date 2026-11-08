@@ -191,7 +191,7 @@ struct ReaderView: View {
     }
 
     private func chapterSwipeGesture(width: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 10)
+        DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .updating($horizontalDragTranslation) { value, translation, _ in
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 translation = value.translation.width
@@ -204,7 +204,7 @@ struct ReaderView: View {
                 }
                 guard abs(horizontal) > 10 else { return }
 
-                let isForwardSwipe = model.selectedTranslation.isRightToLeft ? horizontal > 0 : horizontal < 0
+                let isForwardSwipe = model.selectedTranslation.isForwardChapterSwipe(horizontalTranslation: horizontal)
                 let target = isForwardSwipe ? model.nextChapterLocation : model.previousChapterLocation
                 if target != swipePreviewTarget {
                     swipePreviewTarget = target

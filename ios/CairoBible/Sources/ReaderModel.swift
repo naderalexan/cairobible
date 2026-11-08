@@ -391,6 +391,9 @@ enum BibleTranslation: String, CaseIterable, Identifiable {
 
     var isRightToLeft: Bool { self == .svd }
 
+    func isForwardChapterSwipe(horizontalTranslation: CGFloat) -> Bool {
+        isRightToLeft ? horizontalTranslation > 0 : horizontalTranslation < 0
+    }
 }
 
 struct ScriptureVerse: Equatable, Identifiable {

@@ -72,6 +72,18 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(BibleTranslation.svd.readerControlTitle, "العربية")
     }
 
+    func testChapterSwipeDirectionFollowsTranslationWhenAppLanguageIsArabic() {
+        let suiteName = "ChapterSwipeDirectionTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        XCTAssertEqual(ReadingPreferences(defaults: defaults, preferredLanguages: ["ar"]).appLanguage, .ar)
+        XCTAssertTrue(BibleTranslation.niv.isForwardChapterSwipe(horizontalTranslation: -1))
+        XCTAssertFalse(BibleTranslation.niv.isForwardChapterSwipe(horizontalTranslation: 1))
+        XCTAssertTrue(BibleTranslation.svd.isForwardChapterSwipe(horizontalTranslation: 1))
+        XCTAssertFalse(BibleTranslation.svd.isForwardChapterSwipe(horizontalTranslation: -1))
+    }
+
     func testVerseCopyTextIncludesLocalizedBookAndVerseReference() {
         let verse = ScriptureVerse(number: 16, text: "For God so loved the world.")
         XCTAssertEqual(verse.copyText(book: BibleBook.all[42], chapter: 3, appLanguage: .en), "\"For God so loved the world.\" -John 3:16")
