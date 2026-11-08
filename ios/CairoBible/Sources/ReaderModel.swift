@@ -364,6 +364,13 @@ enum BibleTranslation: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var readerControlTitle: String {
+        switch self {
+        case .niv: "EN - NIV"
+        case .svd: "العربية"
+        }
+    }
+
     var title: String {
         switch self {
         case .niv: "NIV"
