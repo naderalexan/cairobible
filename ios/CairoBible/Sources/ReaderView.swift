@@ -57,8 +57,7 @@ struct ReaderView: View {
                                 visibleReaderContent
                             }
                             .padding(.horizontal, 20)
-                            .padding(.top, 20 + (areReaderControlsVisible ? chapterNavigationHeight : 0))
-                            .padding(.bottom, 20)
+                            .padding(.top, 20 + chapterNavigationHeight)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .scrollIndicators(.hidden)
@@ -101,6 +100,7 @@ struct ReaderView: View {
                         Spacer()
                         if areReaderControlsVisible {
                             ReaderControlsBar(model: model, preferences: preferences, colors: paletteColors)
+                                .safeAreaPadding(.bottom)
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
@@ -108,6 +108,7 @@ struct ReaderView: View {
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .background(paletteColors.surface)
             }
+            .ignoresSafeArea(edges: .bottom)
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingPreferences) {
                 ReadingPreferencesView(
