@@ -91,8 +91,8 @@ struct ReaderView: View {
                     chapterNavigation
                         .frame(maxWidth: .infinity)
                         .frame(height: chapterNavigationHeight)
-                        .opacity(areReaderControlsVisible ? 1 : 0)
                         .background(paletteColors.surface)
+                        .opacity(areReaderControlsVisible ? 1 : 0)
                         .allowsHitTesting(areReaderControlsVisible)
                         .accessibilityHidden(!areReaderControlsVisible)
 
