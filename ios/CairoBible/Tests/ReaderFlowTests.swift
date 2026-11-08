@@ -69,7 +69,7 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .ar), "(SVD) العربية")
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .en), "(SVD) العربية")
         XCTAssertEqual(BibleTranslation.niv.readerControlTitle, "EN (NIV)")
-        XCTAssertEqual(BibleTranslation.svd.readerControlTitle, "العربية")
+        XCTAssertEqual(BibleTranslation.svd.readerControlTitle, "(SVD) العربية")
     }
 
     func testChapterSwipeDirectionFollowsTranslationWhenAppLanguageIsArabic() {
