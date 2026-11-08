@@ -185,10 +185,26 @@ final class ReadingPreferences: ObservableObject {
         return (book, chapter, verse)
     }
 
+    func lastReadLocation(for book: BibleBook) -> (chapter: Int, verse: Int)? {
+        let chapterKey = "\(lastReadChapterKey).\(book.id)"
+        let verseKey = "\(lastReadVerseKey).\(book.id)"
+        guard defaults.object(forKey: chapterKey) != nil else {
+            guard let location = lastReadLocation, location.book == book else { return nil }
+            return (location.chapter, location.verse)
+        }
+
+        let chapter = defaults.integer(forKey: chapterKey)
+        let verse = defaults.integer(forKey: verseKey)
+        guard (1...book.chapterCount).contains(chapter), verse > 0 else { return nil }
+        return (chapter, verse)
+    }
+
     func saveLastReadLocation(book: BibleBook, chapter: Int, verse: Int) {
         defaults.set(book.name, forKey: lastReadBookKey)
         defaults.set(chapter, forKey: lastReadChapterKey)
         defaults.set(verse, forKey: lastReadVerseKey)
+        defaults.set(chapter, forKey: "\(lastReadChapterKey).\(book.id)")
+        defaults.set(verse, forKey: "\(lastReadVerseKey).\(book.id)")
     }
 
     func setAppLanguage(_ appLanguage: AppLanguage) {
@@ -430,9 +446,10 @@ final class ReaderModel: ObservableObject {
     }
 
     func selectBook(_ book: BibleBook) {
+        let location = preferences.lastReadLocation(for: book)
         selectedBook = book
-        selectedChapter = 1
-        selectedVerse = 1
+        selectedChapter = location?.chapter ?? 1
+        selectedVerse = location?.verse ?? 1
         saveLastReadLocation()
         state = .idle
     }

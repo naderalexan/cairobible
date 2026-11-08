@@ -113,6 +113,34 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(relaunchedModel.selectedVerse, 1)
     }
 
+    func testReaderRestoresEachBooksLastReadChapterWhenReturning() {
+        let suiteName = "BookLastReadLocationsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let model = ReaderModel(nivClient: StubNIVReadingClient(), preferences: ReadingPreferences(defaults: defaults))
+        let john = BibleBook.all.first { $0.name == "John" }!
+        let psalms = BibleBook.all.first { $0.name == "Psalms" }!
+        model.selectBook(john)
+        model.selectChapter(3)
+        model.selectVerse(16)
+        model.selectBook(psalms)
+        model.selectChapter(23)
+        model.selectVerse(6)
+
+        model.selectBook(john)
+        XCTAssertEqual(model.selectedChapter, 3)
+        XCTAssertEqual(model.selectedVerse, 16)
+        model.selectBook(psalms)
+        XCTAssertEqual(model.selectedChapter, 23)
+        XCTAssertEqual(model.selectedVerse, 6)
+
+        let relaunchedModel = ReaderModel(nivClient: StubNIVReadingClient(), preferences: ReadingPreferences(defaults: defaults))
+        relaunchedModel.selectBook(john)
+        XCTAssertEqual(relaunchedModel.selectedChapter, 3)
+        XCTAssertEqual(relaunchedModel.selectedVerse, 16)
+    }
+
     func testReaderIgnoresInvalidSavedChapterLocation() {
         let suiteName = "InvalidLastReadLocationTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
