@@ -607,6 +607,21 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(preferences.recentlyVisitedBooks(asOf: now), [john, genesis])
     }
 
+    func testRecentBookChaptersUseLastSavedChapterAndDefaultToOne() {
+        let suiteName = "RecentBookChaptersTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let preferences = ReadingPreferences(defaults: defaults)
+        let genesis = BibleBook.all.first { $0.name == "Genesis" }!
+        let psalms = BibleBook.all.first { $0.name == "Psalms" }!
+        preferences.saveLastReadLocation(book: psalms, chapter: 23, verse: 1)
+        preferences.recordBookVisit(genesis)
+        preferences.recordBookVisit(psalms)
+
+        XCTAssertEqual(preferences.recentlyVisitedBookChapters, [genesis: 1, psalms: 23])
+    }
+
     func testReaderRecordsOpenedBooksAsRecent() {
         let suiteName = "ReaderRecentBookVisitsTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

@@ -213,6 +213,12 @@ final class ReadingPreferences: ObservableObject {
         recentlyVisitedBooks(asOf: Date())
     }
 
+    var recentlyVisitedBookChapters: [BibleBook: Int] {
+        Dictionary(uniqueKeysWithValues: recentlyVisitedBooks.map {
+            ($0, lastReadLocation(for: $0)?.chapter ?? 1)
+        })
+    }
+
     func recentlyVisitedBooks(asOf date: Date) -> [BibleBook] {
         let cutoff = date.addingTimeInterval(-recentBookVisitWindow)
         let visits = defaults.dictionary(forKey: recentBookVisitsKey)?.compactMapValues { $0 as? Date } ?? [:]

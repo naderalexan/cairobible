@@ -12,6 +12,9 @@
 "New Testament" = "العهد الجديد";
 "Recent · Last 30 days" = "الأخيرة · آخر ٣٠ يومًا";
 "Recently visited in the last 30 days" = "تمت زيارتها خلال آخر ٣٠ يومًا";
+"Ch. %d" = "الإصحاح %d";
+"Selected, chapter %d" = "محدد، الإصحاح %d";
+"Recently visited in the last 30 days, chapter %d" = "تمت زيارتها خلال آخر ٣٠ يومًا، الإصحاح %d";
 "No books found" = "لم يتم العثور على أسفار";
 "Close book selector" = "إغلاق محدد الأسفار";
 "Previous chapter" = "الإصحاح السابق";

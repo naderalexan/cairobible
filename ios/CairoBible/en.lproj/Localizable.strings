@@ -12,6 +12,9 @@
 "New Testament" = "New Testament";
 "Recent · Last 30 days" = "Recent · Last 30 days";
 "Recently visited in the last 30 days" = "Recently visited in the last 30 days";
+"Ch. %d" = "Ch. %d";
+"Selected, chapter %d" = "Selected, chapter %d";
+"Recently visited in the last 30 days, chapter %d" = "Recently visited in the last 30 days, chapter %d";
 "No books found" = "No books found";
 "Close book selector" = "Close book selector";
 "Previous chapter" = "Previous chapter";

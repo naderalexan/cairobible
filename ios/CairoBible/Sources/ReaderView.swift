@@ -340,6 +340,7 @@ struct ReaderView: View {
                 BookPickerSheet(
                     selectedBook: model.selectedBook,
                     recentlyVisitedBooks: preferences.recentlyVisitedBooks,
+                    recentlyVisitedBookChapters: preferences.recentlyVisitedBookChapters,
                     appLanguage: preferences.appLanguage,
                     colors: pickerColors
                 ) { book in
@@ -639,6 +640,7 @@ private struct BookPickerSheet: View {
 
     let selectedBook: BibleBook
     let recentlyVisitedBooks: [BibleBook]
+    let recentlyVisitedBookChapters: [BibleBook: Int]
     let appLanguage: AppLanguage
     let colors: ReaderPaletteColors
     let onSelect: (BibleBook) -> Void
@@ -773,11 +775,26 @@ private struct BookPickerSheet: View {
                     dismiss()
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(book.localizedName(for: appLanguage))
-                            .font(.custom("Georgia", size: 15, relativeTo: .body))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                            .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                        HStack(spacing: 4) {
+                            Text(book.localizedName(for: appLanguage))
+                                .font(.custom("Georgia", size: 15, relativeTo: .body))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .foregroundStyle(isSelected ? colors.surfaceRaised : colors.ink)
+                            Spacer(minLength: 0)
+                            if isRecent, let chapter = recentlyVisitedBookChapters[book] {
+                                Text(appLanguage.format("Ch. %d", chapter))
+                                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(colors.accent)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        isSelected ? colors.surfaceRaised : colors.accent.opacity(0.16),
+                                        in: Capsule()
+                                    )
+                                    .accessibilityHidden(true)
+                            }
+                        }
                         Text("\(book.localizedAbbreviation(for: appLanguage)) · \(book.chapterCount)")
                             .font(.system(size: 10, weight: .medium, design: .rounded))
                             .tracking(0.5)
@@ -793,22 +810,21 @@ private struct BookPickerSheet: View {
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(colors.accent.opacity(isSelected ? 0 : (isRecent ? 0.22 : 0.12)), lineWidth: 1)
                     }
-                    .overlay(alignment: .topTrailing) {
-                        if isRecent && !isSelected {
-                            Image(systemName: "clock")
-                                .font(.system(size: 9, weight: .medium))
-                                .foregroundStyle(colors.accent.opacity(0.72))
-                                .padding(8)
-                                .accessibilityHidden(true)
-                        }
-                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(book.localizedName(for: appLanguage))
-                .accessibilityValue(isSelected ? appLanguage.localized("Selected") : (isRecent ? appLanguage.localized("Recently visited in the last 30 days") : ""))
+                .accessibilityValue(bookAccessibilityValue(book, isSelected: isSelected))
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
+    }
+
+    private func bookAccessibilityValue(_ book: BibleBook, isSelected: Bool) -> String {
+        guard let chapter = recentlyVisitedBookChapters[book] else {
+            return isSelected ? appLanguage.localized("Selected") : ""
+        }
+        let key = isSelected ? "Selected, chapter %d" : "Recently visited in the last 30 days, chapter %d"
+        return appLanguage.format(key, chapter)
     }
 
     private func filteredBooks(_ books: [BibleBook]) -> [BibleBook] {
