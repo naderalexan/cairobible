@@ -64,6 +64,16 @@ struct ReaderView: View {
                         .scrollPosition(id: $visibleVerseID, anchor: .top)
                         .scrollDisabled(chapterSwipeGestureState.isHorizontal)
                         .background(paletteColors.surface)
+                        .overlay {
+                            if transitionChapter == nil {
+                                switch model.state {
+                                case .idle, .loading:
+                                    chapterLoadingIndicator(for: model.selectedBook, chapter: model.selectedChapter)
+                                case .loaded, .failed:
+                                    EmptyView()
+                                }
+                            }
+                        }
                         .onTapGesture { areReaderControlsVisible ? hideReaderControls() : showReaderControls() }
                         .offset(x: chapterSwipeTranslation)
 
@@ -294,14 +304,7 @@ struct ReaderView: View {
                 if let chapter = swipePreviewChapter {
                     chapterContent(chapter, location: target)
                 } else {
-                    ProgressView(preferences.appLanguage.format(
-                        "Loading %@, %@ %d…",
-                        model.selectedTranslation.localizedTitle(for: preferences.appLanguage),
-                        target.book.localizedName(for: preferences.appLanguage),
-                        target.chapter
-                    ))
-                    .foregroundStyle(paletteColors.muted)
-                    .frame(maxWidth: .infinity, minHeight: 160, alignment: .center)
+                    Color.clear.frame(height: 160)
                 }
             }
             .padding(.horizontal, 20)
@@ -312,6 +315,11 @@ struct ReaderView: View {
         .scrollPosition(id: $swipePreviewVerseID, anchor: .top)
         .frame(width: width)
         .background(paletteColors.surface)
+        .overlay {
+            if swipePreviewChapter == nil {
+                chapterLoadingIndicator(for: target.book, chapter: target.chapter)
+            }
+        }
     }
 
     @ViewBuilder
@@ -443,18 +451,22 @@ struct ReaderView: View {
         model.selectedBook.localizedName(for: preferences.appLanguage)
     }
 
+    private func chapterLoadingIndicator(for book: BibleBook, chapter: Int) -> some View {
+        ProgressView(preferences.appLanguage.format(
+            "Loading %@, %@ %d…",
+            model.selectedTranslation.localizedTitle(for: preferences.appLanguage),
+            book.localizedName(for: preferences.appLanguage),
+            chapter
+        ))
+        .foregroundStyle(paletteColors.muted)
+        .allowsHitTesting(false)
+    }
+
     @ViewBuilder
     private var readingContent: some View {
         switch model.state {
         case .idle, .loading:
-            ProgressView(preferences.appLanguage.format(
-                "Loading %@, %@ %d…",
-                model.selectedTranslation.localizedTitle(for: preferences.appLanguage),
-                model.selectedBook.localizedName(for: preferences.appLanguage),
-                model.selectedChapter
-            ))
-                .foregroundStyle(paletteColors.muted)
-                .frame(maxWidth: .infinity, minHeight: 160, alignment: .center)
+            Color.clear.frame(height: 160)
 
         case let .loaded(chapter):
             chapterContent(chapter)
