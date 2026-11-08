@@ -68,6 +68,8 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertEqual(BibleBook.all.first?.localizedAbbreviation(for: .en), "GEN")
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .ar), "فان دايك العربية")
         XCTAssertEqual(BibleTranslation.svd.localizedTitle(for: .en), "Arabic SVD")
+        XCTAssertEqual(BibleTranslation.niv.readerControlTitle, "EN - NIV")
+        XCTAssertEqual(BibleTranslation.svd.readerControlTitle, "العربية")
     }
 
     func testVerseCopyTextIncludesLocalizedBookAndVerseReference() {

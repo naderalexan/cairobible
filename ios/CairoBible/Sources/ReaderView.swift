@@ -790,15 +790,15 @@ private struct ReaderControlsBar: View {
                         model.selectTranslation(translation)
                     } label: {
                         if model.selectedTranslation == translation {
-                            Label(translation.localizedTitle(for: preferences.appLanguage), systemImage: "checkmark")
+                            Label(translation.readerControlTitle, systemImage: "checkmark")
                         } else {
-                            Text(translation.localizedTitle(for: preferences.appLanguage))
+                            Text(translation.readerControlTitle)
                         }
                     }
                 }
             } label: {
                 HStack(spacing: 5) {
-                    Text(model.selectedTranslation.isRightToLeft ? "Arabic / NIV" : model.selectedTranslation.localizedTitle(for: preferences.appLanguage))
+                    Text(model.selectedTranslation.readerControlTitle)
                         .font(.system(size: 14, weight: .medium))
                     Image(systemName: "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
@@ -806,7 +806,7 @@ private struct ReaderControlsBar: View {
                 .foregroundStyle(colors.ink)
             }
             .accessibilityLabel(preferences.appLanguage.localized("Translation"))
-            .accessibilityValue(model.selectedTranslation.localizedTitle(for: preferences.appLanguage))
+            .accessibilityValue(model.selectedTranslation.readerControlTitle)
 
             controlDivider
 
