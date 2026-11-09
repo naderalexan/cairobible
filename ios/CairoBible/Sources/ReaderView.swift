@@ -146,11 +146,11 @@ struct ReaderView: View {
             }
             .onChange(of: model.selectedBook) { _, _ in
                 visibleVerseID = 1
-                showReaderControls()
+                if transitionLocation == nil { showReaderControls() }
             }
             .onChange(of: model.selectedChapter) { _, _ in
                 visibleVerseID = 1
-                showReaderControls()
+                if transitionLocation == nil { showReaderControls() }
             }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
