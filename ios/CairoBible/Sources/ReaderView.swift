@@ -248,7 +248,9 @@ struct ReaderView: View {
                 let target = isForwardSwipe ? model.nextChapterLocation : model.previousChapterLocation
                 if target != swipePreviewTarget {
                     swipePreviewTarget = target
-                    swipePreviewVerseID = 1
+                    if let target {
+                        swipePreviewVerseID = Self.restoredVerse(for: target, from: swipeVersePositions)
+                    }
                     swipePreviewChapter = nil
                 }
             }
@@ -296,6 +298,9 @@ struct ReaderView: View {
             } else {
                 model.selectPreviousChapter()
             }
+            let verse = Self.restoredVerse(for: target, from: swipeVersePositions)
+            visibleVerseID = verse
+            model.selectVerse(verse)
             settlingOffset = nil
             swipePreviewTarget = nil
             swipePreviewChapter = nil
