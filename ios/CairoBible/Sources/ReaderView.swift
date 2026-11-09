@@ -61,6 +61,10 @@ struct ReaderView: View {
                             .padding(.horizontal, 20)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .id(transitionLocation ?? ReaderChapterLocation(
+                            book: model.selectedBook,
+                            chapter: model.selectedChapter
+                        ))
                         .scrollIndicators(.hidden)
                         .scrollPosition(id: $visibleVerseID, anchor: .top)
                         .scrollDisabled(chapterSwipeGestureState.isHorizontal)
