@@ -310,6 +310,7 @@ struct ReaderView: View {
     private func previewScrollView(for target: ReaderChapterLocation, width: CGFloat) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                Color.clear.frame(height: 20 + chapterNavigationHeight)
                 if let chapter = swipePreviewChapter {
                     chapterContent(chapter, location: target)
                 } else {
@@ -317,7 +318,7 @@ struct ReaderView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 20)
+            .padding(.bottom, 20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.hidden)
