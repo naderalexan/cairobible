@@ -449,7 +449,7 @@ struct ReaderChapter: Equatable {
     let attribution: String
 }
 
-struct ReaderChapterLocation: Equatable {
+struct ReaderChapterLocation: Hashable {
     let book: BibleBook
     let chapter: Int
 }

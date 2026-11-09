@@ -93,6 +93,15 @@ final class ReaderFlowTests: XCTestCase {
         XCTAssertFalse(BibleTranslation.svd.isForwardChapterSwipe(horizontalTranslation: -1))
     }
 
+    func testChapterSwipeRestoresSavedVerseForThePreviousChapter() {
+        let location = ReaderChapterLocation(book: BibleBook.all[0], chapter: 1)
+        let nextChapter = ReaderChapterLocation(book: BibleBook.all[0], chapter: 2)
+        let positions = [location: 4]
+
+        XCTAssertEqual(ReaderView.restoredVerse(for: location, from: positions), 4)
+        XCTAssertEqual(ReaderView.restoredVerse(for: nextChapter, from: positions), 1)
+    }
+
     func testVerseCopyTextIncludesLocalizedBookAndVerseReference() {
         let verse = ScriptureVerse(number: 16, text: "For God so loved the world.")
         XCTAssertEqual(verse.copyText(book: BibleBook.all[42], chapter: 3, appLanguage: .en), "\"For God so loved the world.\" -John 3:16")

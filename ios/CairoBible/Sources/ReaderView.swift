@@ -20,6 +20,7 @@ struct ReaderView: View {
     @State private var visibleVerseID: Int?
     @GestureState private var chapterSwipeGestureState = ChapterSwipeGestureState()
     @State private var swipePreviewTarget: ReaderChapterLocation?
+    @State private var swipeVersePositions: [ReaderChapterLocation: Int] = [:]
     @State private var swipePreviewVerseID: Int? = 1
     @State private var swipePreviewChapter: ReaderChapter?
     @State private var transitionChapter: ReaderChapter?
@@ -145,12 +146,10 @@ struct ReaderView: View {
                 showReaderControls()
             }
             .onChange(of: model.selectedBook) { _, _ in
-                visibleVerseID = 1
-                if transitionLocation == nil { showReaderControls() }
+                updateVisibleVerseAfterChapterSelection()
             }
             .onChange(of: model.selectedChapter) { _, _ in
-                visibleVerseID = 1
-                if transitionLocation == nil { showReaderControls() }
+                updateVisibleVerseAfterChapterSelection()
             }
             .task(id: "\(model.selectedTranslation.id)-\(model.selectedBook.id)-\(model.selectedChapter)") {
                 await model.load()
@@ -220,6 +219,10 @@ struct ReaderView: View {
         horizontal != 0 && abs(vertical) <= abs(horizontal) * CGFloat(tan(Double.pi / 6))
     }
 
+    static func restoredVerse(for location: ReaderChapterLocation, from positions: [ReaderChapterLocation: Int]) -> Int {
+        positions[location] ?? 1
+    }
+
     private func chapterSwipeGesture(width: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .updating($chapterSwipeGestureState) { value, state, _ in
@@ -285,6 +288,7 @@ struct ReaderView: View {
         withAnimation(.easeOut(duration: 0.24), completionCriteria: .logicallyComplete) {
             settlingOffset = horizontal < 0 ? -width : width
         } completion: {
+            swipeVersePositions[ReaderChapterLocation(book: model.selectedBook, chapter: model.selectedChapter)] = model.selectedVerse
             transitionChapter = swipePreviewChapter
             transitionLocation = target
             if target == model.nextChapterLocation {
@@ -562,6 +566,17 @@ struct ReaderView: View {
             copyFeedbackDismissal = dismissal
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: dismissal)
         }
+    }
+
+    private func updateVisibleVerseAfterChapterSelection() {
+        guard let transitionLocation else {
+            visibleVerseID = 1
+            showReaderControls()
+            return
+        }
+        let verse = Self.restoredVerse(for: transitionLocation, from: swipeVersePositions)
+        visibleVerseID = verse
+        model.selectVerse(verse)
     }
 
     private func showReaderControls() {
