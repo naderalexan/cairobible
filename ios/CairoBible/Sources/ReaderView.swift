@@ -529,9 +529,12 @@ struct ReaderView: View {
             }
 
             Text(chapter.attribution)
-                .font(.footnote)
+                .font(model.selectedTranslation == .niv ? .caption : .footnote)
                 .foregroundStyle(paletteColors.muted)
+                .padding(.top, model.selectedTranslation == .niv ? 24 : 0)
                 .textSelection(.enabled)
+                .opacity(model.selectedTranslation != .niv || areReaderControlsVisible ? 1 : 0)
+                .accessibilityHidden(model.selectedTranslation == .niv && !areReaderControlsVisible)
                 .accessibilityLabel(preferences.appLanguage.format("Translation attribution. %@", chapter.attribution))
         }
         .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
