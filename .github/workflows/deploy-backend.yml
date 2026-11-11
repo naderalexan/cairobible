@@ -159,23 +159,48 @@ jobs:
           run_root() {
             if [[ "$(id -u)" -eq 0 ]]; then "$@"; else sudo -n "$@"; fi
           }
-          backup="$(mktemp /tmp/cairo-bible-caddy.XXXXXX)"
-          run_root cp -p "$config" "$backup"
-          if ! grep -Fq '# Managed by Cairo Bible deployment' "$config"; then
-            run_root tee -a "$config" < "$HOME/cairo-bible/Caddyfile" >/dev/null
+          run_root flock -x /run/lock/caddy-site-config.lock bash -s -- "$HOME/cairo-bible/Caddyfile" <<'REMOTE_CADDY'
+          set -euo pipefail
+          source_file="$1"
+          config=/etc/caddy/Caddyfile
+          site_dir=/etc/caddy/sites-enabled
+          site_file="$site_dir/cairo-bible.caddy"
+          run_root() {
+            if [[ "$(id -u)" -eq 0 ]]; then "$@"; else sudo -n "$@"; fi
+          }
+          if ! run_root test -f "$config" || ! run_root grep -Fq 'import /etc/caddy/sites-enabled/*.caddy' "$config"; then
+            echo "$config must import /etc/caddy/sites-enabled/*.caddy before deploying a site." >&2
+            exit 1
           fi
+          run_root install -d -m 755 "$site_dir"
+          site_temp="$(run_root mktemp "$site_dir/.cairo-bible.XXXXXX")"
+          site_backup="$(run_root mktemp /tmp/cairo-bible-caddy.XXXXXX)"
+          site_existed=0
+          if run_root test -f "$site_file"; then
+            run_root cp -p "$site_file" "$site_backup"
+            site_existed=1
+          fi
+          restore_site() {
+            if [[ "$site_existed" == "1" ]]; then
+              run_root cp -p "$site_backup" "$site_file"
+            else
+              run_root rm -f "$site_file"
+            fi
+            run_root rm -f "$site_backup" "$site_temp"
+          }
+          run_root install -m 644 "$source_file" "$site_temp"
+          run_root mv "$site_temp" "$site_file"
           if ! run_root caddy validate --config "$config"; then
-            run_root cp -p "$backup" "$config"
-            run_root rm -f "$backup"
+            restore_site
             exit 1
           fi
           if ! run_root systemctl reload caddy; then
-            run_root cp -p "$backup" "$config"
+            restore_site
             run_root systemctl reload caddy || true
-            run_root rm -f "$backup"
             exit 1
           fi
-          run_root rm -f "$backup"
+          run_root rm -f "$site_backup"
+          REMOTE_CADDY
           REMOTE
 
       - name: Diagnose failed API or Caddy startup
