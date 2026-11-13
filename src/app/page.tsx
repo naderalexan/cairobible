@@ -460,9 +460,9 @@ export default function Home() {
   return (
     <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio, "--scripture-width": `${selectedScriptureWidth.width}px` } as CSSProperties}>
       {translation === "niv" && <Script src="https://pkg.api.bible/fumsV3.min.js" strategy="afterInteractive" />}
-      <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
+      <aside id="bookSidebar" className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
         <div className="sidebar-search-row">
-          <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t(sidebarOpen ? "Hide book list" : "Show book list")} aria-expanded={sidebarOpen}><MenuIcon /></button>
+          {sidebarOpen && <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(false)} aria-label={t("Hide book list")} aria-expanded="true" aria-controls="bookSidebar"><MenuIcon /></button>}
           {sidebarOpen && <label className="search-wrap" htmlFor="bookSearch">
             <SearchIcon /><input id="bookSearch" type="search" placeholder={t("Find a book")} value={query} onChange={(event) => setQuery(event.target.value)} />
             <kbd>/</kbd>
@@ -528,7 +528,13 @@ export default function Home() {
           <section className="reader">
             <div className="reader-heading">
               <div className="reader-heading-leading">
-                <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
+                <div>
+                  <p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p>
+                  <div className="reader-title-line">
+                    {!sidebarOpen && <button className="sidebar-open-control" onClick={() => setSidebarOpen(true)} aria-label={t("Show book list")} title={t("Show book list")} aria-expanded="false" aria-controls="bookSidebar">{language === "ar" ? <ChevronRight /> : <ChevronLeft />}</button>}
+                    <h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1>
+                  </div>
+                </div>
               </div>
               <div className="reader-heading-actions">
                 <button className="chapter-picker" onClick={() => setChapterPickerOpen(true)} aria-haspopup="dialog" aria-expanded={chapterPickerOpen}><span>{t("Chapter {chapter}", { chapter })}</span><ChevronDown /></button>
