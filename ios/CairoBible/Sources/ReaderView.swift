@@ -508,18 +508,28 @@ struct ReaderView: View {
         Group {
             if !chapter.verses.isEmpty {
                 LazyVStack(alignment: .leading, spacing: lineSpacing * 3) {
-                    ForEach(chapter.headings.indices.filter { chapter.headings[$0].afterVerse == nil }, id: \.self) { index in
-                        headingRow(chapter.headings[index])
+                    ForEach(chapter.contentItems.indices.filter { chapter.contentItems[$0].verseNumber == nil }, id: \.self) { index in
+                        if case let .heading(heading) = chapter.contentItems[index] {
+                            headingRow(heading)
+                        }
                     }
                     ForEach(chapter.verses) { verse in
-                        verseRow(
-                            verse,
-                            isRightToLeft: model.selectedTranslation.isRightToLeft,
-                            book: location?.book ?? model.selectedBook,
-                            chapter: location?.chapter ?? model.selectedChapter
-                        )
-                        ForEach(chapter.headings.indices.filter { chapter.headings[$0].afterVerse == verse.number }, id: \.self) { index in
-                            headingRow(chapter.headings[index])
+                        VStack(alignment: .leading, spacing: lineSpacing * 2) {
+                            ForEach(chapter.contentItems.indices.filter { chapter.contentItems[$0].verseNumber == verse.number }, id: \.self) { index in
+                                switch chapter.contentItems[index] {
+                                case let .verse(_, text, startsVerse):
+                                    verseRow(
+                                        verse,
+                                        text: text,
+                                        showsVerseNumber: startsVerse,
+                                        isRightToLeft: model.selectedTranslation.isRightToLeft,
+                                        book: location?.book ?? model.selectedBook,
+                                        chapter: location?.chapter ?? model.selectedChapter
+                                    )
+                                case let .heading(heading):
+                                    headingRow(heading)
+                                }
+                            }
                         }
                     }
                 }
@@ -558,16 +568,22 @@ struct ReaderView: View {
 
     private func verseRow(
         _ verse: ScriptureVerse,
+        text: String,
+        showsVerseNumber: Bool,
         isRightToLeft: Bool,
         book: BibleBook,
         chapter: Int
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(verbatim: "\u{2068}\(verse.number)\u{2069}")
-                .font(.system(size: CGFloat(readingFontSize * 0.78), design: .serif))
-                .foregroundStyle(paletteColors.muted)
-                .frame(width: 24)
-            Text(verbatim: verse.text)
+            if showsVerseNumber {
+                Text(verbatim: "\u{2068}\(verse.number)\u{2069}")
+                    .font(.system(size: CGFloat(readingFontSize * 0.78), design: .serif))
+                    .foregroundStyle(paletteColors.muted)
+                    .frame(width: 24)
+            } else {
+                Color.clear.frame(width: 24)
+            }
+            Text(verbatim: text)
                 .font(readingFont)
                 .foregroundStyle(paletteColors.ink)
                 .lineSpacing(lineSpacing)
@@ -578,7 +594,7 @@ struct ReaderView: View {
         .multilineTextAlignment(.leading)
         .environment(\.locale, isRightToLeft ? Locale(identifier: "ar") : .current)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, verse.text))
+        .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, text))
         .onTapGesture(count: 2) {
             UIPasteboard.general.string = verse.copyText(
                 book: book,

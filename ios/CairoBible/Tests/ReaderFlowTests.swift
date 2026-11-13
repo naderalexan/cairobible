@@ -27,7 +27,24 @@ final class ReaderFlowTests: XCTestCase {
         model.selectBook(BibleBook.all.first { $0.name == "Song of Songs" }!)
         await model.load()
         guard case let .loaded(readerChapter) = model.state else { return XCTFail("Expected Song of Songs to load") }
-        XCTAssertEqual(readerChapter.headings, chapter.headings)
+        XCTAssertEqual(readerChapter.contentItems, chapter.contentItems)
+    }
+
+    func testNIVSongOfSongsKeepsDialogueParagraphsAroundSpeakerLabelsInSourceOrder() throws {
+        let data = #"{"bookName":"Song of Songs","chapter":1,"content":"<p class=\"q1\"><span data-number=\"4\" data-sid=\"SNG 1:4\" class=\"v\">4</span>Take me away with you—let us hurry!</p><p data-vid=\"SNG 1:4\" class=\"q2\">Let the king bring me into his chambers.</p><p data-vid=\"SNG 1:4\" class=\"sp\">Friends</p><p data-vid=\"SNG 1:4\" class=\"q1\">We rejoice and delight in you;</p><p data-vid=\"SNG 1:4\" class=\"q2\">we will praise your love more than wine.</p><p data-vid=\"SNG 1:4\" class=\"sp\">She</p><p data-vid=\"SNG 1:4\" class=\"q1\">How right they are to adore you!</p><p class=\"b\"></p><p class=\"q1\"><span data-number=\"5\" data-sid=\"SNG 1:5\" class=\"v\">5</span>Dark am I, yet lovely,</p>","headings":[{"type":"speaker","text":"Friends","afterVerse":4},{"type":"speaker","text":"She","afterVerse":4}],"copyright":"NIV copyright"}"#.data(using: .utf8)!
+
+        let chapter = try JSONDecoder().decode(NIVChapter.self, from: data)
+
+        XCTAssertEqual(chapter.contentItems.filter { $0.verseNumber == 4 }, [
+            .verse(number: 4, text: "Take me away with you—let us hurry!", startsVerse: true),
+            .verse(number: 4, text: "Let the king bring me into his chambers.", startsVerse: false),
+            .heading(NIVHeading(type: "speaker", text: "Friends", afterVerse: 4)),
+            .verse(number: 4, text: "We rejoice and delight in you;", startsVerse: false),
+            .verse(number: 4, text: "we will praise your love more than wine.", startsVerse: false),
+            .heading(NIVHeading(type: "speaker", text: "She", afterVerse: 4)),
+            .verse(number: 4, text: "How right they are to adore you!", startsVerse: false),
+        ])
+        XCTAssertEqual(chapter.verses.first?.text, "Take me away with you—let us hurry! Let the king bring me into his chambers. We rejoice and delight in you; we will praise your love more than wine. How right they are to adore you!")
     }
 
     func testReaderToolbarPresetsAndLineSpacingPersistWithoutNormalizingSavedFontSize() {

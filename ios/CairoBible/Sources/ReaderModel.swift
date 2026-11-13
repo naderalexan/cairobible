@@ -441,12 +441,24 @@ struct ScriptureVerse: Equatable, Identifiable {
     }
 }
 
+enum ScriptureContentItem: Equatable {
+    case verse(number: Int, text: String, startsVerse: Bool)
+    case heading(NIVHeading)
+
+    var verseNumber: Int? {
+        switch self {
+        case let .verse(number, _, _): number
+        case let .heading(heading): heading.afterVerse
+        }
+    }
+}
+
 struct ReaderChapter: Equatable {
     let bookName: String
     let chapter: Int
     let text: String
     let verses: [ScriptureVerse]
-    let headings: [NIVHeading]
+    let contentItems: [ScriptureContentItem]
     let attribution: String
 }
 
@@ -637,7 +649,7 @@ final class ReaderModel: ObservableObject {
                 chapter: chapter.chapter,
                 text: chapter.plainText,
                 verses: chapter.verses,
-                headings: chapter.headings,
+                contentItems: chapter.contentItems,
                 attribution: chapter.copyright
             )
         case .svd:
@@ -647,7 +659,7 @@ final class ReaderModel: ObservableObject {
                 chapter: chapter.chapter,
                 text: chapter.verses.map(\.text).joined(),
                 verses: chapter.verses,
-                headings: [],
+                contentItems: chapter.verses.map { .verse(number: $0.number, text: $0.text, startsVerse: true) },
                 attribution: chapter.attribution
             )
         }

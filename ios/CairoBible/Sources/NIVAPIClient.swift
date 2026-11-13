@@ -50,6 +50,20 @@ struct NIVChapter: Codable, Equatable {
         }
     }
 
+    var contentItems: [ScriptureContentItem] {
+        var items = Self.contentItems(fromHTML: content)
+        for heading in headings where !items.contains(where: {
+            if case let .heading(item) = $0 { return item == heading }
+            return false
+        }) {
+            let insertionIndex = heading.afterVerse.flatMap { verse in
+                items.lastIndex(where: { $0.verseNumber == verse }).map { $0 + 1 }
+            } ?? 0
+            items.insert(.heading(heading), at: insertionIndex)
+        }
+        return items
+    }
+
     private static func text(fromHTML html: String) -> String {
         let withBreaks = html.replacingOccurrences(
             of: #"(?i)<br\s*/?>|</(?:p|div|li|h[1-6])\s*>"#,
@@ -127,6 +141,65 @@ struct NIVChapter: Codable, Equatable {
             }
         }
         return headings
+    }
+
+    private static func contentItems(fromHTML html: String) -> [ScriptureContentItem] {
+        guard let paragraphs = try? NSRegularExpression(pattern: #"(?is)<p\b([^>]*)>(.*?)</p>"#),
+              let classAttribute = try? NSRegularExpression(pattern: #"(?i)\bclass\s*=\s*["']([^"']*)["']"#),
+              let dataVerse = try? NSRegularExpression(pattern: #"(?i)\bdata-vid\s*=\s*["'][^"']*:(\d+)["']"#),
+              let verseNumberSpan = try? NSRegularExpression(pattern: #"(?is)<span\b[^>]*\bdata-number\s*=\s*["'](\d+)["'][^>]*>.*?</span>"#) else {
+            return []
+        }
+        let source = html as NSString
+        var lastVerse: Int?
+        var items: [ScriptureContentItem] = []
+        for paragraph in paragraphs.matches(in: html, range: NSRange(location: 0, length: source.length)) {
+            let attributes = source.substring(with: paragraph.range(at: 1)) as NSString
+            let attributeText = attributes as String
+            let classes: [Substring]
+            if let match = classAttribute.firstMatch(in: attributeText, range: NSRange(location: 0, length: attributes.length)),
+               let classRange = Range(match.range(at: 1), in: attributeText) {
+                classes = attributeText[classRange].split(whereSeparator: \.isWhitespace)
+            } else {
+                classes = []
+            }
+
+            let paragraphText = source.substring(with: paragraph.range(at: 2))
+            let paragraphSource = paragraphText as NSString
+            let spanMatch = verseNumberSpan.firstMatch(
+                in: paragraphText,
+                range: NSRange(location: 0, length: paragraphSource.length)
+            )
+            let spanVerse = spanMatch.flatMap { Int(paragraphSource.substring(with: $0.range(at: 1))) }
+            let dataVerseMatch = dataVerse.firstMatch(in: attributeText, range: NSRange(location: 0, length: attributes.length))
+            let dataVerseNumber = dataVerseMatch.flatMap { Int(attributes.substring(with: $0.range(at: 1))) }
+            let verse = spanVerse ?? dataVerseNumber ?? lastVerse
+            let type: String?
+            if classes.contains(where: { $0.range(of: #"^s\d*$"#, options: .regularExpression) != nil }) {
+                type = "section"
+            } else if classes.contains("sp") {
+                type = "speaker"
+            } else if classes.contains("d") {
+                type = "descriptive"
+            } else {
+                type = nil
+            }
+            let text = Self.text(fromHTML: spanVerse == nil
+                ? paragraphText
+                : verseNumberSpan.stringByReplacingMatches(
+                    in: paragraphText,
+                    range: NSRange(location: 0, length: paragraphSource.length),
+                    withTemplate: " "
+                ))
+            if let type, !text.isEmpty {
+                items.append(.heading(NIVHeading(type: type, text: text, afterVerse: verse)))
+            } else if let verse, !text.isEmpty {
+                items.append(.verse(number: verse, text: text, startsVerse: spanVerse != nil))
+            }
+            if let spanVerse { lastVerse = spanVerse }
+            else if let dataVerseNumber { lastVerse = dataVerseNumber }
+        }
+        return items
     }
 
     private static func decodeHTMLEntities(_ text: String) -> String {
