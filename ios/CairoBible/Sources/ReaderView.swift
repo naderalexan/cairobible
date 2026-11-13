@@ -518,7 +518,7 @@ struct ReaderView: View {
                         verseRow(
                             verse,
                             contentItems: contentItems.isEmpty
-                                ? [.verse(number: verse.number, text: verse.text, startsVerse: true)]
+                                ? [.verse(number: verse.number, text: verse.text, startsVerse: true, isSpeakerText: false)]
                                 : contentItems,
                             isRightToLeft: model.selectedTranslation.isRightToLeft,
                             book: location?.book ?? model.selectedBook,
@@ -576,9 +576,9 @@ struct ReaderView: View {
                 ForEach(Array(contentItems.enumerated()), id: \.offset) { element in
                     let item = element.element
                     switch item {
-                    case let .verse(_, text, _):
+                    case let .verse(_, text, _, isSpeakerText):
                         Text(verbatim: text)
-                            .font(readingFont)
+                            .font(isSpeakerText ? readingFont.italic() : readingFont)
                             .foregroundStyle(paletteColors.ink)
                             .lineSpacing(lineSpacing)
                             .fixedSize(horizontal: false, vertical: true)

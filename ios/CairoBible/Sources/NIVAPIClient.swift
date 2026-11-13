@@ -152,6 +152,7 @@ struct NIVChapter: Codable, Equatable {
         }
         let source = html as NSString
         var lastVerse: Int?
+        var followsSpeakerHeading = false
         var items: [ScriptureContentItem] = []
         for paragraph in paragraphs.matches(in: html, range: NSRange(location: 0, length: source.length)) {
             let attributes = source.substring(with: paragraph.range(at: 1)) as NSString
@@ -191,10 +192,12 @@ struct NIVChapter: Codable, Equatable {
                     range: NSRange(location: 0, length: paragraphSource.length),
                     withTemplate: " "
                 ))
+            if spanVerse != nil { followsSpeakerHeading = false }
             if let type, !text.isEmpty {
                 items.append(.heading(NIVHeading(type: type, text: text, afterVerse: verse)))
+                followsSpeakerHeading = type == "speaker"
             } else if let verse, !text.isEmpty {
-                items.append(.verse(number: verse, text: text, startsVerse: spanVerse != nil))
+                items.append(.verse(number: verse, text: text, startsVerse: spanVerse != nil, isSpeakerText: followsSpeakerHeading))
             }
             if let spanVerse { lastVerse = spanVerse }
             else if let dataVerseNumber { lastVerse = dataVerseNumber }

@@ -36,14 +36,15 @@ final class ReaderFlowTests: XCTestCase {
         let chapter = try JSONDecoder().decode(NIVChapter.self, from: data)
 
         XCTAssertEqual(chapter.contentItems.filter { $0.verseNumber == 4 }, [
-            .verse(number: 4, text: "Take me away with you—let us hurry!", startsVerse: true),
-            .verse(number: 4, text: "Let the king bring me into his chambers.", startsVerse: false),
+            .verse(number: 4, text: "Take me away with you—let us hurry!", startsVerse: true, isSpeakerText: false),
+            .verse(number: 4, text: "Let the king bring me into his chambers.", startsVerse: false, isSpeakerText: false),
             .heading(NIVHeading(type: "speaker", text: "Friends", afterVerse: 4)),
-            .verse(number: 4, text: "We rejoice and delight in you;", startsVerse: false),
-            .verse(number: 4, text: "we will praise your love more than wine.", startsVerse: false),
+            .verse(number: 4, text: "We rejoice and delight in you;", startsVerse: false, isSpeakerText: true),
+            .verse(number: 4, text: "we will praise your love more than wine.", startsVerse: false, isSpeakerText: true),
             .heading(NIVHeading(type: "speaker", text: "She", afterVerse: 4)),
-            .verse(number: 4, text: "How right they are to adore you!", startsVerse: false),
+            .verse(number: 4, text: "How right they are to adore you!", startsVerse: false, isSpeakerText: true),
         ])
+        XCTAssertEqual(chapter.contentItems.last, .verse(number: 5, text: "Dark am I, yet lovely,", startsVerse: true, isSpeakerText: false))
         XCTAssertEqual(chapter.verses.first?.text, "Take me away with you—let us hurry! Let the king bring me into his chambers. We rejoice and delight in you; we will praise your love more than wine. How right they are to adore you!")
     }
 
