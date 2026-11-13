@@ -1,7 +1,9 @@
 import json
 import os
+import re
 import threading
 import time
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -14,6 +16,56 @@ NIV_BIBLE_ID = "78a9f6124f344018-01"
 API_ROOT = "https://rest.api.bible/v1"
 CORPUS_TTL = 29 * 24 * 60 * 60
 _sync_lock = threading.Lock()
+
+
+class _ChapterHeadings(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.headings: list[dict[str, Any]] = []
+        self.paragraph_class: str | None = None
+        self.paragraph_text: list[str] = []
+        self.last_verse: int | None = None
+        self.verse_number: str | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if tag == "p":
+            self.paragraph_class = attributes.get("class", "")
+            self.paragraph_text = []
+        elif tag == "span":
+            number = attributes.get("data-number")
+            if number and number.isdecimal():
+                self.verse_number = number
+
+    def handle_data(self, data: str) -> None:
+        if self.paragraph_class is not None:
+            self.paragraph_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "span" and self.verse_number is not None:
+            self.last_verse = int(self.verse_number)
+            self.verse_number = None
+        if tag != "p" or self.paragraph_class is None:
+            return
+        classes = self.paragraph_class.split()
+        kind = next((
+            name for name, pattern in (
+                ("section", r"s\d*"),
+                ("speaker", r"sp"),
+                ("descriptive", r"d"),
+            )
+            if any(re.fullmatch(pattern, class_name) for class_name in classes)
+        ), None)
+        title = " ".join("".join(self.paragraph_text).split())
+        if kind and title:
+            self.headings.append({"type": kind, "text": title, "afterVerse": self.last_verse})
+        self.paragraph_class = None
+
+
+def chapter_headings(content: str) -> list[dict[str, Any]]:
+    parser = _ChapterHeadings()
+    parser.feed(content)
+    return parser.headings
 
 
 def corpus_path() -> Path:
@@ -181,6 +233,7 @@ def get_chapter_response(book_title: str, number: int) -> dict[str, Any]:
         "bookName": book["name"],
         "chapter": number,
         "content": chapter["content"],
+        "headings": chapter_headings(chapter["content"]),
         "copyright": chapter["copyright"] or corpus["copyright"],
         "fumsToken": chapter["fumsToken"],
     }

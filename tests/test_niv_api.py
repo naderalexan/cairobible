@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -120,6 +121,33 @@ class NivApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["content"], "<p>In the beginning</p>")
         self.assertEqual(self.cache_path.read_bytes(), previous_copy)
+
+    def test_song_of_songs_chapter_returns_source_headings_between_verses(self) -> None:
+        content = (
+            '<p class="s1">The Song of Songs</p>'
+            '<p class="sp">Beloved</p>'
+            '<p class="q1"><span data-number="1" class="v">1</span>Let him kiss me.</p>'
+            '<p class="sp">Friends</p>'
+            '<p class="q1"><span data-number="2" class="v">2</span>Beloved, your name is like perfume.</p>'
+        )
+        self.cache_path.write_text(json.dumps({
+            "fetchedAt": time.time(),
+            "copyright": "NIV copyright",
+            "books": {"SNG": {"name": "Song of Songs", "chapters": {
+                "1": {"content": content, "copyright": "NIV copyright", "fumsToken": "song-token"}
+            }}},
+        }))
+
+        with TestClient(app=app) as client:
+            response = client.get("/api/niv/books/SNG/chapters/1")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["content"], content)
+        self.assertEqual(response.json()["headings"], [
+            {"type": "section", "text": "The Song of Songs", "afterVerse": None},
+            {"type": "speaker", "text": "Beloved", "afterVerse": None},
+            {"type": "speaker", "text": "Friends", "afterVerse": 1},
+        ])
 
     def test_corpus_is_unavailable_without_license_confirmation(self) -> None:
         self.cache_path.write_text(
