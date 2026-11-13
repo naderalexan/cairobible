@@ -4,18 +4,30 @@ import XCTest
 
 @MainActor
 final class ReaderFlowTests: XCTestCase {
-    func testNIVSongOfSongsHeadingsStaySeparateFromVerseText() throws {
-        let data = #"{"bookName":"Song of Songs","chapter":1,"content":"<p class=\"q1\"><span data-number=\"1\">1</span>Let him kiss me.</p>","headings":[{"type":"speaker","text":"Beloved","afterVerse":null},{"type":"speaker","text":"Friends","afterVerse":1}],"copyright":"NIV copyright"}"#.data(using: .utf8)!
+    func testNIVSongOfSongsSourceHeadingStaysSeparateFromVerseText() async throws {
+        let data = #"{"bookName":"Song of Songs","chapter":1,"content":"<p class=\"p\"><span data-number=\"1\" data-sid=\"SNG 1:1\" class=\"v\">1</span>Solomon’s Song of Songs.</p><p class=\"b\"></p><p class=\"sp\">She</p><p class=\"q1\"><span data-number=\"2\" data-sid=\"SNG 1:2\" class=\"v\">2</span>She is beautiful.</p>","copyright":"NIV copyright"}"#.data(using: .utf8)!
 
         let chapter = try JSONDecoder().decode(NIVChapter.self, from: data)
 
         XCTAssertEqual(chapter.headings, [
-            NIVHeading(type: "speaker", text: "Beloved", afterVerse: nil),
-            NIVHeading(type: "speaker", text: "Friends", afterVerse: 1),
+            NIVHeading(type: "speaker", text: "She", afterVerse: 1),
         ])
-        XCTAssertEqual(chapter.verses, [ScriptureVerse(number: 1, text: "Let him kiss me.")])
-        XCTAssertEqual(chapter.plainText, "Let him kiss me.")
-        XCTAssertFalse(chapter.verses.contains { $0.text.contains("Beloved") || $0.text.contains("Friends") })
+        XCTAssertEqual(chapter.verses, [
+            ScriptureVerse(number: 1, text: "Solomon’s Song of Songs."),
+            ScriptureVerse(number: 2, text: "She is beautiful."),
+        ])
+        XCTAssertEqual(chapter.plainText, "Solomon’s Song of Songs. She is beautiful.")
+        XCTAssertFalse(chapter.verses.contains { $0.text == "She" })
+
+        struct StubClient: NIVReadingClient {
+            let chapter: NIVChapter
+            func fetchChapter(book: BibleBook, number: Int) async throws -> NIVChapter { chapter }
+        }
+        let model = ReaderModel(nivClient: StubClient(chapter: chapter), preferences: makePreferences())
+        model.selectBook(BibleBook.all.first { $0.name == "Song of Songs" }!)
+        await model.load()
+        guard case let .loaded(readerChapter) = model.state else { return XCTFail("Expected Song of Songs to load") }
+        XCTAssertEqual(readerChapter.headings, chapter.headings)
     }
 
     func testReaderToolbarPresetsAndLineSpacingPersistWithoutNormalizingSavedFontSize() {

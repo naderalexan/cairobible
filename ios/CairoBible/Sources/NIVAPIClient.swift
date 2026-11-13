@@ -15,7 +15,7 @@ struct NIVChapter: Codable, Equatable {
         self.bookName = bookName
         self.chapter = chapter
         self.content = content
-        self.headings = headings
+        self.headings = headings.isEmpty ? Self.sourceHeadings(fromHTML: content) : headings
         self.copyright = copyright
     }
 
@@ -24,7 +24,8 @@ struct NIVChapter: Codable, Equatable {
         bookName = try values.decode(String.self, forKey: .bookName)
         chapter = try values.decode(Int.self, forKey: .chapter)
         content = try values.decode(String.self, forKey: .content)
-        headings = try values.decodeIfPresent([NIVHeading].self, forKey: .headings) ?? []
+        let suppliedHeadings = try values.decodeIfPresent([NIVHeading].self, forKey: .headings) ?? []
+        headings = suppliedHeadings.isEmpty ? Self.sourceHeadings(fromHTML: content) : suppliedHeadings
         copyright = try values.decode(String.self, forKey: .copyright)
     }
 
@@ -43,7 +44,7 @@ struct NIVChapter: Codable, Equatable {
             guard let numberRange = Range(match.range(at: 1), in: content),
                   let bodyRange = Range(match.range(at: 2), in: content),
                   let number = Int(content[numberRange]) else { return nil }
-            let text = Self.text(fromHTML: String(content[bodyRange]))
+            let text = Self.text(fromHTML: Self.withoutHeadingParagraphs(String(content[bodyRange])))
             guard !text.isEmpty else { return nil }
             return ScriptureVerse(number: number, text: text)
         }
@@ -63,6 +64,69 @@ struct NIVChapter: Codable, Equatable {
         return decodeHTMLEntities(withoutTags)
             .split(whereSeparator: \.isWhitespace)
             .joined(separator: " ")
+    }
+
+    private static func withoutHeadingParagraphs(_ html: String) -> String {
+        guard let paragraphs = try? NSRegularExpression(pattern: #"(?is)<p\b([^>]*)>(.*?)</p>"#),
+              let classAttribute = try? NSRegularExpression(pattern: #"(?i)\bclass\s*=\s*["']([^"']*)["']"#) else {
+            return html
+        }
+        let source = html as NSString
+        let result = NSMutableString(string: html)
+        for paragraph in paragraphs.matches(in: html, range: NSRange(location: 0, length: source.length)).reversed() {
+            let attributes = source.substring(with: paragraph.range(at: 1)) as NSString
+            let attributeText = attributes as String
+            guard let match = classAttribute.firstMatch(in: attributeText, range: NSRange(location: 0, length: attributes.length)),
+                  let classRange = Range(match.range(at: 1), in: attributeText) else { continue }
+            let classes = attributeText[classRange].split(whereSeparator: \.isWhitespace)
+            guard classes.contains(where: { $0 == "sp" || $0 == "d" || $0.range(of: #"^s\d*$"#, options: .regularExpression) != nil }) else { continue }
+            result.replaceCharacters(in: paragraph.range, with: " ")
+        }
+        return result as String
+    }
+
+    private static func sourceHeadings(fromHTML html: String) -> [NIVHeading] {
+        guard let paragraphs = try? NSRegularExpression(pattern: #"(?is)<p\b([^>]*)>(.*?)</p>"#),
+              let verseSpans = try? NSRegularExpression(pattern: #"(?is)<span\b[^>]*\bdata-number\s*=\s*["'](\d+)["'][^>]*>"#),
+              let classAttribute = try? NSRegularExpression(pattern: #"(?i)\bclass\s*=\s*["']([^"']*)["']"#) else {
+            return []
+        }
+        let source = html as NSString
+        let verseMatches = verseSpans.matches(in: html, range: NSRange(location: 0, length: source.length))
+        var verseIndex = 0
+        var lastVerse: Int?
+        var headings: [NIVHeading] = []
+        for paragraph in paragraphs.matches(in: html, range: NSRange(location: 0, length: source.length)) {
+            while verseIndex < verseMatches.count && verseMatches[verseIndex].range.location < paragraph.range.location {
+                let numberRange = verseMatches[verseIndex].range(at: 1)
+                lastVerse = Int(source.substring(with: numberRange)) ?? lastVerse
+                verseIndex += 1
+            }
+            let attributes = source.substring(with: paragraph.range(at: 1)) as NSString
+            let attributeText = attributes as String
+            guard let match = classAttribute.firstMatch(
+                in: attributeText,
+                range: NSRange(location: 0, length: attributes.length)
+            ),
+            let classRange = Range(match.range(at: 1), in: attributeText) else { continue }
+            let classes = attributeText[classRange].split(whereSeparator: \.isWhitespace)
+            let type: String?
+            if classes.contains(where: { $0.range(of: #"^s\d*$"#, options: .regularExpression) != nil }) {
+                type = "section"
+            } else if classes.contains("sp") {
+                type = "speaker"
+            } else if classes.contains("d") {
+                type = "descriptive"
+            } else {
+                type = nil
+            }
+            guard let type else { continue }
+            let text = text(fromHTML: source.substring(with: paragraph.range(at: 2)))
+            if !text.isEmpty {
+                headings.append(NIVHeading(type: type, text: text, afterVerse: lastVerse))
+            }
+        }
+        return headings
     }
 
     private static func decodeHTMLEntities(_ text: String) -> String {
