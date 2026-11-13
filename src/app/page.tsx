@@ -462,11 +462,11 @@ export default function Home() {
       {translation === "niv" && <Script src="https://pkg.api.bible/fumsV3.min.js" strategy="afterInteractive" />}
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
         <div className="sidebar-search-row">
-          {sidebarOpen && <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(false)} aria-label={t("Hide book list")} aria-expanded="true"><MenuIcon /></button>}
-          <label className="search-wrap" htmlFor="bookSearch">
+          <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t(sidebarOpen ? "Hide book list" : "Show book list")} aria-expanded={sidebarOpen}><MenuIcon /></button>
+          {sidebarOpen && <label className="search-wrap" htmlFor="bookSearch">
             <SearchIcon /><input id="bookSearch" type="search" placeholder={t("Find a book")} value={query} onChange={(event) => setQuery(event.target.value)} />
             <kbd>/</kbd>
-          </label>
+          </label>}
         </div>
         <nav className="book-nav" aria-label={t("Books of the Bible")}>
           {oldTestament.length > 0 && <section className="book-group"><h2>{t("OLD TESTAMENT")}</h2><ul className="book-list">{renderBooks(oldTestament)}</ul></section>}
@@ -528,7 +528,7 @@ export default function Home() {
           <section className="reader">
             <div className="reader-heading">
               <div className="reader-heading-leading">
-                {!sidebarOpen && <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label={t("Show book list")} aria-expanded="false"><MenuIcon /></button>}
+                {!sidebarOpen && <button className="icon-button sidebar-toggle reader-sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label={t("Show book list")} aria-expanded="false"><MenuIcon /></button>}
                 <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
               </div>
               <div className="reader-heading-actions">
