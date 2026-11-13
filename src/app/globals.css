@@ -18,7 +18,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .app-shell.dark[data-palette="sandstone"] { --surface: #241F16; --surface-raised: #302918; --surface-sidebar: #2B251A; --ink: #F1E8D1; --muted: #C9BFA3; --line: #4A402D; --accent: #E0C278; --accent-ink: #E0C278; --accent-on: #241F16; --accent-soft: #403822; --selection: #51462B; --focus: #F0D58F; }
 .app-shell[lang="ar"] { font-family: 'Geeza Pro', 'Noto Sans Arabic', Montserrat, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .sidebar { width: 278px; flex: 0 0 278px; height: 100dvh; position: sticky; top: 0; display: flex; flex-direction: column; padding: 28px 16px 16px; background: var(--surface-sidebar); border-inline-end: 1px solid var(--line); transition: width .22s ease, flex-basis .22s ease, transform .22s ease; z-index: 4; }
-.sidebar.collapsed { width: 0; flex-basis: 0; padding-inline: 0; overflow: hidden; border: 0; }
+.sidebar.collapsed { width: 0; min-width: 0; flex-basis: 0; padding-inline: 0; overflow: hidden; visibility: hidden; border: 0; }
 .icon-button { width: 42px; height: 42px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--muted); transition: color .15s ease, background .15s ease; }
 .icon-button:hover { background: var(--accent-soft); color: var(--ink); }
 .icon-button svg, .chapter-picker svg, .chapter-step svg, .search-wrap svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
