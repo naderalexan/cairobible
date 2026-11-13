@@ -551,7 +551,7 @@ struct ReaderView: View {
 
     private func headingRow(_ heading: NIVHeading) -> some View {
         Text(verbatim: heading.text)
-            .font(readingFont.bold())
+            .font(readingFont.bold().italic())
             .foregroundStyle(paletteColors.ink)
             .lineSpacing(lineSpacing)
             .fixedSize(horizontal: false, vertical: true)
