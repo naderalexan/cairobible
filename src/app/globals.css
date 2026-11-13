@@ -26,7 +26,6 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .sidebar-search-row .sidebar-toggle { flex: 0 0 42px; }
 .sidebar.collapsed .sidebar-search-row { justify-content: center; }
 .sidebar.collapsed .search-wrap { display: none; }
-.reader-sidebar-toggle { display: none; }
 .search-wrap { min-width: 0; flex: 1; height: 42px; margin: 0 4px; padding: 0 10px; display: flex; align-items: center; gap: 8px; color: var(--muted); border: 1px solid var(--line); border-radius: 11px; background: var(--surface-raised); }
 .search-wrap svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .search-wrap input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; font-size: 13px; }
@@ -188,13 +187,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .loading-mark { width: 25px; height: 25px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 760px) {
-  .sidebar { width: min(84vw, 310px); flex-basis: min(84vw, 310px); position: fixed; inset-inline-start: 0; transform: translateX(-102%); box-shadow: var(--shadow); }
+  .sidebar { width: min(84vw, 310px); flex-basis: min(84vw, 310px); position: fixed; inset-inline-start: 0; transform: translateX(0); box-shadow: var(--shadow); }
   .sidebar.open { transform: translateX(0); }
-  .sidebar.collapsed { width: min(84vw, 310px); flex-basis: min(84vw, 310px); padding: 28px 16px 16px; border-inline-end: 1px solid var(--line); }
-  .app-shell[dir="rtl"] .sidebar { transform: translateX(102%); }
+  .sidebar.collapsed { width: 58px; flex-basis: 58px; padding: 28px 8px 16px; border-inline-end: 1px solid var(--line); }
+  .sidebar.collapsed + .main-area { margin-inline-start: 58px; }
   .app-shell[dir="rtl"] .sidebar.open { transform: translateX(0); }
   .sidebar-scrim { position: fixed; inset: 0; z-index: 3; display: block; width: 100%; border: 0; background: rgba(20, 24, 21, .28); }
-  .reader-sidebar-toggle { display: inline-grid; }
   .reader-heading { gap: 6px; margin-bottom: 24px; }
   .reader-heading-leading { gap: 2px; }
   .reader-heading h1 { font-size: clamp(24px, 7vw, 34px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

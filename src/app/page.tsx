@@ -528,7 +528,6 @@ export default function Home() {
           <section className="reader">
             <div className="reader-heading">
               <div className="reader-heading-leading">
-                {!sidebarOpen && <button className="icon-button sidebar-toggle reader-sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label={t("Show book list")} aria-expanded="false"><MenuIcon /></button>}
                 <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
               </div>
               <div className="reader-heading-actions">
