@@ -538,7 +538,7 @@ export default function Home() {
             </div>
             {chapterData ? (
               <article className={`scripture${translation === "svd" ? " arabic-scripture" : ""}`} lang={language} aria-label={`${displayBookName(currentBook)} ${t("Chapter {chapter}", { chapter })}`} onMouseUp={handleVerseSelection} onKeyUp={handleVerseSelection} onTouchEnd={handleVerseSelection}>
-                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined} onMouseLeave={paragraph.isVerse ? handleVerseLeave : undefined}>{paragraph.content}</p>)}
+                {paragraphs.map((paragraph, index) => <p key={`${chapterData.id}-${index}`} className={paragraph.isVerse ? "verse" : paragraph.isHeading ? "scripture-heading" : undefined} data-verse-number={paragraph.verseNumber} data-verse-key={paragraph.verseNumber ? `${chapterData.id}-${paragraph.verseNumber}` : undefined} onMouseEnter={paragraph.isVerse ? (event) => handleVerseHover(event.currentTarget) : undefined} onMouseLeave={paragraph.isVerse ? handleVerseLeave : undefined}>{paragraph.content}</p>)}
                 {paragraphs.length === 0 && <p>{t("This chapter has no readable text.")}</p>}
                 {translation === "niv" && chapterData.copyright && <p className="copyright">{chapterData.copyright}</p>}
               </article>
@@ -649,7 +649,7 @@ export default function Home() {
   );
 }
 
-type ScriptureParagraph = { content: ReactNode[]; isVerse: boolean; verseNumber?: string };
+type ScriptureParagraph = { content: ReactNode[]; isVerse: boolean; isHeading: boolean; verseNumber?: string };
 type ScriptureToken = { content: ReactNode; startsVerse: boolean; verseNumber?: string };
 
 function scriptureParagraphs(content: string, preserveLineBreaks: boolean): ScriptureParagraph[] {
@@ -666,8 +666,9 @@ function scriptureParagraphs(content: string, preserveLineBreaks: boolean): Scri
     let current: ReactNode[] = [];
     let isVerse = false;
     let verseNumber: string | undefined;
+    const isHeading = paragraph instanceof Element && Array.from(paragraph.classList).some((name) => /^(s\d*|sp|d)$/.test(name));
     const finish = () => {
-      if (current.length) result.push({ content: current, isVerse, verseNumber });
+      if (current.length) result.push({ content: current, isVerse, isHeading, verseNumber });
       current = [];
     };
 
@@ -685,7 +686,7 @@ function scriptureParagraphs(content: string, preserveLineBreaks: boolean): Scri
 
   return blocks.reduce<ScriptureParagraph[]>((result, paragraph, index) => {
     const previous = result[result.length - 1];
-    if (!paragraph.isVerse && previous?.isVerse) {
+    if (!paragraph.isVerse && !paragraph.isHeading && previous?.isVerse) {
       previous.content.push(preserveLineBreaks ? <br key={`continuation-${index}`} /> : " ", ...paragraph.content);
     } else {
       result.push(paragraph);
