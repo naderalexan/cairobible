@@ -1,6 +1,6 @@
 # Cairo Bible
 
-A warm, installable Bible reader with Arabic Smith & Van Dyck (SVD), NIV support gated on API.Bible licensing, quick book/chapter navigation, five color palettes, saved reading preferences, and offline SVD reading. The Cairo Bible wordmark uses locally bundled Montserrat and Yellowtail fonts; their licenses are included in `public/fonts/`. The logo mark and installable app icons are in `public/icons/`.
+A warm, installable Bible reader with Arabic Smith & Van Dyck (SVD), NIV support gated on API.Bible licensing, quick book/chapter navigation, five color palettes, saved reading preferences, and offline SVD reading. Canonical design assets live in [`design/assets/`](design/assets/): logos and app icons, brand fonts and licenses, mockups, and App Store artwork. The web app serves the icons and fonts through `public/icons/` and `public/fonts/` symlinks; the iOS asset catalog links to the canonical app icon.
 
 ## Arabic Smith & Van Dyck (SVD)
 
