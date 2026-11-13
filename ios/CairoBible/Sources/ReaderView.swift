@@ -514,23 +514,16 @@ struct ReaderView: View {
                         }
                     }
                     ForEach(chapter.verses) { verse in
-                        VStack(alignment: .leading, spacing: lineSpacing * 2) {
-                            ForEach(chapter.contentItems.indices.filter { chapter.contentItems[$0].verseNumber == verse.number }, id: \.self) { index in
-                                switch chapter.contentItems[index] {
-                                case let .verse(_, text, startsVerse):
-                                    verseRow(
-                                        verse,
-                                        text: text,
-                                        showsVerseNumber: startsVerse,
-                                        isRightToLeft: model.selectedTranslation.isRightToLeft,
-                                        book: location?.book ?? model.selectedBook,
-                                        chapter: location?.chapter ?? model.selectedChapter
-                                    )
-                                case let .heading(heading):
-                                    headingRow(heading)
-                                }
-                            }
-                        }
+                        let contentItems = chapter.contentItems.filter { $0.verseNumber == verse.number }
+                        verseRow(
+                            verse,
+                            contentItems: contentItems.isEmpty
+                                ? [.verse(number: verse.number, text: verse.text, startsVerse: true)]
+                                : contentItems,
+                            isRightToLeft: model.selectedTranslation.isRightToLeft,
+                            book: location?.book ?? model.selectedBook,
+                            chapter: location?.chapter ?? model.selectedChapter
+                        )
                     }
                 }
                 .scrollTargetLayout()
@@ -561,6 +554,7 @@ struct ReaderView: View {
             .font(readingFont.bold())
             .foregroundStyle(paletteColors.ink)
             .lineSpacing(lineSpacing)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .multilineTextAlignment(.leading)
             .accessibilityAddTraits(.isHeader)
@@ -568,33 +562,38 @@ struct ReaderView: View {
 
     private func verseRow(
         _ verse: ScriptureVerse,
-        text: String,
-        showsVerseNumber: Bool,
+        contentItems: [ScriptureContentItem],
         isRightToLeft: Bool,
         book: BibleBook,
         chapter: Int
     ) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            if showsVerseNumber {
-                Text(verbatim: "\u{2068}\(verse.number)\u{2069}")
-                    .font(.system(size: CGFloat(readingFontSize * 0.78), design: .serif))
-                    .foregroundStyle(paletteColors.muted)
-                    .frame(width: 24)
-            } else {
-                Color.clear.frame(width: 24)
+        HStack(alignment: .top, spacing: 10) {
+            Text(verbatim: "\u{2068}\(verse.number)\u{2069}")
+                .font(.system(size: CGFloat(readingFontSize * 0.78), design: .serif))
+                .foregroundStyle(paletteColors.muted)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: lineSpacing * 2) {
+                ForEach(Array(contentItems.enumerated()), id: \.offset) { element in
+                    let item = element.element
+                    switch item {
+                    case let .verse(_, text, _):
+                        Text(verbatim: text)
+                            .font(readingFont)
+                            .foregroundStyle(paletteColors.ink)
+                            .lineSpacing(lineSpacing)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    case let .heading(heading):
+                        headingRow(heading)
+                    }
+                }
             }
-            Text(verbatim: text)
-                .font(readingFont)
-                .foregroundStyle(paletteColors.ink)
-                .lineSpacing(lineSpacing)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .multilineTextAlignment(.leading)
         .environment(\.locale, isRightToLeft ? Locale(identifier: "ar") : .current)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, text))
+        .accessibilityLabel(preferences.appLanguage.format("Verse %d. %@", verse.number, verse.text))
         .onTapGesture(count: 2) {
             UIPasteboard.general.string = verse.copyText(
                 book: book,
