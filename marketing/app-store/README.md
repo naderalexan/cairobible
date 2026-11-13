@@ -1,6 +1,6 @@
 # App Store creative assets
 
-- `header.png`: 3840 × 1646 px, product page Header placement.
+- `header.png`: 3840 × 1646 px, Product Page Header placement.
 - `search-results.png`: 3840 × 2560 px, Search Results placement.
 - Both exports are opaque RGB PNGs. Text-free artwork suits Arabic and English listings.
 
@@ -8,15 +8,14 @@ In App Store Connect, select the app version → Product Page Information → He
 
 Specifications: https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications
 
-Created with the built-in image_gen tool using the existing iOS app icon as the brand reference. Artwork was generated below the final resolution and upscaled for upload. No application code changed; no app rebuild is required. App Store Connect upload, crop previews, and review acceptance remain unverified.
+Generated with the built-in image_gen tool in the visual style of the Cairo Bible icon. The artwork was generated at 1915 × 821 px (header) and 1536 × 1024 px (search results), then resized to the required export dimensions. App Store Connect upload, crop previews, and review acceptance remain unverified.
 
 ## Generation prompts
 
 ### Header
 
-Use case: ads-marketing. Create a finished premium App Store product page HEADER artwork for Cairo Bible, a calm Arabic and English Bible reader. Output landscape exactly 3840 x 1646 pixels (21:9). Reference image: the provided app icon is a BRAND reference only: warm muted burnt terracotta background and cream abstract dove formed from two leaflike pages. Translate that warmth into a sophisticated tactile paper sculpture editorial still life. A beautifully sculpted open Bible made of layered warm ivory paper, no legible printing, gently fanned pages; above its center a small elegant cream paper dove inspired by the icon. Background seamless warm terracotta #AD593B with subtle tonal variation and fine matte paper grain, gentle curved paper forms flowing outward near far edges, delicate diffuse warm directional light, soft realistic shadows. Quiet, contemplative, premium, understated and spacious. Composition critically important: keep the entire book and dove comfortably inside the middle 42 percent of width and middle 52 percent of height so there is generous crop-safe breathing room around them. Bible low center, dove above center, compact cohesive central subject. Broad empty terracotta areas on left and right; background extends fully to all edges. No text, no letters, no fake scripture, no UI, no phones, no promotional badges, no border, no watermark. Not an app icon, no square panel. Opaque RGB artwork, no transparency.
+Use case: ads-marketing. Asset type: App Store product page header artwork for Cairo Bible, landscape 3840 × 1646 (21:9). Create sophisticated premium editorial still-life art in tactile paper sculpture style, matching a calm Arabic and English Bible reader brand. Seamless warm burnt terracotta background (#AD593B), subtle tonal variation and matte paper grain. A sculpted open Bible made of layered warm ivory paper, gently fanned blank pages, with a small elegant cream paper dove formed from two leaflike pages floating above it. Keep this compact cohesive subject centered horizontally and low-center vertically, entirely inside the middle 42% of width and middle 52% of height for crop-safe breathing room. Broad empty terracotta negative space to both sides, background fills all edges. Soft diffuse warm directional studio light, delicate realistic shadows, quiet contemplative premium understated mood. No readable print, no text or letters, no UI, phone, badges, border, watermark, icon panel, or transparency. Opaque RGB.
 
 ### Search Results
 
-undefined
-
+Use case: ads-marketing. Asset type: App Store Search Results placement artwork for Cairo Bible, landscape 3840 × 2560 (3:2). Create a complementary yet distinct premium editorial still-life in tactile paper sculpture, for a calm Arabic and English Bible reader. A warm terracotta (#AD593B) matte paper backdrop with subtle fine grain. On the right half, close composition of a small open ivory Bible with naturally curved layered blank pages and a tiny cream dove made from two leaflike pages resting beside it; soft shadows and warm directional studio light. Keep the main subject within the central 64% width and 72% height with generous edges for crops. The left half remains mostly uninterrupted terracotta negative space. Rich warm ivory and burnt clay palette, quiet contemplative premium craft, realistic paper fibers, elegant tactile forms. Different composition from a centered book: arrange the book in a three-quarter view on the right and leave clear breathing room on the left. No readable printing, letters, text, UI, phone, badges, border, watermark, icon panel, or transparency. Opaque RGB.
