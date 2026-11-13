@@ -461,13 +461,13 @@ export default function Home() {
     <div className={`app-shell ${theme}${focusMode ? " focus-mode" : ""}`} data-palette={palette} lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ "--reading-size": `${FONT_SIZES[fontLevel]}px`, "--reading-line-height": selectedLineHeight.ratio, "--scripture-width": `${selectedScriptureWidth.width}px` } as CSSProperties}>
       {translation === "niv" && <Script src="https://pkg.api.bible/fumsV3.min.js" strategy="afterInteractive" />}
       <aside className={`sidebar${sidebarOpen ? " open" : " collapsed"}`} aria-label={t("Books of the Bible")}>
-        <div className="sidebar-top">
-          <button className="icon-button sidebar-close" onClick={() => setSidebarOpen(false)} aria-label={t("Close book list")}>×</button>
+        <div className="sidebar-search-row">
+          {sidebarOpen && <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(false)} aria-label={t("Hide book list")} aria-expanded="true"><MenuIcon /></button>}
+          <label className="search-wrap" htmlFor="bookSearch">
+            <SearchIcon /><input id="bookSearch" type="search" placeholder={t("Find a book")} value={query} onChange={(event) => setQuery(event.target.value)} />
+            <kbd>/</kbd>
+          </label>
         </div>
-        <label className="search-wrap" htmlFor="bookSearch">
-          <SearchIcon /><input id="bookSearch" type="search" placeholder={t("Find a book")} value={query} onChange={(event) => setQuery(event.target.value)} />
-          <kbd>/</kbd>
-        </label>
         <nav className="book-nav" aria-label={t("Books of the Bible")}>
           {oldTestament.length > 0 && <section className="book-group"><h2>{t("OLD TESTAMENT")}</h2><ul className="book-list">{renderBooks(oldTestament)}</ul></section>}
           {newTestament.length > 0 && <section className="book-group"><h2>{t("NEW TESTAMENT")}</h2><ul className="book-list">{renderBooks(newTestament)}</ul></section>}
@@ -528,7 +528,7 @@ export default function Home() {
           <section className="reader">
             <div className="reader-heading">
               <div className="reader-heading-leading">
-                <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={t(sidebarOpen ? "Hide book list" : "Show book list")} aria-expanded={sidebarOpen}><MenuIcon /></button>
+                {!sidebarOpen && <button className="icon-button sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label={t("Show book list")} aria-expanded="false"><MenuIcon /></button>}
                 <div><p className="eyebrow">{translation === "svd" ? "العهد القديم والجديد · SVD" : `${t(currentBook.testament.toUpperCase())} · NIV`}</p><h1>{translation === "svd" ? (svdBookName || displayBookName(currentBook)) : currentBook.name} <span>{chapter}</span></h1></div>
               </div>
               <div className="reader-heading-actions">
