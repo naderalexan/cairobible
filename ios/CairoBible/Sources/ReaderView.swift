@@ -508,6 +508,9 @@ struct ReaderView: View {
         Group {
             if !chapter.verses.isEmpty {
                 LazyVStack(alignment: .leading, spacing: lineSpacing * 3) {
+                    ForEach(chapter.headings.indices.filter { chapter.headings[$0].afterVerse == nil }, id: \.self) { index in
+                        headingRow(chapter.headings[index])
+                    }
                     ForEach(chapter.verses) { verse in
                         verseRow(
                             verse,
@@ -515,6 +518,9 @@ struct ReaderView: View {
                             book: location?.book ?? model.selectedBook,
                             chapter: location?.chapter ?? model.selectedChapter
                         )
+                        ForEach(chapter.headings.indices.filter { chapter.headings[$0].afterVerse == verse.number }, id: \.self) { index in
+                            headingRow(chapter.headings[index])
+                        }
                     }
                 }
                 .scrollTargetLayout()
@@ -538,6 +544,16 @@ struct ReaderView: View {
                 .accessibilityLabel(preferences.appLanguage.format("Translation attribution. %@", chapter.attribution))
         }
         .environment(\.layoutDirection, model.selectedTranslation.isRightToLeft ? .rightToLeft : .leftToRight)
+    }
+
+    private func headingRow(_ heading: NIVHeading) -> some View {
+        Text(verbatim: heading.text)
+            .font(readingFont.bold())
+            .foregroundStyle(paletteColors.ink)
+            .lineSpacing(lineSpacing)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .multilineTextAlignment(.leading)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private func verseRow(

@@ -4,7 +4,29 @@ struct NIVChapter: Codable, Equatable {
     let bookName: String
     let chapter: Int
     let content: String
+    let headings: [NIVHeading]
     let copyright: String
+
+    private enum CodingKeys: String, CodingKey {
+        case bookName, chapter, content, headings, copyright
+    }
+
+    init(bookName: String, chapter: Int, content: String, headings: [NIVHeading] = [], copyright: String) {
+        self.bookName = bookName
+        self.chapter = chapter
+        self.content = content
+        self.headings = headings
+        self.copyright = copyright
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        bookName = try values.decode(String.self, forKey: .bookName)
+        chapter = try values.decode(Int.self, forKey: .chapter)
+        content = try values.decode(String.self, forKey: .content)
+        headings = try values.decodeIfPresent([NIVHeading].self, forKey: .headings) ?? []
+        copyright = try values.decode(String.self, forKey: .copyright)
+    }
 
     var plainText: String {
         let parsedVerses = verses
@@ -69,6 +91,12 @@ struct NIVChapter: Codable, Equatable {
         }
         return result as String
     }
+}
+
+struct NIVHeading: Codable, Equatable {
+    let type: String
+    let text: String
+    let afterVerse: Int?
 }
 
 protocol NIVReadingClient {

@@ -4,6 +4,20 @@ import XCTest
 
 @MainActor
 final class ReaderFlowTests: XCTestCase {
+    func testNIVSongOfSongsHeadingsStaySeparateFromVerseText() throws {
+        let data = #"{"bookName":"Song of Songs","chapter":1,"content":"<p class=\"q1\"><span data-number=\"1\">1</span>Let him kiss me.</p>","headings":[{"type":"speaker","text":"Beloved","afterVerse":null},{"type":"speaker","text":"Friends","afterVerse":1}],"copyright":"NIV copyright"}"#.data(using: .utf8)!
+
+        let chapter = try JSONDecoder().decode(NIVChapter.self, from: data)
+
+        XCTAssertEqual(chapter.headings, [
+            NIVHeading(type: "speaker", text: "Beloved", afterVerse: nil),
+            NIVHeading(type: "speaker", text: "Friends", afterVerse: 1),
+        ])
+        XCTAssertEqual(chapter.verses, [ScriptureVerse(number: 1, text: "Let him kiss me.")])
+        XCTAssertEqual(chapter.plainText, "Let him kiss me.")
+        XCTAssertFalse(chapter.verses.contains { $0.text.contains("Beloved") || $0.text.contains("Friends") })
+    }
+
     func testReaderToolbarPresetsAndLineSpacingPersistWithoutNormalizingSavedFontSize() {
         let suiteName = "ReaderToolbarPreferencesTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

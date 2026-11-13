@@ -446,6 +446,7 @@ struct ReaderChapter: Equatable {
     let chapter: Int
     let text: String
     let verses: [ScriptureVerse]
+    let headings: [NIVHeading]
     let attribution: String
 }
 
@@ -636,6 +637,7 @@ final class ReaderModel: ObservableObject {
                 chapter: chapter.chapter,
                 text: chapter.plainText,
                 verses: chapter.verses,
+                headings: chapter.headings,
                 attribution: chapter.copyright
             )
         case .svd:
@@ -645,6 +647,7 @@ final class ReaderModel: ObservableObject {
                 chapter: chapter.chapter,
                 text: chapter.verses.map(\.text).joined(),
                 verses: chapter.verses,
+                headings: [],
                 attribution: chapter.attribution
             )
         }
