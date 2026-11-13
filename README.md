@@ -2,6 +2,10 @@
 
 A warm, installable Bible reader with Arabic Smith & Van Dyck (SVD), NIV support gated on API.Bible licensing, quick book/chapter navigation, five color palettes, saved reading preferences, and offline SVD reading. Canonical design assets live in [`design/assets/`](design/assets/): logos and app icons, brand fonts and licenses, mockups, and App Store artwork. The web app serves the icons and fonts through `public/icons/` and `public/fonts/` symlinks; the iOS asset catalog links to the canonical app icon.
 
+## License
+
+The Cairo Bible codebase is licensed under the [MIT License](LICENSE), also published on the web app at `/license`. This applies to the codebase; scripture and other third-party materials remain subject to their own notices and licenses.
+
 ## Arabic Smith & Van Dyck (SVD)
 
 The Litestar API serves the Arabic Van Dyck Bible from `public/data/arb-vd.json` and preserves verse markers from `public/data/arb-vd-verses.json`. The app fetches chapters from that API and uses its locally cached corpus when the browser is offline.

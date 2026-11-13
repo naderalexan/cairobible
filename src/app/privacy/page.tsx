@@ -13,6 +13,7 @@ export default function PrivacyPage() {
         <Link href="/">Cairo Bible</Link>
         <Link href="/support">Support</Link>
         <Link href="/copyright">Copyright</Link>
+        <Link href="/license">License</Link>
       </nav>
       <header className="legal-header">
         <p className="legal-eyebrow">CAIRO BIBLE · IOS APP</p>

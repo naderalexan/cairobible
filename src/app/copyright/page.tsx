@@ -13,6 +13,7 @@ export default function CopyrightPage() {
         <Link href="/">Cairo Bible</Link>
         <Link href="/privacy">Privacy</Link>
         <Link href="/support">Support</Link>
+        <Link href="/license">License</Link>
       </nav>
       <header className="legal-header">
         <p className="legal-eyebrow">CAIRO BIBLE · SCRIPTURE &amp; APP</p>
