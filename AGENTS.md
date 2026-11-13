@@ -12,10 +12,6 @@ Issues and specs live in GitHub Issues for `naderalexan/cairobible`; use `gh`. S
 
 The triage skill's five roles map to GitHub labels listed in `docs/agents/triage-labels.md`.
 
-### Domain docs
-
-This is a single-context repo: check the root glossary and relevant ADRs in `docs/adr/`. See `docs/agents/domain.md`.
-
 ### Ponytail skills
 
 | Skill | Use for | Guide |
