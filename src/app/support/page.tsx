@@ -12,6 +12,7 @@ export default function SupportPage() {
       <nav className="legal-nav" aria-label="Cairo Bible links">
         <Link href="/">Cairo Bible</Link>
         <Link href="/privacy">Privacy</Link>
+        <Link href="/copyright">Copyright</Link>
       </nav>
       <header className="legal-header">
         <p className="legal-eyebrow">CAIRO BIBLE · IOS APP</p>
